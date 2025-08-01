@@ -22,6 +22,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	file \
 	gettext \
 	git \
+    gettext \
+    supervisor \
+    +make \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
@@ -32,6 +35,11 @@ RUN set -eux; \
 		opcache \
 		zip \
 	;
+
+# Installing Nodejs and NPM
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash
+RUN apt-get install -y nodejs
+RUN npm install -g npm@11.4.2
 
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
