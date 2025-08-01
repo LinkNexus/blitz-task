@@ -1,0 +1,22 @@
+{
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@types/node": "^24.1.0",
+        "@types/react": "^19.1.9",
+        "@types/react-dom": "^19.1.7",
+        "vite": "^6.0",
+        "vite-plugin-symfony": "^8.2"
+    },
+    "dependencies": {
+        "@tailwindcss/vite": "^4.1.11",
+        "@vitejs/plugin-react": "^4.7.0",
+        "react": "^19.1.1",
+        "react-dom": "^19.1.1",
+        "tailwindcss": "^4.1.11"
+    }
+}
