@@ -4,3 +4,10 @@ export interface User {
   email: string;
   isVerified: boolean;
 }
+
+export interface FormErrors {
+  violations: {
+    propertyPath: string,
+    title: string
+  }[]
+}

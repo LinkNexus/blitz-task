@@ -1,6 +1,5 @@
 import {defineConfig} from "vite";
 import symfonyPlugin from "vite-plugin-symfony";
-import process from "node:process";
 import path from "node:path";
 import react from '@vitejs/plugin-react';
 import tailwindcss from "@tailwindcss/vite";
@@ -21,14 +20,19 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     cors: {
-      origin: process.env.SITE_NAME,
-      credentials: true
-    },
-    hmr: {
-      host: new URL(process.env.SITE_NAME!).hostname,
+      origin: "*",
     },
     watch: {
-      ignored: ["**/node_modules/**", "**/vendor/**", "**/.git/**", "/src/**"]
+      ignored: [
+        "**/node_modules/**",
+        "**/vendor/**",
+        "**/.git/**",
+        "**/src/**",          // Ignore Symfony source code completely (including controllers)
+        "**/docker/**",       // Ignore docker files
+        "**/templates/**",    // Ignore Symfony templates
+        "**/config/**",       // Ignore config files (and services)
+        "**/var/**"
+      ]
     }
   },
   resolve: {

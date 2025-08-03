@@ -1,8 +1,10 @@
 import {useAppStore} from "@/lib/store.ts";
 import {Redirect, Route, Switch} from "wouter";
 import {LoginPage} from "@/pages/auth/login-page.tsx";
-import {Toaster} from "sonner";
 import {RegisterPage} from "@/pages/auth/register-page.tsx";
+import {ForgotPasswordPage} from "@/pages/auth/forgot-password-page.tsx";
+import {Toaster} from "@/components/ui/sonner.tsx";
+import {ResetPasswordPage} from "@/pages/auth/reset-password-page.tsx";
 
 export function App() {
   const {user} = useAppStore(state => state);
@@ -24,7 +26,9 @@ export function App() {
             </div>
             <Switch>
               <Route path="/login" component={LoginPage}/>
-              <Route path="/register" component={RegisterPage} />
+              <Route path="/register" component={RegisterPage}/>
+              <Route path="/forgot-password" component={ForgotPasswordPage}/>
+              <Route path="/reset-password" component={ResetPasswordPage}/>
               <Route component={() => <Redirect to="/login"/>}/>
             </Switch>
           </div>

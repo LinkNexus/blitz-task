@@ -1,5 +1,4 @@
 import {useAppStore} from "@/lib/store.ts";
-import {apiFetch} from "@/lib/fetch.ts";
 
 export function useAccount() {
   const user = useAppStore(state => state.user);
@@ -7,9 +6,13 @@ export function useAccount() {
 
   return {
     user,
-    logout() {
-      apiFetch("/api/auth/logout")
-        .then(() => setUser(null));
+    verifyUser() {
+      if (user) {
+        setUser({
+          ...user,
+          isVerified: true
+        });
+      }
     }
   }
 }

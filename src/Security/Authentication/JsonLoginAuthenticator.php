@@ -23,7 +23,7 @@ class JsonLoginAuthenticator extends AbstractAuthenticator implements Authentica
 {
 
     public function __construct(
-        private readonly UserRepository $repository,
+        private readonly UserRepository      $repository,
         private readonly SerializerInterface $serializer
     )
     {
@@ -59,7 +59,7 @@ class JsonLoginAuthenticator extends AbstractAuthenticator implements Authentica
         return new Passport(
             new UserBadge(
                 $email,
-                fn ($userIdentifier) => $this->repository->findOneBy(["email" => $email])
+                fn($email) => $this->repository->findOneBy(["email" => $email])
             ),
             new PasswordCredentials($password),
             $badges

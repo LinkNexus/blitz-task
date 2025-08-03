@@ -3,6 +3,11 @@
 {% block body %}
     <div id="root"></div>
     <script>
-        window["__blitz_task_user"] = JSON.parse("{{ app.user|serialize(format= "json") }}");
+        window["__blitz_task_user"] = JSON.parse("{{ app.user|serialize(
+            format= "json",
+            context= {
+                groups: ["user:read"]
+            }
+        )|e("js") }}");
     </script>
 {% endblock %}

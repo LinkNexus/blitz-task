@@ -11,9 +11,61 @@ import {Loader2, UserPlus} from "lucide-react";
 import {useApiFetch} from "@/hooks/use-fetch.ts";
 import {Separator} from "@/components/ui/separator.tsx";
 import {Link} from "wouter";
+import {useAppStore} from "@/lib/store.ts";
+import type {ApiError} from "@/lib/fetch.ts";
+import type {FormErrors, User} from "@/types.ts";
+import {toast} from "sonner";
+import {useAccount} from "@/hooks/use-account.ts";
 
 export function RegisterPage() {
-  const {pending, callback: register} = useApiFetch("/api/auth/register");
+  const setUser = useAppStore.getState().setUser;
+  const {verifyUser} = useAccount();
+
+  const {
+    pending: isSendingMail,
+    callback: sendMail
+  } = useApiFetch("/api/auth/resend-verification-mail", {
+    onSuccess(isVerified: boolean) {
+      if (isVerified) {
+        verifyUser();
+        toast.info("You are already verified, no need to send a verification mail.");
+      } else {
+        toast.success("The verification mail was successfully sent.");
+      }
+    },
+    onError(err: ApiError<{ message?: string }>) {
+      const error = err.data.message || "Something went wrong";
+      toast.error(error, {
+        closeButton: true
+      });
+      console.log(err.data);
+    }
+  })
+
+  const {pending, callback: register} = useApiFetch("/api/auth/register", {
+    onSuccess(data: User) {
+      setUser(data);
+      toast.success("Your account was successfully created!", {
+        closeButton: true
+      });
+      toast.success("A validation mail will be or has been sent to your given email address", {
+        action: {
+          label: isSendingMail ? "Sending..." : "Resend",
+          onClick: async () => {
+            await sendMail();
+          }
+        }
+      })
+    },
+    onError(err: ApiError<FormErrors>) {
+      err.data.violations.forEach(v => {
+        form.setError(v.propertyPath as keyof z.infer<typeof registrationSchema>, {
+          type: "manual",
+          message: v.title
+        })
+      })
+    }
+  });
 
   const registrationSchema = z.object({
     email: z.string().email({error: (iss) => `The email ${iss.input} is not a valid email address.`}),
@@ -22,10 +74,7 @@ export function RegisterPage() {
       .max(255, "The name must be at most 255 characters long")
       .regex(/^[a-zA-Z0-9_ ]+$/, "Name must only contain alphanumeric characters, spaces and underscores"),
     password: z.string(),
-    confirmPassword: z.string(),
-    acceptTerms: z.boolean().refine((value) => value, {
-      message: "You must accept the terms and conditions"
-    })
+    confirmPassword: z.string()
   }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords must match"
   });
@@ -36,8 +85,7 @@ export function RegisterPage() {
       email: "",
       name: "",
       password: "",
-      confirmPassword: "",
-      acceptTerms: false
+      confirmPassword: ""
     }
   });
 
@@ -55,7 +103,12 @@ export function RegisterPage() {
           <SocialLinks/>
           <Divider>or</Divider>
           <Form {...form}>
-            <form className="space-y-4">
+            <form
+              className="space-y-4"
+              onSubmit={form.handleSubmit(async (data) => {
+                await register({data})
+              })}
+            >
               <FormField
                 control={form.control}
                 name="name"
@@ -121,6 +174,17 @@ export function RegisterPage() {
                   </FormItem>
                 )}
               />
+
+              <div className="text-xs">
+                By creating an account, you accept the {""}
+                <Link
+                  className="hover:underline hover:underline-offset-2 hover:text-primary"
+                  to="terms-and-conditions"
+                >
+                  terms and conditions
+                </Link>
+                {""} of our service
+              </div>
 
               <Button
                 type="submit"
