@@ -28,7 +28,7 @@ export function useApiFetch<T, S>(
       data: options.data,
       searchParams: {}
     }) => {
-      if (pending) return; // Prevent multiple concurrent requests
+      if (pending) return Promise.resolve(); // Prevent multiple concurrent requests
       const { data, searchParams } = params;
 
       setPending(true);
