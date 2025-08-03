@@ -12,6 +12,7 @@ services:
       #  from the bind-mount for better performance by enabling the next line:
       #- /app/vendor
     environment:
+      MAILER_DSN: smtp://mailer:1025
       FRANKENPHP_WORKER_CONFIG: watch
       MERCURE_EXTRA_DIRECTIVES: demo
       # See https://xdebug.org/docs/all_settings#mode
@@ -24,6 +25,33 @@ services:
     ports:
       - "8400:80"
       - "5173:5173"
+    networks:
+      - mailer
+  
+  ###> symfony/mercure-bundle ###
+  ###< symfony/mercure-bundle ###
+  
+  ###> doctrine/doctrine-bundle ###
+  database:
+    ports:
+      - "5432"
+    networks:
+      - pgadmin
+  ###< doctrine/doctrine-bundle ###
+  
+  ###> symfony/mailer ###
+  mailer:
+    image: axllent/mailpit
+    ports:
+      - "1025"
+      - "8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+###< symfony/mailer ###
 
-###> symfony/mercure-bundle ###
-###< symfony/mercure-bundle ###
+networks:
+  mailer:
+    external: true
+  pgadmin:
+    external: true
