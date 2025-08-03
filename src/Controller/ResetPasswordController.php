@@ -36,7 +36,13 @@ final class ResetPasswordController extends AbstractController
     #[Route("", name: "request", methods: ["POST"])]
     public function request(Request $request): JsonResponse
     {
-        $decodedContent = json_decode($request->getContent());
+        try {
+            $decodedContent = json_decode($request->getContent(), false, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            return $this->json([
+                "error" => "Malformed JSON: " . $e->getMessage()
+            ], Response::HTTP_BAD_REQUEST);
+        }
         if (is_null($decodedContent) || !property_exists($decodedContent, 'email')) {
             return $this->json([
                 "error" => "Invalid JSON or missing 'email' property."
