@@ -9,6 +9,7 @@ use App\Event\UserCreatedEvent;
 use App\Security\Authentication\JsonLoginAuthenticator;
 use App\Security\EmailVerifier;
 use Doctrine\ORM\EntityManagerInterface;
+use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -31,7 +32,8 @@ final class SecurityController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface   $entityManager,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly EmailVerifier            $emailVerifier
+        private readonly EmailVerifier            $emailVerifier,
+        private ClientRegistry                    $clientRegistry
     )
     {
     }
@@ -104,5 +106,19 @@ final class SecurityController extends AbstractController
 
         $this->addFlash('success', 'Your email address has been successfully verified.');
         return $this->redirect("/");
+    }
+
+    #[Route("/connect/{service}")]
+    public function connect(
+        string $service
+    ): RedirectResponse
+    {
+        if ($service === "github") {
+            $scopes = ["user:email", "read:user"];
+            $client = $this->clientRegistry->getClient($service);
+            return $client->redirect($scopes);
+        }
+
+        return $this->redirect("/login");
     }
 }
