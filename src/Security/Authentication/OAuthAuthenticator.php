@@ -108,7 +108,6 @@ class OAuthAuthenticator extends OAuth2Authenticator
      */
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
-        dump($token->getUser());
         return new RedirectResponse("/dashboard");
     }
 
