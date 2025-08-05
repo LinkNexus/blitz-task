@@ -1,3 +1,5 @@
+import {useAppStore} from "@/lib/store.ts";
+
 export interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   data?: Record<string, any> | FormData | null;
   contentType?: "json" | "form-data";
@@ -12,7 +14,7 @@ export async function apiFetch<T>(
     accept: "json",
   }
 ) {
-  const { data = null, contentType = "json", accept = "json" } = options;
+  const {data = null, contentType = "json", accept = "json"} = options;
   let headers: Record<string, string> = {};
 
   if (data && !(data instanceof FormData) && contentType === "json")
@@ -32,6 +34,11 @@ export async function apiFetch<T>(
     },
     method: options.method ?? options.data ? "POST" : "GET",
   });
+
+  if (response.status === 401) {
+    useAppStore.getState().setUser(null);
+    return null as unknown as T; // Unauthorized, return null
+  }
 
   if (!response.ok) {
     throw new ApiError(await response.json(), response.status);

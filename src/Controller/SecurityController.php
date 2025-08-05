@@ -9,6 +9,7 @@ use App\Event\UserCreatedEvent;
 use App\Security\Authentication\JsonLoginAuthenticator;
 use App\Security\EmailVerifier;
 use Doctrine\ORM\EntityManagerInterface;
+use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -31,9 +32,17 @@ final class SecurityController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface   $entityManager,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly EmailVerifier            $emailVerifier
+        private readonly EmailVerifier            $emailVerifier,
+        private ClientRegistry                    $clientRegistry
     )
     {
+    }
+
+    #[IsGranted("IS_AUTHENTICATED_FULLY")]
+    #[Route("/me", name: "me", methods: ["GET"])]
+    public function me(#[CurrentUser] User $user): JsonResponse
+    {
+        return $this->json($user, context: ["groups" => ["user:read"]]);
     }
 
     #[Route("/logout", name: "logout", methods: ["DELETE"])]
@@ -104,5 +113,24 @@ final class SecurityController extends AbstractController
 
         $this->addFlash('success', 'Your email address has been successfully verified.');
         return $this->redirect("/");
+    }
+
+    #[Route("/connect/{service}")]
+    public function connect(
+        string $service
+    ): RedirectResponse
+    {
+        $scopes = [];
+
+        if ($service === "github") {
+            $scopes = ["user:email", "read:user"];
+        }
+
+        if ($service === "google") {
+            $scopes = ["openid"];
+        }
+
+        $client = $this->clientRegistry->getClient($service);
+        return $client->redirect($scopes);
     }
 }
