@@ -8,7 +8,7 @@ export function ProjectsPage() {
             Manage your projects and collaborate with your team.
           </p>
         </div>
-        <button className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg">
+        <button className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg">
           + New Project
         </button>
       </div>
