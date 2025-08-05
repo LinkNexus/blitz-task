@@ -16,7 +16,27 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.tsx";
 
-export function Favorites({favorites}: { favorites: any[] }) {
+const favorites = [
+  {
+    name: "Website Redesign",
+    url: "/projects/website-redesign",
+    status: "active",
+    teamId: 0
+  },
+  {
+    name: "Mobile App",
+    url: "/projects/mobile-app",
+    status: "archived",
+    teamId: 1
+  },
+  {
+    name: "Marketing Campaign",
+    url: "/projects/marketing",
+    teamId: 2
+  },
+];
+
+export function Favorites() {
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>
@@ -27,7 +47,7 @@ export function Favorites({favorites}: { favorites: any[] }) {
       </SidebarGroupLabel>
       <SidebarMenu>
         {favorites.map((item) => (
-          <FavoriteItem item={item}/>
+          <FavoriteItem key={item.name} item={item}/>
         ))}
         <SidebarMenuItem className="text-muted-foreground">
           <SidebarMenuButton>

@@ -1,4 +1,4 @@
-export function TasksPage() {
+export function IssuesBoardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -12,7 +12,7 @@ export function TasksPage() {
           + Add Task
         </button>
       </div>
-      
+
       <div className="grid gap-6 md:grid-cols-4">
         {/* To Do Column */}
         <div className="space-y-3">
@@ -36,7 +36,7 @@ export function TasksPage() {
                 <span className="text-xs text-gray-500">2 comments</span>
               </div>
             </div>
-            
+
             <div className="bg-white p-4 rounded-lg border shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">Medium</span>
@@ -53,7 +53,7 @@ export function TasksPage() {
             </div>
           </div>
         </div>
-        
+
         {/* In Progress Column */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -69,7 +69,7 @@ export function TasksPage() {
               <h4 className="font-medium mb-2">Mobile app testing</h4>
               <p className="text-sm text-gray-600 mb-3">Test the mobile app on different devices</p>
               <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-                <div className="bg-blue-600 h-2 rounded-full" style={{ width: '60%' }}></div>
+                <div className="bg-blue-600 h-2 rounded-full" style={{width: '60%'}}></div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex -space-x-2">
@@ -81,7 +81,7 @@ export function TasksPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Review Column */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -105,7 +105,7 @@ export function TasksPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Done Column */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -124,7 +124,7 @@ export function TasksPage() {
                 <span className="text-xs text-green-600">✓ Completed</span>
               </div>
             </div>
-            
+
             <div className="bg-white p-4 rounded-lg border shadow-sm border-l-4 border-l-green-500 opacity-75">
               <h4 className="font-medium mb-2">User authentication setup</h4>
               <p className="text-sm text-gray-600 mb-3">Set up OAuth and user authentication</p>
