@@ -23,10 +23,12 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb.tsx";
 import {ThemeProvider} from "@/components/custom/theme-provider.tsx";
+import {useAppStore} from "@/lib/store.ts";
 
 export function App() {
   const {status, authenticate} = useAuth();
   const [location] = useLocation();
+  const {sidebarState, toggleSidebar} = useAppStore(state => state);
 
   // Function to get page title from current location
   const getPageTitle = () => {
@@ -112,7 +114,10 @@ export function App() {
 
       {status === "authenticated" && (
         <ThemeProvider>
-          <SidebarProvider>
+          <SidebarProvider
+            open={sidebarState === "open"}
+            onOpenChange={toggleSidebar}
+          >
             <AppSidebar/>
             <SidebarInset>
               <header

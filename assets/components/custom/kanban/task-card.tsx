@@ -17,15 +17,36 @@ import {
   Flag,
   MessageSquare,
   MoreHorizontal,
-  Paperclip
+  Paperclip,
+  GripVertical
 } from "lucide-react";
 import type {Task} from "@/types.ts";
+import {useDraggable} from '@dnd-kit/core';
+import {CSS} from '@dnd-kit/utilities';
 
 interface TaskCardProps {
   task: Task;
 }
 
 export function TaskCard({task}: TaskCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: `task-${task.id}`,
+    data: {
+      type: 'task',
+      task,
+    },
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+  };
+
   const isOverdue = new Date(task.dueAt) < new Date() && task.relatedColumn.name !== "Done";
 
   const getPriorityIcon = (priority: Task["priority"]) => {
@@ -67,7 +88,15 @@ export function TaskCard({task}: TaskCardProps) {
   };
 
   return (
-    <Card className="mb-2 sm:mb-3 cursor-pointer hover:shadow-md transition-shadow bg-card">
+    <Card 
+      ref={setNodeRef}
+      style={style}
+      className={`mb-2 sm:mb-3 transition-all bg-card ${
+        isDragging 
+          ? 'opacity-50 shadow-lg z-50' 
+          : 'hover:shadow-md'
+      }`}
+    >
       <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-1 sm:gap-2">
@@ -77,12 +106,17 @@ export function TaskCard({task}: TaskCardProps) {
               <span className="sm:hidden">{task.priority.charAt(0).toUpperCase()}</span>
             </Badge>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-5 w-5 sm:h-6 sm:w-6 p-0">
-                <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4"/>
-              </Button>
-            </DropdownMenuTrigger>
+          <div className="flex items-center gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-5 w-5 sm:h-6 sm:w-6 p-0"
+                >
+                  <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4"/>
+                </Button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem>Edit</DropdownMenuItem>
               <DropdownMenuItem>Move to...</DropdownMenuItem>
@@ -90,6 +124,15 @@ export function TaskCard({task}: TaskCardProps) {
               <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+            {/* Drag Handle */}
+            <div 
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted/50 rounded transition-colors"
+              {...listeners}
+              {...attributes}
+            >
+              <GripVertical className="w-3 h-3 text-muted-foreground" />
+            </div>
+          </div>
         </div>
         <CardTitle className="text-xs sm:text-sm font-medium leading-tight">
           {task.name}

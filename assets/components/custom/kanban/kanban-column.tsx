@@ -9,13 +9,27 @@ import {
 import {MoreHorizontal, Plus} from "lucide-react";
 import type {Task, TaskColumn} from "@/types.ts";
 import {TaskCard} from "./task-card.tsx";
+import {useDroppable} from '@dnd-kit/core';
 
 interface KanbanColumnProps {
   column: TaskColumn;
   tasks: Task[];
 }
 
-export function KanbanColumn({column, tasks}: KanbanColumnProps) {
+export function KanbanColumn({
+  column, 
+  tasks
+}: KanbanColumnProps) {
+  const {
+    setNodeRef,
+    isOver,
+  } = useDroppable({
+    id: `column-${column.id}`,
+    data: {
+      type: 'column',
+      column,
+    },
+  });
   return (
     <div className="flex flex-col min-w-[280px] sm:min-w-[300px] flex-shrink-0">
       {/* Column Header */}
@@ -49,9 +63,18 @@ export function KanbanColumn({column, tasks}: KanbanColumnProps) {
 
       {/* Column Tasks */}
       <div
-        className="flex-1 space-y-2 sm:space-y-3 min-h-[400px] sm:min-h-[500px] p-1 sm:p-2 rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors">
+        ref={setNodeRef}
+        className={`flex-1 space-y-2 sm:space-y-3 min-h-[400px] sm:min-h-[500px] p-1 sm:p-2 rounded-lg border-2 border-dashed transition-colors ${
+          isOver 
+            ? 'border-primary bg-primary/10' 
+            : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+        }`}
+      >
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task}/>
+          <TaskCard 
+            key={task.id} 
+            task={task} 
+          />
         ))}
 
         {/* Add task button in column */}

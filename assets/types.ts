@@ -33,4 +33,5 @@ export interface TaskColumn {
   id: number;
   name: string;
   color: string;
+  score: number;
 }
