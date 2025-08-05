@@ -7,7 +7,7 @@ import {
   SidebarMenuItem
 } from "@/components/ui/sidebar.tsx";
 import {Archive, Folder, MoreHorizontal, Share, Star, Trash2} from "lucide-react";
-import {Link} from "wouter";
+import {Link, useLocation} from "wouter";
 import {
   DropdownMenu,
   DropdownMenuContent,
