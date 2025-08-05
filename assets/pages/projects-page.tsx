@@ -31,7 +31,7 @@ export function ProjectsPage() {
                 <span>75%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-orange-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                <div className="bg-primary h-2 rounded-full" style={{ width: '75%' }}></div>
               </div>
             </div>
             <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
