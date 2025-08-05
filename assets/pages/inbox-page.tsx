@@ -12,7 +12,7 @@ export function InboxPage() {
         <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
           <div className="flex flex-row items-center justify-between space-y-0 pb-2">
             <h3 className="tracking-tight text-sm font-medium">Unread</h3>
-            <span className="text-2xl font-bold text-orange-600">12</span>
+            <span className="text-2xl font-bold text-primary">12</span>
           </div>
           <p className="text-xs text-muted-foreground">
             New notifications
