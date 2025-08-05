@@ -21,7 +21,7 @@ import {
   GripVertical
 } from "lucide-react";
 import type {Task} from "@/types.ts";
-import {useDraggable} from '@dnd-kit/core';
+import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 
 interface TaskCardProps {
@@ -34,8 +34,9 @@ export function TaskCard({task}: TaskCardProps) {
     listeners,
     setNodeRef,
     transform,
+    transition,
     isDragging,
-  } = useDraggable({
+  } = useSortable({
     id: `task-${task.id}`,
     data: {
       type: 'task',
@@ -44,7 +45,8 @@ export function TaskCard({task}: TaskCardProps) {
   });
 
   const style = {
-    transform: CSS.Translate.toString(transform),
+    transform: CSS.Transform.toString(transform),
+    transition,
   };
 
   const isOverdue = new Date(task.dueAt) < new Date() && task.relatedColumn.name !== "Done";

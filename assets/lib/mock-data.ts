@@ -34,6 +34,7 @@ export const mockTasks: Task[] = [
     labels: [mockLabels[1], mockLabels[3]],
     createdAt: "2025-08-01",
     relatedColumn: mockColumns[0],
+    order: 0,
   },
   {
     id: 2,
@@ -45,6 +46,7 @@ export const mockTasks: Task[] = [
     labels: [mockLabels[0], mockLabels[2]],
     createdAt: "2025-08-02",
     relatedColumn: mockColumns[1],
+    order: 0,
   },
   {
     id: 3,
@@ -56,6 +58,7 @@ export const mockTasks: Task[] = [
     labels: [mockLabels[1]],
     createdAt: "2025-08-03",
     relatedColumn: mockColumns[1],
+    order: 1,
   },
   {
     id: 4,
@@ -67,6 +70,7 @@ export const mockTasks: Task[] = [
     labels: [mockLabels[4], mockLabels[3]],
     createdAt: "2025-08-04",
     relatedColumn: mockColumns[2],
+    order: 0,
   },
   {
     id: 5,
@@ -78,6 +82,7 @@ export const mockTasks: Task[] = [
     labels: [mockLabels[1]],
     createdAt: "2025-08-05",
     relatedColumn: mockColumns[3],
+    order: 0,
   },
   {
     id: 6,
@@ -89,5 +94,6 @@ export const mockTasks: Task[] = [
     labels: [mockLabels[5]],
     createdAt: "2025-08-01",
     relatedColumn: mockColumns[0],
+    order: 1,
   },
 ];

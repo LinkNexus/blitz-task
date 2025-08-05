@@ -22,6 +22,7 @@ export interface Task {
   labels: TaskLabel[];
   createdAt: string;
   relatedColumn: TaskColumn;
+  order: number;
 }
 
 export interface TaskLabel {

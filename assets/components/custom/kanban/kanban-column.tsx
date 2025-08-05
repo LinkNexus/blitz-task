@@ -10,6 +10,7 @@ import {MoreHorizontal, Plus} from "lucide-react";
 import type {Task, TaskColumn} from "@/types.ts";
 import {TaskCard} from "./task-card.tsx";
 import {useDroppable} from '@dnd-kit/core';
+import {SortableContext, verticalListSortingStrategy} from '@dnd-kit/sortable';
 
 interface KanbanColumnProps {
   column: TaskColumn;
@@ -30,6 +31,10 @@ export function KanbanColumn({
       column,
     },
   });
+
+  // Sort tasks by their order within the column
+  const sortedTasks = [...tasks].sort((a, b) => a.order - b.order);
+  const taskIds = sortedTasks.map(task => `task-${task.id}`);
   return (
     <div className="flex flex-col min-w-[280px] sm:min-w-[300px] flex-shrink-0">
       {/* Column Header */}
@@ -70,12 +75,14 @@ export function KanbanColumn({
             : 'border-muted-foreground/25 hover:border-muted-foreground/50'
         }`}
       >
-        {tasks.map((task) => (
-          <TaskCard 
-            key={task.id} 
-            task={task} 
-          />
-        ))}
+        <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+          {sortedTasks.map((task) => (
+            <TaskCard 
+              key={task.id} 
+              task={task} 
+            />
+          ))}
+        </SortableContext>
 
         {/* Add task button in column */}
         <Button
