@@ -61,6 +61,7 @@ export function Favorites() {
 }
 
 function FavoriteItem({item}: { item: any }) {
+  const [location] = useLocation();
   return (
     <SidebarMenuItem key={item.name}>
       <SidebarMenuButton asChild isActive={location === item.url}>
