@@ -7,6 +7,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use KnpU\OAuth2ClientBundle\Security\Authenticator\OAuth2Authenticator;
 use League\OAuth2\Client\Provider\GithubResourceOwner;
+use League\OAuth2\Client\Provider\GoogleUser;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,7 +33,7 @@ class OAuthAuthenticator extends OAuth2Authenticator
     public function supports(Request $request): ?bool
     {
         return "api.auth.oauth_check" === $request->attributes->get('_route')
-            && in_array($request->get("service"), ["github"]);
+            && in_array($request->get("service"), ["github", "google"]);
     }
 
     /**
@@ -49,6 +50,11 @@ class OAuthAuthenticator extends OAuth2Authenticator
         $name = null;
 
         if ($resourceOwner instanceof GithubResourceOwner) {
+            $email = $resourceOwner->getEmail();
+            $name = $resourceOwner->getName();
+        }
+
+        if ($resourceOwner instanceof GoogleUser) {
             $email = $resourceOwner->getEmail();
             $name = $resourceOwner->getName();
         }
@@ -82,6 +88,11 @@ class OAuthAuthenticator extends OAuth2Authenticator
         if ($service === 'github') {
             $user->setGithubId($resourceOwner->getId());
         }
+
+        if ($service === 'google') {
+            $user->setGoogleId($resourceOwner->getId());
+        }
+
         if (!$user->isVerified()) {
             $user->setIsVerified(true);
         }

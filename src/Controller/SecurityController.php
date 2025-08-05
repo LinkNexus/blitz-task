@@ -38,6 +38,13 @@ final class SecurityController extends AbstractController
     {
     }
 
+    #[IsGranted("IS_AUTHENTICATED_FULLY")]
+    #[Route("/me", name: "me", methods: ["GET"])]
+    public function me(#[CurrentUser] User $user): JsonResponse
+    {
+        return $this->json($user, context: ["groups" => ["user:read"]]);
+    }
+
     #[Route("/logout", name: "logout", methods: ["DELETE"])]
     public function logout()
     {
@@ -113,12 +120,17 @@ final class SecurityController extends AbstractController
         string $service
     ): RedirectResponse
     {
+        $scopes = [];
+
         if ($service === "github") {
             $scopes = ["user:email", "read:user"];
-            $client = $this->clientRegistry->getClient($service);
-            return $client->redirect($scopes);
         }
 
-        return $this->redirect("/login");
+        if ($service === "google") {
+            $scopes = ["openid"];
+        }
+
+        $client = $this->clientRegistry->getClient($service);
+        return $client->redirect($scopes);
     }
 }

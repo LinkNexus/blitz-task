@@ -9,3 +9,11 @@ knpu_oauth2_client:
             redirect_route: api.auth.oauth_check
             redirect_params:
                 service: github
+        
+        google:
+            type: google
+            client_id: '%env(GOOGLE_CLIENT)%'
+            client_secret: '%env(GOOGLE_SECRET)%'
+            redirect_route: api.auth.oauth_check
+            redirect_params:
+                service: google
