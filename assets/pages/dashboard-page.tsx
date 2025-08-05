@@ -138,7 +138,7 @@ export function DashboardPage() {
             Here's what's happening with your projects today.
           </p>
         </div>
-        <Button className="bg-orange-600 hover:bg-orange-700">
+        <Button className="bg-primary hover:bg-primary/90">
           <Plus className="mr-2 h-4 w-4" />
           New Task
         </Button>
