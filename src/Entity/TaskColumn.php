@@ -6,6 +6,7 @@ use App\Repository\TaskColumnRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: TaskColumnRepository::class)]
 class TaskColumn
@@ -13,25 +14,30 @@ class TaskColumn
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["column:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["column:read"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["column:read"])]
     private ?string $color = null;
 
     #[ORM\Column]
+    #[Groups(["column:read"])]
     private ?float $score = null;
 
     #[ORM\ManyToOne(inversedBy: 'columns')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["column:read"])]
     private ?Project $project = null;
 
     /**
      * @var Collection<int, Task>
      */
-    #[ORM\OneToMany(targetEntity: Task::class, mappedBy: 'relatedColumn', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: Task::class, mappedBy: 'relatedColumn', cascade: ["remove"], orphanRemoval: true)]
     private Collection $tasks;
 
     public function __construct()

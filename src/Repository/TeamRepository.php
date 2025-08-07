@@ -16,6 +16,26 @@ class TeamRepository extends ServiceEntityRepository
         parent::__construct($registry, Team::class);
     }
 
+    public function findByUser($userId)
+    {
+        return $this->createQueryBuilder("t")
+            ->innerJoin('t.members', 'm')
+            ->andWhere('m.id = :userId')
+            ->setParameter('userId', $userId)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findDefaultByUser($userId)
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.isDefault = true')
+            ->andWhere('t.creator = :userId')
+            ->setParameter('userId', $userId)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     //    /**
     //     * @return Team[] Returns an array of Team objects
     //     */

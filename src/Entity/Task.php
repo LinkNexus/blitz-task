@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 class Task
@@ -16,15 +17,18 @@ class Task
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["column:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["column:read"])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
     #[ORM\Column(enumType: TaskPriority::class)]
+    #[Groups(["column:read"])]
     private ?TaskPriority $priority = TaskPriority::MEDIUM;
 
     /**
@@ -34,6 +38,7 @@ class Task
     private Collection $assignees;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(["column:read"])]
     private ?DateTimeImmutable $dueAt = null;
 
     /**
@@ -48,6 +53,9 @@ class Task
     #[ORM\ManyToOne(inversedBy: 'tasks')]
     #[ORM\JoinColumn(nullable: false)]
     private ?TaskColumn $relatedColumn = null;
+
+    #[ORM\Column]
+    private ?int $position = null;
 
     public function __construct()
     {
@@ -177,6 +185,18 @@ class Task
     public function setRelatedColumn(?TaskColumn $relatedColumn): static
     {
         $this->relatedColumn = $relatedColumn;
+
+        return $this;
+    }
+
+    public function getPosition(): ?int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(int $position): static
+    {
+        $this->position = $position;
 
         return $this;
     }

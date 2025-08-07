@@ -29,7 +29,6 @@ export default defineConfig({
         "**/.git/**",
         "**/src/**",          // Ignore Symfony source code completely (including controllers)
         "**/docker/**",       // Ignore docker files
-        "**/templates/**",    // Ignore Symfony templates
         "**/config/**",       // Ignore config files (and services)
         "**/var/**"
       ]

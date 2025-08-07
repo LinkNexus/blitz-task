@@ -1,40 +1,42 @@
-import {Button} from "@/components/ui/button.tsx";
-import {Badge} from "@/components/ui/badge.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
+import { Button } from "@/components/ui/button.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
-import {MoreHorizontal, Plus} from "lucide-react";
-import type {Task, TaskColumn} from "@/types.ts";
-import {TaskCard} from "./task-card.tsx";
-import {useDroppable} from '@dnd-kit/core';
-import {SortableContext, verticalListSortingStrategy} from '@dnd-kit/sortable';
+import type { Task, TaskColumn } from "@/types.ts";
+import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react";
+import { TaskCard } from "./task-card.tsx";
 
 interface KanbanColumnProps {
   column: TaskColumn;
   tasks: Task[];
+  onAddColumnBetween?: (afterColumnId: number) => void;
 }
 
 export function KanbanColumn({
-  column, 
-  tasks
+  column,
+  tasks,
+  onAddColumnBetween,
 }: KanbanColumnProps) {
-  const {
-    setNodeRef,
-    isOver,
-  } = useDroppable({
+  const { setNodeRef, isOver } = useDroppable({
     id: `column-${column.id}`,
     data: {
-      type: 'column',
+      type: "column",
       column,
     },
   });
 
   // Sort tasks by their order within the column
-  const sortedTasks = [...tasks].sort((a, b) => a.order - b.order);
-  const taskIds = sortedTasks.map(task => `task-${task.id}`);
+  const sortedTasks = [...tasks].sort((a, b) => a.score - b.score);
+  const taskIds = sortedTasks.map((task) => `task-${task.id}`);
   return (
     <div className="flex flex-col min-w-[280px] sm:min-w-[300px] flex-shrink-0">
       {/* Column Header */}
@@ -42,7 +44,7 @@ export function KanbanColumn({
         <div className="flex items-center gap-1 sm:gap-2">
           <div
             className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
-            style={{backgroundColor: column.color}}
+            style={{ backgroundColor: column.color }}
           />
           <h3 className="font-semibold text-xs sm:text-sm">{column.name}</h3>
           <Badge variant="secondary" className="text-xs">
@@ -51,17 +53,44 @@ export function KanbanColumn({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-5 w-5 sm:h-6 sm:w-6 p-0">
-              <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4"/>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 w-5 sm:h-6 sm:w-6 p-0"
+            >
+              <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <DropdownMenuItem>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add column
+                </DropdownMenuItem>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                // onClick={() => onAddColumnBetween?.(column.id)}
+                >
+                  Before
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onAddColumnBetween?.(column.id)}
+                >
+                  After
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <DropdownMenuItem>
-              <Plus className="w-4 h-4 mr-2"/>
-              Add task
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
             </DropdownMenuItem>
-            <DropdownMenuItem>Edit column</DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">Delete column</DropdownMenuItem>
+            <DropdownMenuItem className="text-red-600">
+              <Trash className="w-4 h-4 mr-2 text-red-600" />
+              Delete
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -70,17 +99,14 @@ export function KanbanColumn({
       <div
         ref={setNodeRef}
         className={`flex-1 space-y-2 sm:space-y-3 min-h-[400px] sm:min-h-[500px] p-1 sm:p-2 rounded-lg border-2 border-dashed transition-colors ${
-          isOver 
-            ? 'border-primary bg-primary/10' 
-            : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+          isOver
+            ? "border-primary bg-primary/10"
+            : "border-muted-foreground/25 hover:border-muted-foreground/50"
         }`}
       >
         <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
           {sortedTasks.map((task) => (
-            <TaskCard 
-              key={task.id} 
-              task={task} 
-            />
+            <TaskCard key={task.id} task={task} />
           ))}
         </SortableContext>
 
@@ -89,7 +115,7 @@ export function KanbanColumn({
           variant="ghost"
           className="w-full h-10 sm:h-12 border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors text-xs sm:text-sm"
         >
-          <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2"/>
+          <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
           Add task
         </Button>
       </div>

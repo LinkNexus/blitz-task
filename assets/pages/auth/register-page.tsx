@@ -15,11 +15,9 @@ import {useAppStore} from "@/lib/store.ts";
 import type {ApiError} from "@/lib/fetch.ts";
 import type {FormErrors, User} from "@/types.ts";
 import {toast} from "sonner";
-import {useAccount} from "@/hooks/use-account.ts";
 
 export function RegisterPage() {
   const setUser = useAppStore.getState().setUser;
-  const {verifyUser} = useAccount();
 
   const {
     pending: isSendingMail,
@@ -27,7 +25,6 @@ export function RegisterPage() {
   } = useApiFetch("/api/auth/resend-verification-mail", {
     onSuccess(isVerified: boolean) {
       if (isVerified) {
-        verifyUser();
         toast.info("You are already verified, no need to send a verification mail.");
       } else {
         toast.success("The verification mail was successfully sent.");

@@ -18,11 +18,11 @@ export interface Task {
   description: string;
   priority: "low" | "medium" | "high" | "urgent";
   assignees: User[];
-  dueAt: string;
+  dueAt: string | null;
   labels: TaskLabel[];
   createdAt: string;
   relatedColumn: TaskColumn;
-  order: number;
+  score: number;
 }
 
 export interface TaskLabel {

@@ -49,7 +49,7 @@ export function TaskCard({task}: TaskCardProps) {
     transition,
   };
 
-  const isOverdue = new Date(task.dueAt) < new Date() && task.relatedColumn.name !== "Done";
+  const isOverdue = task.dueAt !== null && new Date(task.dueAt) < new Date() && task.relatedColumn.name !== "Done";
 
   const getPriorityIcon = (priority: Task["priority"]) => {
     switch (priority) {
@@ -160,16 +160,18 @@ export function TaskCard({task}: TaskCardProps) {
         {/* Footer */}
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-1">
-              <Calendar className="w-3 h-3"/>
-              <span className={`text-xs ${isOverdue ? "text-red-600 font-medium" : ""}`}>
-                {new Date(task.dueAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric'
-                })}
-              </span>
-              {isOverdue && <Clock className="w-3 h-3 text-red-600"/>}
-            </div>
+            {task.dueAt !== null && (
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3 h-3"/>
+                <span className={`text-xs ${isOverdue ? "text-red-600 font-medium" : ""}`}>
+                  {new Date(task.dueAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </span>
+                {isOverdue && <Clock className="w-3 h-3 text-red-600"/>}
+              </div>
+            )}
             <div className="hidden sm:flex items-center gap-1">
               <MessageSquare className="w-3 h-3"/>
               <span>3</span>

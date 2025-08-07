@@ -21,6 +21,7 @@ export function LoginPage() {
 
   const {pending, callback: login} = useApiFetch("/api/auth/login", {
     onError(error: ApiError<{ message: string }>) {
+      console.log(error.data);
       toast.error(error.data.message, {
         description: "Please check your credentials and try again.",
         closeButton: true,

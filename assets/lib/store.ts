@@ -9,19 +9,21 @@ export const useAppStore = create(
       {
         user: undefined as User | null | undefined,
         sidebarState: "open" as "open" | "closed",
-        theme: "system" as Theme
+        theme: "system" as Theme,
+        currentTeamId: undefined as number | undefined
       },
       (set) => ({
         setUser: (user: User | null) => set({user}),
         toggleSidebar: () => set(state => ({sidebarState: state.sidebarState === "open" ? "closed" : "open"})),
-        setTheme: (theme: Theme) => set({theme})
+        setTheme: (theme: Theme) => set({theme}),
+        setCurrentTeamId: (teamId: number | undefined) => set({currentTeamId: teamId})
       })
     ), {
       name: "app-store",
       partialize: (state) => ({
-        user: state.user,
         sidebarState: state.sidebarState,
-        theme: state.theme
+        theme: state.theme,
+        currentTeamId: state.currentTeamId
       })
     }
   )

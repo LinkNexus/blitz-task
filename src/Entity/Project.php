@@ -6,6 +6,7 @@ use App\Repository\ProjectRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
 class Project
@@ -13,6 +14,7 @@ class Project
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["column:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -28,7 +30,7 @@ class Project
     /**
      * @var Collection<int, TaskColumn>
      */
-    #[ORM\OneToMany(targetEntity: TaskColumn::class, mappedBy: 'project', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: TaskColumn::class, mappedBy: 'project', cascade: ["remove"], orphanRemoval: true)]
     private Collection $columns;
 
     public function __construct()

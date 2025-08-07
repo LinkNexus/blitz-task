@@ -1,19 +1,5 @@
-import {Link, Redirect, Route, Switch, useLocation} from "wouter";
-import {LoginPage} from "@/pages/auth/login-page.tsx";
-import {RegisterPage} from "@/pages/auth/register-page.tsx";
-import {ForgotPasswordPage} from "@/pages/auth/forgot-password-page.tsx";
-import {Toaster} from "@/components/ui/sonner.tsx";
-import {ResetPasswordPage} from "@/pages/auth/reset-password-page.tsx";
-import {DashboardPage} from "@/pages/dashboard-page.tsx";
-import {ProjectsPage} from "@/pages/projects-page.tsx";
-import {AIAssistantPage} from "@/pages/ai-assistant-page.tsx";
-import {InboxPage} from "@/pages/inbox-page.tsx";
-import {IssuesBoardPage} from "@/pages/issues-board-page.tsx";
-import {useAuth} from "@/hooks/useAuth.ts";
-import {useEffect} from "react";
 import {AppSidebar} from "@/components/custom/sidebar/app-sidebar.tsx";
-import {SidebarInset, SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar.tsx";
-import {Separator} from "@/components/ui/separator.tsx";
+import {ThemeProvider} from "@/components/custom/theme-provider.tsx";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,13 +8,36 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb.tsx";
-import {ThemeProvider} from "@/components/custom/theme-provider.tsx";
+import {Separator} from "@/components/ui/separator.tsx";
+import {SidebarInset, SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar.tsx";
+import {Toaster} from "@/components/ui/sonner.tsx";
+import {useAuth} from "@/hooks/useAuth.ts";
 import {useAppStore} from "@/lib/store.ts";
+import {AIAssistantPage} from "@/pages/ai-assistant-page.tsx";
+import {ForgotPasswordPage} from "@/pages/auth/forgot-password-page.tsx";
+import {LoginPage} from "@/pages/auth/login-page.tsx";
+import {RegisterPage} from "@/pages/auth/register-page.tsx";
+import {ResetPasswordPage} from "@/pages/auth/reset-password-page.tsx";
+import {DashboardPage} from "@/pages/dashboard-page.tsx";
+import {InboxPage} from "@/pages/inbox-page.tsx";
+import {IssuesBoardPage} from "@/pages/issues-board-page.tsx";
+import {ProjectsPage} from "@/pages/projects-page.tsx";
+import {useEffect} from "react";
+import {Link, Redirect, Route, Switch, useLocation} from "wouter";
+
+console.log(fetch("/api/tasks?projectId=4")
+  .then(res => res.json())
+  .then(console.log));
 
 export function App() {
-  const {status, authenticate} = useAuth();
+  const {user, status, authenticate} = useAuth();
   const [location] = useLocation();
-  const {sidebarState, toggleSidebar} = useAppStore(state => state);
+  const {
+    sidebarState,
+    toggleSidebar,
+    // currentTeamId,
+    // setCurrentTeamId,
+  } = useAppStore(state => state);
 
   // Function to get page title from current location
   const getPageTitle = () => {
@@ -53,6 +62,17 @@ export function App() {
       authenticate();
     }
   }, []);
+
+  // useEffect(() => {
+  //   if (user) {
+  //     if (!currentTeamId) {
+  //       apiFetch(`/api/teams/default?userId=${user.id}`)
+  //         .then(setCurrentTeamId)
+  //     }
+  //   }
+  // }, [user?.id]);
+
+  console.log("App Status:", status);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">

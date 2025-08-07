@@ -5,15 +5,26 @@ namespace App\Repository;
 use App\Entity\TaskLabel;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 /**
  * @extends ServiceEntityRepository<TaskLabel>
  */
 class TaskLabelRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(
+        ManagerRegistry                   $registry,
+        private readonly SluggerInterface $slugger
+    )
     {
         parent::__construct($registry, TaskLabel::class);
+    }
+
+    public function findBySlug(string $slug): ?TaskLabel
+    {
+        return $this->findOneBy([
+            'slug' => $this->slugger->slug($slug)->lower()->toString()
+        ]);
     }
 
     //    /**

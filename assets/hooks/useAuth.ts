@@ -20,10 +20,12 @@ export function useAuth() {
   }
 
   return {
+    user,
     status,
     authenticate() {
       apiFetch<User>("/api/auth/me")
         .then(setUser)
+        .catch(() => setUser(null));
     },
     logout() {
       apiFetch("/api/auth/logout")
