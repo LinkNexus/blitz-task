@@ -25,10 +25,6 @@ import {ProjectsPage} from "@/pages/projects-page.tsx";
 import {useEffect} from "react";
 import {Link, Redirect, Route, Switch, useLocation} from "wouter";
 
-console.log(fetch("/api/tasks?projectId=4")
-  .then(res => res.json())
-  .then(console.log));
-
 export function App() {
   const {user, status, authenticate} = useAuth();
   const [location] = useLocation();

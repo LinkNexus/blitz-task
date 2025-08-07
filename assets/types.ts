@@ -12,6 +12,18 @@ export interface FormErrors {
   }[]
 }
 
+export interface Team {
+  id: number;
+  name: string;
+  isDefault: boolean;
+}
+
+export interface Project {
+  id: number;
+  name: string;
+  isDefault: boolean;
+}
+
 export interface Task {
   id: number;
   name: string;

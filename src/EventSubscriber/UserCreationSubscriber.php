@@ -87,7 +87,8 @@ final readonly class UserCreationSubscriber implements EventSubscriberInterface
                     ->setPriority(TaskPriority::LOW)
                     ->addAssignee($user)
                     ->addLabel($label)
-                    ->setRelatedColumn($column);
+                    ->setRelatedColumn($column)
+                    ->setProject($defaultProject);
                 $this->entityManager->persist($task);
             }
 

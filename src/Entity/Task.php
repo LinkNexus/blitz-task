@@ -57,6 +57,10 @@ class Task
     #[ORM\Column]
     private ?int $position = null;
 
+    #[ORM\ManyToOne(inversedBy: 'tasks')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Project $project = null;
+
     public function __construct()
     {
         $this->assignees = new ArrayCollection();
@@ -197,6 +201,18 @@ class Task
     public function setPosition(int $position): static
     {
         $this->position = $position;
+
+        return $this;
+    }
+
+    public function getProject(): ?Project
+    {
+        return $this->project;
+    }
+
+    public function setProject(?Project $project): static
+    {
+        $this->project = $project;
 
         return $this;
     }
