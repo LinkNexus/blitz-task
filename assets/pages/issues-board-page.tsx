@@ -7,6 +7,7 @@ import {TaskCard} from "@/components/custom/kanban/task-card";
 import {useKanbanDragDrop} from "@/hooks/use-kanban-drag-drop";
 
 export function IssuesBoardPage() {
+
   const {
     tasks,
     columns,
@@ -21,7 +22,7 @@ export function IssuesBoardPage() {
     deleteColumn,
     updateColumn,
     addColumnBetween,
-  } = useKanbanDragDrop({ initialTasks, initialColumns: mockColumns });
+  } = useKanbanDragDrop({initialTasks, initialColumns: mockColumns});
 
   const handleAddTask = () => {
     // TODO: Implement add task functionality using the addTask function

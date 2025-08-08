@@ -16,6 +16,36 @@ class ProjectRepository extends ServiceEntityRepository
         parent::__construct($registry, Project::class);
     }
 
+    /**
+     * Finds all projects in a team
+     * @param int $teamId The team id
+     * @return Project[] An array of projects
+     */
+    public function findByTeam(int $teamId): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.team = :team')
+            ->setParameter('team', $teamId)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Finds the given user's default project
+     * @param int $userId The user id
+     * @return Project|null The default project
+     */
+    public function findDefaultByUser(int $userId): ?Project
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin("p.team", "t")
+            ->innerJoin('t.members', 'm')
+            ->where('m.id = :user AND p.isDefault = true')
+            ->setParameter('user', $userId)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     //    /**
     //     * @return Project[] Returns an array of Project objects
     //     */

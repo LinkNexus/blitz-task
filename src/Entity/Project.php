@@ -14,17 +14,20 @@ class Project
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["column:read"])]
+    #[Groups(["projects:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["projects:read"])]
     private ?string $name = null;
 
     #[ORM\Column]
+    #[Groups(["projects:read"])]
     private ?bool $isDefault = false;
 
     #[ORM\ManyToOne(inversedBy: 'projects')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["projects:read"])]
     private ?Team $team = null;
 
     /**

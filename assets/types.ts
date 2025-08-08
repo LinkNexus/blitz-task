@@ -16,12 +16,14 @@ export interface Team {
   id: number;
   name: string;
   isDefault: boolean;
+  projects?: Project[];
 }
 
 export interface Project {
   id: number;
   name: string;
   isDefault: boolean;
+  columns?: TaskColumn[];
 }
 
 export interface Task {
@@ -47,4 +49,5 @@ export interface TaskColumn {
   name: string;
   color: string;
   score: number;
+  tasks: Task[];
 }

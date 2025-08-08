@@ -9,29 +9,31 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import {SidebarMenuButton} from "@/components/ui/sidebar.tsx";
-import {useAccount} from "@/hooks/use-account.ts";
-import {apiFetch} from "@/lib/fetch.ts";
-import {useAppStore} from "@/lib/store.ts";
-import type {Team} from "@/types.ts";
 import {ChevronsUpDown, Loader2, Plus} from "lucide-react";
 import {useEffect} from "react";
+import {useSearchParams} from "wouter";
+import {useApiFetch} from "@/hooks/use-fetch.ts";
 import {toast} from "sonner";
+import {useAppStore} from "@/lib/store.ts";
 
 export function TeamSwitcher() {
-  const {user} = useAccount();
-  const {teams, setActiveTeam, setTeams} = useAppStore((state) => state);
+  const {teams, setTeams} = useAppStore(state => state);
+  const [params, setParams] = useSearchParams();
+  const activeTeamId = params.get("teamId");
+  const activeTeam = teams.find(t => t.id === Number(activeTeamId));
+
+  const {callback: fetchTeams} = useApiFetch("/api/teams", {
+    onSuccess: setTeams,
+    onError() {
+      toast.error("An error occurred when fetching the teams list");
+    }
+  })
 
   useEffect(() => {
-    if (!teams.fetched) {
-      apiFetch<Team[]>(`/api/teams?userId=${user.id}`)
-        .then(setTeams)
-        .catch(() => {
-          toast.error("An error occured when loading the teams list");
-        });
-    }
-  }, [user.id, teams.fetched]);
+    fetchTeams();
+  }, []);
 
-  if (!teams.fetched || teams.data.length === 0 || !teams.activeTeam) {
+  if (!activeTeam) {
     return (
       <span
         className="flex items-center justify-center py-4"
@@ -59,7 +61,7 @@ export function TeamSwitcher() {
                 alt="profile picture"
               />
               <AvatarFallback className="rounded-lg">
-                {teams.activeTeam.name
+                {activeTeam.name
                   .split(" ")
                   .map((n) => n[0])
                   .join("")
@@ -69,7 +71,7 @@ export function TeamSwitcher() {
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight">
             <span className="truncate font-semibold">
-              {teams.activeTeam.name}
+              {activeTeam.name}
             </span>
           </div>
           <ChevronsUpDown className="ml-auto"/>
@@ -84,10 +86,17 @@ export function TeamSwitcher() {
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           Teams
         </DropdownMenuLabel>
-        {teams.data.map((team, index) => (
+        {teams.map((team, index) => (
           <DropdownMenuItem
             key={team.name}
-            onClick={() => setActiveTeam(team.id)}
+            onClick={() => {
+              if (activeTeam.id !== team.id) {
+                setParams(prev => {
+                  prev.set("teamId", team.id.toString());
+                  return prev;
+                })
+              }
+            }}
             className="gap-2 p-2"
           >
             <div className="flex size-6 items-center justify-center rounded-sm border">
@@ -97,8 +106,7 @@ export function TeamSwitcher() {
                   alt="profile picture"
                 />
                 <AvatarFallback className="rounded-lg">
-                  {teams
-                    .activeTeam!.name.split(" ")
+                  {activeTeam.name.split(" ")
                     .map((n) => n[0])
                     .join("")
                     .toUpperCase()}

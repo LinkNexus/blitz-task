@@ -24,15 +24,15 @@ import {IssuesBoardPage} from "@/pages/issues-board-page.tsx";
 import {ProjectsPage} from "@/pages/projects-page.tsx";
 import {useEffect} from "react";
 import {Link, Redirect, Route, Switch, useLocation} from "wouter";
+import {useParamsNavigation} from "@/hooks/useParamsNavigation.ts";
 
 export function App() {
-  const {user, status, authenticate} = useAuth();
+  const {status, authenticate} = useAuth();
   const [location] = useLocation();
+
   const {
     sidebarState,
     toggleSidebar,
-    // currentTeamId,
-    // setCurrentTeamId,
   } = useAppStore(state => state);
 
   // Function to get page title from current location
@@ -59,20 +59,11 @@ export function App() {
     }
   }, []);
 
-  // useEffect(() => {
-  //   if (user) {
-  //     if (!currentTeamId) {
-  //       apiFetch(`/api/teams/default?userId=${user.id}`)
-  //         .then(setCurrentTeamId)
-  //     }
-  //   }
-  // }, [user?.id]);
-
-  console.log("App Status:", status);
+  const {activeTeamId} = useParamsNavigation();
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {status === "unknown" && (
+      {(status === "unknown" || !activeTeamId) && (
         <div
           className="flex items-center justify-center h-screen bg-gradient-to-br from-background via-background to-muted/20">
           <div className="flex flex-col items-center space-y-6">

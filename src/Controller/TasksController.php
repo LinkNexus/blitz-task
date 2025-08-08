@@ -4,9 +4,7 @@ namespace App\Controller;
 
 use App\DTO\TaskDTO;
 use App\Entity\Task;
-use App\Entity\TaskColumn;
 use App\Entity\TaskLabel;
-use App\Repository\TaskColumnRepository;
 use App\Repository\TaskLabelRepository;
 use App\Repository\TaskRepository;
 use DateTimeImmutable;
@@ -14,7 +12,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
@@ -26,29 +23,9 @@ final class TasksController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly TaskRepository         $taskRepository,
         private readonly TaskLabelRepository    $labelRepository,
-        private readonly TaskColumnRepository   $columnRepository,
         private readonly SluggerInterface       $slugger
     )
     {
-    }
-
-    #[Route("", name: "index", methods: ["GET"])]
-    public function index(
-        #[MapQueryParameter] int $projectId
-    ): JsonResponse
-    {
-        $columns = $this->columnRepository->findByProject($projectId);
-
-        return $this->json(
-            array_map(function (TaskColumn $column) {
-                return [
-                    "column" => $column,
-                    "tasks" => $this->taskRepository->findTasksByColumn($column->getId(), 0),
-                    "count" => $this->taskRepository->findTaskCountByColumn($column->getId())
-                ];
-            }, $columns),
-            context: ["groups" => ["column:read"]]
-        );
     }
 
     #[Route("", name: "create", methods: ["POST"])]

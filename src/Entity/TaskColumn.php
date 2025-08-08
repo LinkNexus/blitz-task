@@ -38,6 +38,7 @@ class TaskColumn
      * @var Collection<int, Task>
      */
     #[ORM\OneToMany(targetEntity: Task::class, mappedBy: 'relatedColumn', cascade: ["remove"], orphanRemoval: true)]
+    #[Groups(["column:read"])]
     private Collection $tasks;
 
     public function __construct()
