@@ -1,8 +1,5 @@
 import {useAppStore} from "@/lib/store.ts";
 import {useSearchParams} from "wouter";
-import {useApiFetch} from "@/hooks/use-fetch.ts";
-import type {Project, Team} from "@/types.ts";
-import {toast} from "sonner";
 import {useEffect} from "react";
 
 export function useParamsNavigation() {
@@ -10,51 +7,26 @@ export function useParamsNavigation() {
   const projectId = params.get("projectId");
   const teamId = params.get("teamId");
   const {
-    setDefaultTeam,
-    defaultTeam,
+    teams,
     activeTeamId,
     setActiveTeamId,
     activeProjectId,
     setActiveProjectId
   } = useAppStore(state => state);
-
-  const {
-    callback: fetchTeam
-  } = useApiFetch("/api/teams/default", {
-    onSuccess(team: Team) {
-      setActiveTeamId(team.id);
-      setDefaultTeam(team);
-    },
-    onError() {
-      toast.error("An error happened when getting the active team, reload the page to clear this error.");
-    }
-  });
-
-  const {
-    callback: fetchProject
-  } = useApiFetch("/api/projects/default", {
-    onSuccess(project: Project) {
-      setParams((prev) => {
-        prev.set("projectId", project.id.toString());
-        return prev;
-      })
-    },
-    onError() {
-      toast.error("An error happened when getting the active project, reload the page to clear this error.");
-    }
-  });
+  const defaultTeam = teams.find(t => t.isDefault);
+  const defaultProject = defaultTeam?.projects?.find(p => p.isDefault);
 
   useEffect(() => {
-    if (!activeTeamId || !defaultTeam) {
-      fetchTeam();
+    if (!activeTeamId && !teamId && defaultTeam) {
+      setActiveTeamId(defaultTeam.id);
     }
-  }, [activeTeamId, defaultTeam]);
+  }, [activeTeamId, defaultTeam, teamId]);
 
   useEffect(() => {
-    if (defaultTeam?.id === activeTeamId && !activeProjectId) {
-      fetchProject();
+    if (defaultTeam?.id === activeTeamId && !activeProjectId && defaultProject) {
+      setActiveProjectId(defaultProject.id);
     }
-  }, [activeProjectId, defaultTeam?.id, activeTeamId])
+  }, [activeProjectId, defaultTeam?.id, activeTeamId, defaultProject])
 
   useEffect(() => {
     if (activeTeamId) {

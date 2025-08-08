@@ -31,7 +31,6 @@ class TaskColumn
 
     #[ORM\ManyToOne(inversedBy: 'columns')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(["column:read"])]
     private ?Project $project = null;
 
     /**

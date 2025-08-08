@@ -12,10 +12,7 @@ import {
 } from "@/components/ui/sidebar.tsx";
 import {Bot, ChevronRight, Folder, Home, Inbox, Kanban, Loader2} from "lucide-react";
 import {Link, useLocation, useSearchParams} from "wouter";
-import {useApiFetch} from "@/hooks/use-fetch.ts";
-import {toast} from "sonner";
 import {useAppStore} from "@/lib/store.ts";
-import type {Project} from "@/types.ts";
 
 interface NavigationItem {
   title: string;
@@ -60,19 +57,8 @@ export function NavMain() {
   const [params] = useSearchParams();
   const activeTeamId = params.get("teamId") ? Number(params.get("teamId")) : null;
   const activeProjectId = params.get("projectId") ? Number(params.get("projectId")) : null;
-  const {teams, addProject} = useAppStore(state => state);
+  const {teams} = useAppStore(state => state);
   const projects = teams.find(t => t.id === activeTeamId)?.projects;
-
-  const {
-    callback: fetchProjects
-  } = useApiFetch(`/api/projects?teamId=${activeTeamId}`, {
-    onSuccess(projects: Project[]) {
-      if (activeTeamId) projects.forEach(p => addProject(activeTeamId, p));
-    },
-    onError() {
-      toast.error("Failed to fetch the projects list");
-    }
-  }, [activeTeamId]);
 
   return (
     <SidebarGroup>
@@ -84,11 +70,6 @@ export function NavMain() {
             asChild
             defaultOpen={item.isActive}
             className="group/collapsible"
-            onOpenChange={async (open) => {
-              if (open && !projects) {
-                await fetchProjects();
-              }
-            }}
           >
             <SidebarMenuItem>
               {item.title === "Projects" ? (

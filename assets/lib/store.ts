@@ -19,15 +19,31 @@ export const useAppStore = create(
         setUser: (user: User | null) => set({user}),
         toggleSidebar: () => set(state => ({sidebarState: state.sidebarState === "open" ? "closed" : "open"})),
         setTheme: (theme: Theme) => set({theme}),
-        setDefaultTeam: (team: Team) => set({defaultTeam: team}),
         setActiveTeamId: (teamId: number) => set({activeTeamId: teamId}),
         setActiveProjectId: (projectId: number) => set({activeProjectId: projectId}),
         setTeams: (teams: Team[]) => set({teams}),
+        setProjects: (teamId: number, projects: Project[]) => set(state => {
+          return {
+            teams: state.teams.map(t => {
+              if (t.id === teamId) {
+                return {
+                  ...t,
+                  projects
+                }
+              }
+              return t;
+            })
+          }
+        }),
         addProject(teamId: number, project: Project) {
           set(state => {
             return {
               teams: state.teams.map(t => {
                 if (t.id === teamId) {
+                  if (t.projects?.some(p => p.id === project.id)) {
+                    return t;
+                  }
+
                   return {
                     ...t,
                     projects: [...(t.projects || []), project]

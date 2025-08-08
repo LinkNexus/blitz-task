@@ -4,7 +4,7 @@ import {Checkbox} from "@/components/ui/checkbox.tsx";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Separator} from "@/components/ui/separator.tsx";
-import {useApiFetch} from "@/hooks/use-fetch.ts";
+import {useApiFetch} from "@/hooks/useFetch.ts";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {LoaderIcon} from "lucide-react";
 import {useForm} from "react-hook-form";

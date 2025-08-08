@@ -4,9 +4,23 @@ import {AddColumnButton} from "@/components/custom/kanban/add-column-button";
 import {mockColumns, mockTasks as initialTasks} from "@/lib/mock-data";
 import {closestCenter, DndContext, DragOverlay} from '@dnd-kit/core';
 import {TaskCard} from "@/components/custom/kanban/task-card";
-import {useKanbanDragDrop} from "@/hooks/use-kanban-drag-drop";
+import {useKanbanDragDrop} from "@/hooks/useKanbanDragDrop.ts";
+import {memo} from "react";
+import {useAppStore} from "@/lib/store.ts";
 
-export function IssuesBoardPage() {
+export const IssuesBoardPage = memo(function () {
+  const {
+    activeProjectId,
+    teams
+  } = useAppStore(state => state);
+  const project = teams.flatMap(t => t.projects)
+    .find(p => p?.id === activeProjectId);
+
+  console.log({
+    activeProjectId,
+    project,
+    teams
+  });
 
   const {
     tasks,
@@ -62,6 +76,10 @@ export function IssuesBoardPage() {
     deleteTask(taskId);
   };
 
+  // if (!project) {
+  //   return <Redirect to={"/dashboard"}/>
+  // }
+
   return (
     <DndContext
       onDragStart={handleDragStart}
@@ -99,4 +117,4 @@ export function IssuesBoardPage() {
       </DragOverlay>
     </DndContext>
   );
-}
+});

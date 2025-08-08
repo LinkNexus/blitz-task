@@ -10,28 +10,12 @@ import {
 } from "@/components/ui/dropdown-menu.tsx";
 import {SidebarMenuButton} from "@/components/ui/sidebar.tsx";
 import {ChevronsUpDown, Loader2, Plus} from "lucide-react";
-import {useEffect} from "react";
-import {useSearchParams} from "wouter";
-import {useApiFetch} from "@/hooks/use-fetch.ts";
-import {toast} from "sonner";
 import {useAppStore} from "@/lib/store.ts";
 
 export function TeamSwitcher() {
-  const {teams, setTeams} = useAppStore(state => state);
-  const [params, setParams] = useSearchParams();
-  const activeTeamId = params.get("teamId");
+  const {teams} = useAppStore(state => state);
+  const {activeTeamId, setActiveTeamId} = useAppStore(state => state);
   const activeTeam = teams.find(t => t.id === Number(activeTeamId));
-
-  const {callback: fetchTeams} = useApiFetch("/api/teams", {
-    onSuccess: setTeams,
-    onError() {
-      toast.error("An error occurred when fetching the teams list");
-    }
-  })
-
-  useEffect(() => {
-    fetchTeams();
-  }, []);
 
   if (!activeTeam) {
     return (
@@ -91,10 +75,7 @@ export function TeamSwitcher() {
             key={team.name}
             onClick={() => {
               if (activeTeam.id !== team.id) {
-                setParams(prev => {
-                  prev.set("teamId", team.id.toString());
-                  return prev;
-                })
+                setActiveTeamId(team.id);
               }
             }}
             className="gap-2 p-2"

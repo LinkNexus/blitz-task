@@ -8,7 +8,7 @@ import {SocialLinks} from "@/pages/auth/social-links.tsx";
 import {Divider} from "@/components/custom/divider.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Loader2, UserPlus} from "lucide-react";
-import {useApiFetch} from "@/hooks/use-fetch.ts";
+import {useApiFetch} from "@/hooks/useFetch.ts";
 import {Separator} from "@/components/ui/separator.tsx";
 import {Link} from "wouter";
 import {useAppStore} from "@/lib/store.ts";

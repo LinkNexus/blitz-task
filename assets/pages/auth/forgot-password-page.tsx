@@ -7,7 +7,7 @@ import {FormField} from "@/components/ui/form.tsx";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
 import {Loader2, Mail} from "lucide-react";
-import {useApiFetch} from "@/hooks/use-fetch.ts";
+import {useApiFetch} from "@/hooks/useFetch.ts";
 import {toast} from "sonner";
 import type {ApiError} from "@/lib/fetch.ts";
 import {Separator} from "@/components/ui/separator.tsx";
