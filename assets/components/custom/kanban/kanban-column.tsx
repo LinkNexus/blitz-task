@@ -19,12 +19,16 @@ interface KanbanColumnProps {
   column: TaskColumn;
   tasks: Task[];
   onAddColumnBetween?: (afterColumnId: number) => void;
+  onTaskEdit?: (task: Task) => void;
+  onAddTask?: (columnId: number) => void; // Add task to specific column
 }
 
 export function KanbanColumn({
   column,
   tasks,
   onAddColumnBetween,
+  onTaskEdit,
+  onAddTask,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `column-${column.id}`,
@@ -35,7 +39,7 @@ export function KanbanColumn({
   });
 
   // Sort tasks by their order within the column
-  const sortedTasks = [...tasks].sort((a, b) => a.score - b.score);
+  const sortedTasks = [...tasks].sort((a, b) => a.position - b.position);
   const taskIds = sortedTasks.map((task) => `task-${task.id}`);
   return (
     <div className="flex flex-col min-w-[280px] sm:min-w-[300px] flex-shrink-0">
@@ -106,7 +110,12 @@ export function KanbanColumn({
       >
         <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
           {sortedTasks.map((task) => (
-            <TaskCard key={task.id} task={task} columnName={column.name} />
+            <TaskCard
+              key={task.id}
+              task={task}
+              columnName={column.name}
+              onEdit={onTaskEdit}
+            />
           ))}
         </SortableContext>
 
@@ -114,6 +123,7 @@ export function KanbanColumn({
         <Button
           variant="ghost"
           className="w-full h-10 sm:h-12 border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors text-xs sm:text-sm"
+          onClick={() => onAddTask?.(column.id)}
         >
           <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
           Add task

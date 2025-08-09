@@ -110,13 +110,13 @@ export const useAppStore = create(
             };
           });
         },
-        moveTaskBetweenColumns(
+        moveTaskBetweenColumns: (
           projectId: number,
           taskId: number,
-          fromColumnId: number,
-          toColumnId: number,
-          newScore: number
-        ) {
+          sourceColumnId: number,
+          targetColumnId: number,
+          newPosition: number
+        ) => {
           set((state) => {
             return {
               teams: state.teams.map((t) => {
@@ -128,7 +128,7 @@ export const useAppStore = create(
                         return {
                           ...p,
                           columns: p.columns.map((col) => {
-                            if (col.id === fromColumnId) {
+                            if (col.id === sourceColumnId) {
                               // Remove task from source column
                               return {
                                 ...col,
@@ -136,10 +136,10 @@ export const useAppStore = create(
                                   (task) => task.id !== taskId
                                 ),
                               };
-                            } else if (col.id === toColumnId) {
+                            } else if (col.id === targetColumnId) {
                               // Find the task from the original column and add to target
                               const sourceColumn = p.columns?.find(
-                                (c) => c.id === fromColumnId
+                                (c) => c.id === sourceColumnId
                               );
                               const taskToMove = sourceColumn?.tasks.find(
                                 (task) => task.id === taskId
@@ -149,7 +149,7 @@ export const useAppStore = create(
                                   ...col,
                                   tasks: [
                                     ...col.tasks,
-                                    { ...taskToMove, score: newScore },
+                                    { ...taskToMove, position: newPosition },
                                   ],
                                 };
                               }
@@ -171,7 +171,7 @@ export const useAppStore = create(
           projectId: number,
           columnId: number,
           taskId: number,
-          newScore: number
+          newPosition: number
         ) {
           set((state) => {
             return {
@@ -189,7 +189,7 @@ export const useAppStore = create(
                                 ...col,
                                 tasks: col.tasks.map((task) =>
                                   task.id === taskId
-                                    ? { ...task, score: newScore }
+                                    ? { ...task, position: newPosition }
                                     : task
                                 ),
                               };

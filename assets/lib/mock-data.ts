@@ -35,10 +35,10 @@ export const mockTasks: Task[] = [
     description: "Create login and registration flow with proper validation",
     priority: "high",
     assignees: [mockUsers[0], mockUsers[1]],
-    dueAt: "2025-08-10",
-    labels: [mockLabels[1], mockLabels[3]],
-    createdAt: "2025-08-01",
-    score: 0,
+    dueAt: "2024-02-01",
+    labels: [mockLabels[0]],
+    createdAt: "2024-01-15",
+    position: 0,
   },
   {
     id: 2,
@@ -49,7 +49,7 @@ export const mockTasks: Task[] = [
     dueAt: "2025-08-08",
     labels: [mockLabels[0], mockLabels[2]],
     createdAt: "2025-08-02",
-    score: 0,
+    position: 0,
   },
   {
     id: 3,
@@ -58,9 +58,9 @@ export const mockTasks: Task[] = [
     priority: "low",
     assignees: [mockUsers[3]],
     dueAt: null,
-    labels: [mockLabels[1]],
-    createdAt: "2025-08-03",
-    score: 1,
+    labels: [mockLabels[1], mockLabels[2]],
+    createdAt: "2024-01-16",
+    position: 0,
   },
   {
     id: 4,
@@ -71,7 +71,7 @@ export const mockTasks: Task[] = [
     dueAt: "2025-08-07",
     labels: [mockLabels[4], mockLabels[3]],
     createdAt: "2025-08-04",
-    score: 0,
+    position: 0,
   },
   {
     id: 5,
@@ -82,7 +82,7 @@ export const mockTasks: Task[] = [
     dueAt: "2025-08-12",
     labels: [mockLabels[1]],
     createdAt: "2025-08-05",
-    score: 0,
+    position: 0,
   },
   {
     id: 6,
@@ -93,6 +93,6 @@ export const mockTasks: Task[] = [
     dueAt: null,
     labels: [mockLabels[5]],
     createdAt: "2025-08-01",
-    score: 1,
+    position: 1,
   },
 ];

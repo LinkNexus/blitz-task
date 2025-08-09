@@ -37,9 +37,10 @@ import {
 interface TaskCardProps {
   task: Task;
   columnName?: string; // Add optional column name prop
+  onEdit?: (task: Task) => void; // Add optional edit handler
 }
 
-export function TaskCard({ task, columnName }: TaskCardProps) {
+export function TaskCard({ task, columnName, onEdit }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -139,7 +140,9 @@ export function TaskCard({ task, columnName }: TaskCardProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Edit</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit?.(task)}>
+                  Edit
+                </DropdownMenuItem>
                 <DropdownMenuItem>Move to...</DropdownMenuItem>
                 <DropdownMenuItem>Assign to...</DropdownMenuItem>
                 <DropdownMenuItem className="text-red-600">

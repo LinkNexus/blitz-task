@@ -31,11 +31,11 @@ export interface Task {
   name: string;
   description: string;
   priority: "low" | "medium" | "high" | "urgent";
-  assignees: User[];
+  assignees: Pick<User, "id" | "name">[];
   dueAt: string | null;
   labels: TaskLabel[];
   createdAt: string;
-  score: number;
+  position: number;
 }
 
 export interface TaskLabel {

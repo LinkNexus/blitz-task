@@ -2,7 +2,10 @@ import { AddColumnButton } from "@/components/custom/kanban/add-column-button.ts
 import { BoardHeader } from "@/components/custom/kanban/board-header.tsx";
 import { KanbanColumn } from "@/components/custom/kanban/kanban-column.tsx";
 import { TaskCard } from "@/components/custom/kanban/task-card.tsx";
+import { TaskModal } from "@/components/custom/kanban/task-modal.tsx";
+import { useTaskModal } from "@/hooks/useTaskModal.ts";
 import { apiFetch } from "@/lib/fetch.ts";
+import { mockLabels, mockUsers } from "@/lib/mock-data.ts";
 import { useAppStore } from "@/lib/store.ts";
 import { KanbanBoardLoader } from "@/pages/issues-board/kanban-board-loader.tsx";
 import type { Task, TaskColumn } from "@/types.ts";
@@ -24,6 +27,23 @@ export const IssuesBoardPage = memo(function () {
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
+  const {
+    isOpen: isTaskModalOpen,
+    currentTask,
+    defaultColumnId,
+    openCreateModal,
+    openEditModal,
+    closeModal,
+  } = useTaskModal();
+
+  const handleTaskEdit = (task: Task) => {
+    openEditModal(task);
+  };
+
+  const handleAddTaskToColumn = (columnId: number) => {
+    openCreateModal(columnId);
+  };
+
   useEffect(() => {
     if (project?.id && !columns) {
       apiFetch<TaskColumn[]>(`/api/columns?projectId=${project.id}`)
@@ -38,7 +58,7 @@ export const IssuesBoardPage = memo(function () {
 
   // Custom function to get tasks for a column since they're now embedded
   const getTasksForColumn = (column: TaskColumn) => {
-    return column.tasks?.sort((a, b) => a.score - b.score) || [];
+    return column.tasks?.sort((a, b) => a.position - b.position) || [];
   };
 
   // Simple drag handlers for now - will implement full functionality later
@@ -86,13 +106,13 @@ export const IssuesBoardPage = memo(function () {
         // Move to different column
         const targetColumn = columns.find((col) => col.id === targetColumnId);
         if (targetColumn) {
-          const newScore = targetColumn.tasks?.length || 0;
+          const newPosition = targetColumn.tasks?.length || 0;
           moveTaskBetweenColumns(
             project.id,
             activeTaskId,
             sourceColumn.id,
             targetColumnId,
-            newScore
+            newPosition
           );
         }
       }
@@ -124,12 +144,12 @@ export const IssuesBoardPage = memo(function () {
         const targetIndex = columnTasks.findIndex((t) => t.id === overTaskId);
 
         if (sourceIndex !== targetIndex) {
-          // Update the score to match target position
+          // Update the position to match target position
           reorderTaskInColumn(
             project.id,
             sourceColumn.id,
             activeTaskId,
-            targetTask.score
+            targetTask.position
           );
         }
       } else {
@@ -139,25 +159,45 @@ export const IssuesBoardPage = memo(function () {
           activeTaskId,
           sourceColumn.id,
           targetColumn.id,
-          targetTask.score
+          targetTask.position
         );
       }
     }
   };
 
   const handleAddTask = () => {
-    // TODO: Implement add task functionality using the addTask function
-    console.log("Add task clicked");
-    // Example usage:
-    // addTask({
-    //   name: "New Task",
-    //   description: "Task description",
-    //   priority: "medium",
-    //   labels: [],
-    //   assignees: [],
-    //   dueAt: new Date().toISOString(), // Can be null or a date string
-    //   createdAt: new Date().toISOString(),
-    // });
+    // Open create task modal with first column as default
+    const firstColumn = columns?.[0];
+    if (firstColumn) {
+      openCreateModal(firstColumn.id);
+    }
+  };
+
+  // Handle task created/updated from modal
+  const handleTaskCreated = (_task: Task) => {
+    // Refresh columns to get updated data
+    if (project?.id) {
+      apiFetch<TaskColumn[]>(`/api/columns?projectId=${project.id}`)
+        .then((columns) => {
+          setColumns(project.id, columns);
+        })
+        .catch((error) => {
+          console.error("Failed to refresh columns:", error);
+        });
+    }
+  };
+
+  const handleTaskUpdated = (_task: Task) => {
+    // Refresh columns to get updated data
+    if (project?.id) {
+      apiFetch<TaskColumn[]>(`/api/columns?projectId=${project.id}`)
+        .then((columns) => {
+          setColumns(project.id, columns);
+        })
+        .catch((error) => {
+          console.error("Failed to refresh columns:", error);
+        });
+    }
   };
 
   const handleFilter = () => {
@@ -204,6 +244,8 @@ export const IssuesBoardPage = memo(function () {
                   column={column}
                   tasks={tasks}
                   onAddColumnBetween={handleAddColumnBetween}
+                  onTaskEdit={handleTaskEdit}
+                  onAddTask={handleAddTaskToColumn}
                 />
               );
             })}
@@ -227,6 +269,19 @@ export const IssuesBoardPage = memo(function () {
           </div>
         )}
       </DragOverlay>
+
+      {/* Task Modal */}
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        onClose={closeModal}
+        onTaskCreated={handleTaskCreated}
+        onTaskUpdated={handleTaskUpdated}
+        task={currentTask}
+        columns={columns || []}
+        users={mockUsers}
+        labels={mockLabels}
+        defaultColumnId={defaultColumnId}
+      />
     </DndContext>
   );
 });
