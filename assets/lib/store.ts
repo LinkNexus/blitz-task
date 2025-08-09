@@ -110,6 +110,44 @@ export const useAppStore = create(
             };
           });
         },
+        // Helper function to normalize task positions in a column
+        normalizeTaskPositions: (projectId: number, columnId: number) => {
+          set((state) => {
+            return {
+              teams: state.teams.map((t) => {
+                if (t.projects?.some((p) => p.id === projectId)) {
+                  return {
+                    ...t,
+                    projects: t.projects.map((p) => {
+                      if (p.id === projectId && p.columns) {
+                        return {
+                          ...p,
+                          columns: p.columns.map((col) => {
+                            if (col.id === columnId) {
+                              const sortedTasks = [...col.tasks].sort(
+                                (a, b) => a.position - b.position
+                              );
+                              return {
+                                ...col,
+                                tasks: sortedTasks.map((task, index) => ({
+                                  ...task,
+                                  position: index,
+                                })),
+                              };
+                            }
+                            return col;
+                          }),
+                        };
+                      }
+                      return p;
+                    }),
+                  };
+                }
+                return t;
+              }),
+            };
+          });
+        },
         moveTaskBetweenColumns: (
           projectId: number,
           taskId: number,

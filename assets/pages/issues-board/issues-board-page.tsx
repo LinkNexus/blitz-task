@@ -1,16 +1,15 @@
-import { AddColumnButton } from "@/components/custom/kanban/add-column-button.tsx";
-import { BoardHeader } from "@/components/custom/kanban/board-header.tsx";
-import { KanbanColumn } from "@/components/custom/kanban/kanban-column.tsx";
-import { TaskCard } from "@/components/custom/kanban/task-card.tsx";
-import { TaskModal } from "@/components/custom/kanban/task-modal.tsx";
-import { useTaskModal } from "@/hooks/useTaskModal.ts";
-import { apiFetch } from "@/lib/fetch.ts";
-import { mockLabels, mockUsers } from "@/lib/mock-data.ts";
-import { useAppStore } from "@/lib/store.ts";
-import { KanbanBoardLoader } from "@/pages/issues-board/kanban-board-loader.tsx";
-import type { Task, TaskColumn } from "@/types.ts";
-import { closestCenter, DndContext, DragOverlay } from "@dnd-kit/core";
-import { memo, useEffect, useState } from "react";
+import {AddColumnButton} from "@/components/custom/kanban/add-column-button.tsx";
+import {BoardHeader} from "@/components/custom/kanban/board-header.tsx";
+import {KanbanColumn} from "@/components/custom/kanban/kanban-column.tsx";
+import {TaskCard} from "@/components/custom/kanban/task-card.tsx";
+import {TaskModal} from "@/components/custom/kanban/task-modal.tsx";
+import {useTaskModal} from "@/hooks/useTaskModal.ts";
+import {apiFetch} from "@/lib/fetch.ts";
+import {useAppStore} from "@/lib/store.ts";
+import {KanbanBoardLoader} from "@/pages/issues-board/kanban-board-loader.tsx";
+import type {Task, TaskColumn} from "@/types.ts";
+import {closestCenter, DndContext, DragOverlay} from "@dnd-kit/core";
+import {memo, useEffect, useState} from "react";
 
 export const IssuesBoardPage = memo(function () {
   const {
@@ -19,6 +18,7 @@ export const IssuesBoardPage = memo(function () {
     setColumns,
     moveTaskBetweenColumns,
     reorderTaskInColumn,
+    normalizeTaskPositions,
   } = useAppStore((state) => state);
   const project = teams
     .flatMap((t) => t.projects)
@@ -63,7 +63,7 @@ export const IssuesBoardPage = memo(function () {
 
   // Simple drag handlers for now - will implement full functionality later
   const handleDragStart = (event: any) => {
-    const { active } = event;
+    const {active} = event;
     const taskId = parseInt(active.id.replace("task-", ""));
 
     // Find the task in any column
@@ -74,7 +74,7 @@ export const IssuesBoardPage = memo(function () {
   };
 
   const handleDragEnd = (event: any) => {
-    const { active, over } = event;
+    const {active, over} = event;
     setActiveTask(null);
 
     if (!over || !project?.id || !columns) return;
@@ -96,14 +96,14 @@ export const IssuesBoardPage = memo(function () {
 
     if (!sourceColumn || !sourceTask) return;
 
-    // Handle dropping on column
+    // Handle dropping on column (empty area)
     if (over.id.toString().startsWith("column-")) {
       const targetColumnId = parseInt(
         over.id.toString().replace("column-", "")
       );
 
       if (sourceColumn.id !== targetColumnId) {
-        // Move to different column
+        // Move to different column at the end
         const targetColumn = columns.find((col) => col.id === targetColumnId);
         if (targetColumn) {
           const newPosition = targetColumn.tasks?.length || 0;
@@ -114,11 +114,17 @@ export const IssuesBoardPage = memo(function () {
             targetColumnId,
             newPosition
           );
+
+          // Normalize positions in both columns
+          setTimeout(() => {
+            normalizeTaskPositions(project.id, sourceColumn.id);
+            normalizeTaskPositions(project.id, targetColumnId);
+          }, 0);
         }
       }
     }
 
-    // Handle dropping on task (reordering)
+    // Handle dropping on task (specific position)
     if (over.id.toString().startsWith("task-")) {
       const overTaskId = parseInt(over.id.toString().replace("task-", ""));
 
@@ -144,23 +150,61 @@ export const IssuesBoardPage = memo(function () {
         const targetIndex = columnTasks.findIndex((t) => t.id === overTaskId);
 
         if (sourceIndex !== targetIndex) {
-          // Update the position to match target position
+          // Calculate new position based on target index
+          let newPosition: number;
+
+          if (sourceIndex < targetIndex) {
+            // Moving down: place after target task
+            newPosition = targetTask.position + 0.5;
+          } else {
+            // Moving up: place before target task
+            newPosition = targetTask.position - 0.5;
+          }
+
           reorderTaskInColumn(
             project.id,
             sourceColumn.id,
             activeTaskId,
-            targetTask.position
+            newPosition
           );
+
+          // Normalize positions to avoid fractional values accumulating
+          setTimeout(() => {
+            normalizeTaskPositions(project.id, sourceColumn.id);
+          }, 0);
         }
       } else {
         // Moving to different column at specific position
+        const targetColumnTasks = targetColumn.tasks || [];
+        const targetIndex = targetColumnTasks.findIndex(
+          (t) => t.id === overTaskId
+        );
+
+        // Calculate position to insert before the target task
+        let newPosition: number;
+
+        if (targetIndex === 0) {
+          // Inserting at the beginning
+          newPosition = targetTask.position - 0.5;
+        } else {
+          // Inserting between tasks
+          const prevTask = targetColumnTasks[targetIndex - 1];
+          newPosition = (prevTask.position + targetTask.position) / 2;
+        }
+
         moveTaskBetweenColumns(
           project.id,
           activeTaskId,
           sourceColumn.id,
           targetColumn.id,
-          targetTask.position
+          newPosition
         );
+
+        // Normalize positions in both columns
+        setTimeout(() => {
+          normalizeTaskPositions(project.id, sourceColumn.id);
+          normalizeTaskPositions(project.id, targetColumn.id);
+        }, 0);
       }
     }
   };
@@ -220,7 +264,7 @@ export const IssuesBoardPage = memo(function () {
   // };
 
   if (!project || !columns) {
-    return <KanbanBoardLoader />;
+    return <KanbanBoardLoader/>;
   }
 
   return (
@@ -230,7 +274,7 @@ export const IssuesBoardPage = memo(function () {
       collisionDetection={closestCenter}
     >
       <div className="space-y-4 sm:space-y-6">
-        <BoardHeader onAddTask={handleAddTask} onFilter={handleFilter} />
+        <BoardHeader onAddTask={handleAddTask} onFilter={handleFilter}/>
 
         {/* Kanban Board */}
         <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px] overflow-x-auto pb-4">
@@ -250,7 +294,7 @@ export const IssuesBoardPage = memo(function () {
               );
             })}
 
-          <AddColumnButton />
+          <AddColumnButton/>
         </div>
       </div>
 
@@ -278,8 +322,6 @@ export const IssuesBoardPage = memo(function () {
         onTaskUpdated={handleTaskUpdated}
         task={currentTask}
         columns={columns || []}
-        users={mockUsers}
-        labels={mockLabels}
         defaultColumnId={defaultColumnId}
       />
     </DndContext>

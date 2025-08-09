@@ -56,12 +56,12 @@ class Task
     #[ORM\JoinColumn(nullable: false)]
     private ?TaskColumn $relatedColumn = null;
 
-    #[ORM\Column]
-    private ?int $position = null;
-
     #[ORM\ManyToOne(inversedBy: 'tasks')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Project $project = null;
+
+    #[ORM\Column]
+    private ?float $score = null;
 
     public function __construct()
     {
@@ -195,18 +195,6 @@ class Task
         return $this;
     }
 
-    public function getPosition(): ?int
-    {
-        return $this->position;
-    }
-
-    public function setPosition(int $position): static
-    {
-        $this->position = $position;
-
-        return $this;
-    }
-
     public function getProject(): ?Project
     {
         return $this->project;
@@ -215,6 +203,18 @@ class Task
     public function setProject(?Project $project): static
     {
         $this->project = $project;
+
+        return $this;
+    }
+
+    public function getScore(): ?float
+    {
+        return $this->score;
+    }
+
+    public function setScore(float $score): static
+    {
+        $this->score = $score;
 
         return $this;
     }

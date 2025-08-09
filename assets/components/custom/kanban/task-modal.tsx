@@ -1,18 +1,8 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar.tsx";
-import { Badge } from "@/components/ui/badge.tsx";
-import { Button } from "@/components/ui/button.tsx";
-import { Calendar } from "@/components/ui/calendar.tsx";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command.tsx";
+import {Avatar, AvatarFallback, AvatarImage,} from "@/components/ui/avatar.tsx";
+import {Badge} from "@/components/ui/badge.tsx";
+import {Button} from "@/components/ui/button.tsx";
+import {Calendar} from "@/components/ui/calendar.tsx";
+import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem,} from "@/components/ui/command.tsx";
 import {
   Dialog,
   DialogContent,
@@ -21,46 +11,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog.tsx";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form.tsx";
-import { Input } from "@/components/ui/input.tsx";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover.tsx";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select.tsx";
-import { Textarea } from "@/components/ui/textarea.tsx";
-import { apiFetch } from "@/lib/fetch.ts";
-import { cn } from "@/lib/utils.ts";
-import type { Task, TaskColumn, TaskLabel, User } from "@/types.ts";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import {
-  AlertCircle,
-  Calendar as CalendarIcon,
-  Flag,
-  Loader2,
-  Plus,
-  Tag,
-  X,
-} from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form.tsx";
+import {Input} from "@/components/ui/input.tsx";
+import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover.tsx";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select.tsx";
+import {Textarea} from "@/components/ui/textarea.tsx";
+import {apiFetch} from "@/lib/fetch.ts";
+import {cn} from "@/lib/utils.ts";
+import type {Task, TaskColumn, TaskLabel} from "@/types.ts";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {format} from "date-fns";
+import {AlertCircle, Calendar as CalendarIcon, Flag, Loader2, Plus, Tag, X,} from "lucide-react";
+import {useEffect, useState} from "react";
+import {useForm} from "react-hook-form";
+import {toast} from "sonner";
+import {z} from "zod";
 
 const taskSchema = z.object({
   name: z
@@ -88,8 +53,6 @@ interface TaskModalProps {
   onTaskUpdated?: (task: Task) => void;
   task?: Task | null; // For editing existing task
   columns: TaskColumn[];
-  users: User[]; // Available users for assignment
-  labels: TaskLabel[]; // Available labels
   defaultColumnId?: number; // Default column when creating new task
 }
 
@@ -100,14 +63,27 @@ export function TaskModal({
   onTaskUpdated,
   task,
   columns,
-  users,
-  labels,
   defaultColumnId,
 }: TaskModalProps) {
   const isEditing = !!task;
-  const [availableLabels, setAvailableLabels] = useState<TaskLabel[]>(labels);
+  const [availableLabels, setAvailableLabels] = useState(
+    Array.from(
+      new Map(
+        columns.flatMap(c => c.tasks)
+          .flatMap(t => t.labels)
+          .map(l => [l.id, l])
+      ).values()
+    )
+  );
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
   const [labelSearchValue, setLabelSearchValue] = useState("");
+  const users = Array.from(
+    new Map(
+      columns.flatMap(c => c.tasks)
+        .flatMap(t => t.assignees)
+        .map(user => [user.id, user])
+    ).values()
+  );
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
@@ -115,7 +91,12 @@ export function TaskModal({
       name: task?.name || "",
       description: task?.description || "",
       priority: task?.priority || "medium",
-      columnId: defaultColumnId || columns[0]?.id,
+      columnId: task
+        ? // For editing existing tasks, use the task's current column
+        columns.find((col) => col.tasks?.some((t) => t.id === task.id))?.id ||
+        columns[0]?.id
+        : // For new tasks, use defaultColumnId or first column
+        defaultColumnId || columns[0]?.id,
       assigneeIds: task?.assignees?.map((a) => a.id) || [],
       labelIds: task?.labels?.map((l) => l.id) || [],
       dueAt: task?.dueAt ? new Date(task.dueAt) : undefined,
@@ -124,7 +105,7 @@ export function TaskModal({
 
   const {
     handleSubmit,
-    formState: { isSubmitting },
+    formState: {isSubmitting},
     reset,
     watch,
     setValue,
@@ -132,6 +113,35 @@ export function TaskModal({
 
   const watchedAssigneeIds = watch("assigneeIds") || [];
   const watchedLabelIds = watch("labelIds") || [];
+
+  // Update the form when defaultColumnId changes (for new tasks)
+  useEffect(() => {
+    if (!isEditing && defaultColumnId) {
+      setValue("columnId", defaultColumnId);
+    }
+  }, [defaultColumnId, isEditing, setValue]);
+
+  // Reset form when modal opens with new task/column data
+  useEffect(() => {
+    if (isOpen) {
+      const newColumnId = task
+        ? // For editing existing tasks, find the task's current column
+        columns.find((col) => col.tasks?.some((t) => t.id === task.id))?.id ||
+        columns[0]?.id
+        : // For new tasks, use defaultColumnId or first column
+        defaultColumnId || columns[0]?.id;
+
+      reset({
+        name: task?.name || "",
+        description: task?.description || "",
+        priority: task?.priority || "medium",
+        columnId: newColumnId,
+        assigneeIds: task?.assignees?.map((a) => a.id) || [],
+        labelIds: task?.labels?.map((l) => l.id) || [],
+        dueAt: task?.dueAt ? new Date(task.dueAt) : undefined,
+      });
+    }
+  }, [isOpen, task, defaultColumnId, columns, reset]);
 
   const onSubmit = async (data: TaskFormData) => {
     try {
@@ -243,7 +253,7 @@ export function TaskModal({
       // Create the new label via API
       const newLabel = await apiFetch<TaskLabel>("/api/labels", {
         method: "POST",
-        data: { name: trimmedName },
+        data: {name: trimmedName},
       });
 
       // Add the new label to available labels
@@ -266,15 +276,15 @@ export function TaskModal({
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
       case "urgent":
-        return <AlertCircle className="w-4 h-4 text-red-500" />;
+        return <AlertCircle className="w-4 h-4 text-red-500"/>;
       case "high":
-        return <Flag className="w-4 h-4 text-orange-500" />;
+        return <Flag className="w-4 h-4 text-orange-500"/>;
       case "medium":
-        return <Flag className="w-4 h-4 text-yellow-500" />;
+        return <Flag className="w-4 h-4 text-yellow-500"/>;
       case "low":
-        return <Flag className="w-4 h-4 text-green-500" />;
+        return <Flag className="w-4 h-4 text-green-500"/>;
       default:
-        return <Flag className="w-4 h-4 text-gray-500" />;
+        return <Flag className="w-4 h-4 text-gray-500"/>;
     }
   };
 
@@ -312,13 +322,13 @@ export function TaskModal({
             <FormField
               control={form.control}
               name="name"
-              render={({ field }) => (
+              render={({field}) => (
                 <FormItem>
                   <FormLabel>Task Name *</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter task name..." {...field} />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage/>
                 </FormItem>
               )}
             />
@@ -327,7 +337,7 @@ export function TaskModal({
             <FormField
               control={form.control}
               name="description"
-              render={({ field }) => (
+              render={({field}) => (
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
@@ -337,7 +347,7 @@ export function TaskModal({
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage/>
                 </FormItem>
               )}
             />
@@ -347,7 +357,7 @@ export function TaskModal({
               <FormField
                 control={form.control}
                 name="priority"
-                render={({ field }) => (
+                render={({field}) => (
                   <FormItem>
                     <FormLabel>Priority *</FormLabel>
                     <Select
@@ -356,7 +366,7 @@ export function TaskModal({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
+                          <SelectValue placeholder="Select priority"/>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -386,7 +396,7 @@ export function TaskModal({
                         </SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
+                    <FormMessage/>
                   </FormItem>
                 )}
               />
@@ -395,7 +405,7 @@ export function TaskModal({
               <FormField
                 control={form.control}
                 name="columnId"
-                render={({ field }) => (
+                render={({field}) => (
                   <FormItem>
                     <FormLabel>Column *</FormLabel>
                     <Select
@@ -404,7 +414,7 @@ export function TaskModal({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select column" />
+                          <SelectValue placeholder="Select column"/>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -416,7 +426,7 @@ export function TaskModal({
                             <div className="flex items-center gap-2">
                               <div
                                 className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: column.color }}
+                                style={{backgroundColor: column.color}}
                               />
                               <span>{column.name}</span>
                             </div>
@@ -424,7 +434,7 @@ export function TaskModal({
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
+                    <FormMessage/>
                   </FormItem>
                 )}
               />
@@ -434,7 +444,7 @@ export function TaskModal({
             <FormField
               control={form.control}
               name="dueAt"
-              render={({ field }) => (
+              render={({field}) => (
                 <FormItem>
                   <FormLabel>Due Date</FormLabel>
                   <Popover>
@@ -452,7 +462,7 @@ export function TaskModal({
                           ) : (
                             <span>Pick a date</span>
                           )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50"/>
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -480,7 +490,7 @@ export function TaskModal({
                       )}
                     </PopoverContent>
                   </Popover>
-                  <FormMessage />
+                  <FormMessage/>
                 </FormItem>
               )}
             />
@@ -503,7 +513,7 @@ export function TaskModal({
                         className="flex items-center gap-1"
                       >
                         <Avatar className="w-4 h-4">
-                          <AvatarImage src="" alt={user.name} />
+                          <AvatarImage src="" alt={user.name}/>
                           <AvatarFallback className="text-xs">
                             {user.name
                               .split(" ")
@@ -526,13 +536,13 @@ export function TaskModal({
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-4 h-4 mr-2"/>
                     Add Assignee
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
                   <Command>
-                    <CommandInput placeholder="Search users..." />
+                    <CommandInput placeholder="Search users..."/>
                     <CommandEmpty>No users found.</CommandEmpty>
                     <CommandGroup>
                       {users
@@ -543,7 +553,7 @@ export function TaskModal({
                             onSelect={() => addAssignee(user.id)}
                           >
                             <Avatar className="w-6 h-6 mr-2">
-                              <AvatarImage src="" alt={user.name} />
+                              <AvatarImage src="" alt={user.name}/>
                               <AvatarFallback className="text-xs">
                                 {user.name
                                   .split(" ")
@@ -552,9 +562,6 @@ export function TaskModal({
                               </AvatarFallback>
                             </Avatar>
                             <span>{user.name}</span>
-                            <span className="ml-auto text-xs text-muted-foreground">
-                              {user.email}
-                            </span>
                           </CommandItem>
                         ))}
                     </CommandGroup>
@@ -600,7 +607,7 @@ export function TaskModal({
               >
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-4 h-4 mr-2"/>
                     Add Label
                   </Button>
                 </PopoverTrigger>
@@ -620,9 +627,9 @@ export function TaskModal({
                             disabled={isCreatingLabel}
                           >
                             {isCreatingLabel ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
                             ) : (
-                              <Tag className="w-4 h-4 mr-2" />
+                              <Tag className="w-4 h-4 mr-2"/>
                             )}
                             <span>Create "{labelSearchValue}"</span>
                           </CommandItem>
@@ -643,9 +650,9 @@ export function TaskModal({
                             disabled={isCreatingLabel}
                           >
                             {isCreatingLabel ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
                             ) : (
-                              <Tag className="w-4 h-4 mr-2" />
+                              <Tag className="w-4 h-4 mr-2"/>
                             )}
                             <span>Create "{labelSearchValue}"</span>
                           </CommandItem>
@@ -679,7 +686,7 @@ export function TaskModal({
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                 )}
                 {isEditing ? "Update Task" : "Create Task"}
               </Button>
