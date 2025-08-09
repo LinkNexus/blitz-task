@@ -1,26 +1,31 @@
-import type {Task, TaskColumn, TaskLabel, User} from "@/types";
+import type { Task, TaskColumn, TaskLabel, User } from "@/types";
 
 export const mockUsers: User[] = [
-  {id: 1, name: "Alice Johnson", email: "alice@example.com", isVerified: true},
-  {id: 2, name: "Bob Smith", email: "bob@example.com", isVerified: true},
-  {id: 3, name: "Carol Davis", email: "carol@example.com", isVerified: true},
-  {id: 4, name: "David Wilson", email: "david@example.com", isVerified: true},
+  {
+    id: 1,
+    name: "Alice Johnson",
+    email: "alice@example.com",
+    isVerified: true,
+  },
+  { id: 2, name: "Bob Smith", email: "bob@example.com", isVerified: true },
+  { id: 3, name: "Carol Davis", email: "carol@example.com", isVerified: true },
+  { id: 4, name: "David Wilson", email: "david@example.com", isVerified: true },
 ];
 
 export const mockLabels: TaskLabel[] = [
-  {id: 1, name: "Frontend"},
-  {id: 2, name: "Backend"},
-  {id: 3, name: "Bug"},
-  {id: 4, name: "Feature"},
-  {id: 5, name: "Design"},
-  {id: 6, name: "Testing"},
+  { id: 1, name: "Frontend" },
+  { id: 2, name: "Backend" },
+  { id: 3, name: "Bug" },
+  { id: 4, name: "Feature" },
+  { id: 5, name: "Design" },
+  { id: 6, name: "Testing" },
 ];
 
 export const mockColumns: TaskColumn[] = [
-  {id: 1, name: "To Do", color: "#6b7280", score: 0},
-  {id: 2, name: "In Progress", color: "#3b82f6", score: 1},
-  {id: 3, name: "Review", color: "#f59e0b", score: 2},
-  {id: 4, name: "Done", color: "#10b981", score: 3},
+  { id: 1, name: "To Do", color: "#6b7280", score: 0, tasks: [] },
+  { id: 2, name: "In Progress", color: "#3b82f6", score: 1, tasks: [] },
+  { id: 3, name: "Review", color: "#f59e0b", score: 2, tasks: [] },
+  { id: 4, name: "Done", color: "#10b981", score: 3, tasks: [] },
 ];
 
 export const mockTasks: Task[] = [
@@ -33,7 +38,6 @@ export const mockTasks: Task[] = [
     dueAt: "2025-08-10",
     labels: [mockLabels[1], mockLabels[3]],
     createdAt: "2025-08-01",
-    relatedColumn: mockColumns[0],
     score: 0,
   },
   {
@@ -45,7 +49,6 @@ export const mockTasks: Task[] = [
     dueAt: "2025-08-08",
     labels: [mockLabels[0], mockLabels[2]],
     createdAt: "2025-08-02",
-    relatedColumn: mockColumns[1],
     score: 0,
   },
   {
@@ -57,7 +60,6 @@ export const mockTasks: Task[] = [
     dueAt: null,
     labels: [mockLabels[1]],
     createdAt: "2025-08-03",
-    relatedColumn: mockColumns[1],
     score: 1,
   },
   {
@@ -69,7 +71,6 @@ export const mockTasks: Task[] = [
     dueAt: "2025-08-07",
     labels: [mockLabels[4], mockLabels[3]],
     createdAt: "2025-08-04",
-    relatedColumn: mockColumns[2],
     score: 0,
   },
   {
@@ -81,7 +82,6 @@ export const mockTasks: Task[] = [
     dueAt: "2025-08-12",
     labels: [mockLabels[1]],
     createdAt: "2025-08-05",
-    relatedColumn: mockColumns[3],
     score: 0,
   },
   {
@@ -93,7 +93,6 @@ export const mockTasks: Task[] = [
     dueAt: null,
     labels: [mockLabels[5]],
     createdAt: "2025-08-01",
-    relatedColumn: mockColumns[0],
     score: 1,
   },
 ];

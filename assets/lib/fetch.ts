@@ -12,12 +12,14 @@ export async function apiFetch<T>(
     accept: "json",
   }
 ) {
-  const {data = null, contentType = "json", accept = "json"} = options;
+  const { data = null, contentType = "json", accept = "json" } = options;
   let headers: Record<string, string> = {};
 
   if (data && !(data instanceof FormData) && contentType === "json")
     headers["Content-Type"] = "application/json";
   if (accept === "json") headers["Accept"] = "application/json";
+
+  // await new Promise((resolve) => setTimeout(resolve, 5000)); // Simulate network delay
 
   const response = await fetch(url, {
     ...options,
@@ -50,10 +52,7 @@ export class ApiError<T> extends Error {
   public data: T;
   public statusCode: number;
 
-  constructor(
-    data: T,
-    statusCode: number
-  ) {
+  constructor(data: T, statusCode: number) {
     super();
     this.name = "ApiError";
     this.data = data;

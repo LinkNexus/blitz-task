@@ -17,34 +17,36 @@ class Task
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["column:read"])]
+    #[Groups(["columns:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["column:read"])]
+    #[Groups(["columns:read"])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
     #[ORM\Column(enumType: TaskPriority::class)]
-    #[Groups(["column:read"])]
+    #[Groups(["columns:read"])]
     private ?TaskPriority $priority = TaskPriority::MEDIUM;
 
     /**
      * @var Collection<int, User>
      */
     #[ORM\ManyToMany(targetEntity: User::class)]
+    #[Groups(["columns:read"])]
     private Collection $assignees;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["column:read"])]
+    #[Groups(["columns:read"])]
     private ?DateTimeImmutable $dueAt = null;
 
     /**
      * @var Collection<int, TaskLabel>
      */
     #[ORM\ManyToMany(targetEntity: TaskLabel::class)]
+    #[Groups(["columns:read"])]
     private Collection $labels;
 
     #[ORM\Column]

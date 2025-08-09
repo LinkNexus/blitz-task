@@ -24,9 +24,12 @@ class TaskColumnRepository extends ServiceEntityRepository
     public function findByProject(int $projectId): array
     {
         return $this->createQueryBuilder('c')
+            ->leftJoin('c.tasks', 't')
+            ->addSelect('t')
             ->andWhere('c.project = :projectId')
             ->setParameter('projectId', $projectId)
             ->orderBy('c.score', 'ASC')
+            ->addOrderBy('t.position', 'ASC')
             ->getQuery()
             ->getResult();
     }

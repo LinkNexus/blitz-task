@@ -27,7 +27,6 @@ class Project
 
     #[ORM\ManyToOne(inversedBy: 'projects')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(["projects:read"])]
     private ?Team $team = null;
 
     /**

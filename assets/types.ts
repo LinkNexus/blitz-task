@@ -7,9 +7,9 @@ export interface User {
 
 export interface FormErrors {
   violations: {
-    propertyPath: string,
-    title: string
-  }[]
+    propertyPath: string;
+    title: string;
+  }[];
 }
 
 export interface Team {
@@ -35,7 +35,6 @@ export interface Task {
   dueAt: string | null;
   labels: TaskLabel[];
   createdAt: string;
-  relatedColumn: TaskColumn;
   score: number;
 }
 

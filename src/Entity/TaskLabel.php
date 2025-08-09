@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\TaskLabelRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: TaskLabelRepository::class)]
 class TaskLabel
@@ -11,9 +12,11 @@ class TaskLabel
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["columns:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["columns:read"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]

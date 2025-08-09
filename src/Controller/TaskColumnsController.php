@@ -31,7 +31,7 @@ class TaskColumnsController extends AbstractController
         return $this->json(
             $this->entityManager->getRepository(TaskColumn::class)
                 ->findByProject($projectId),
-            context: ["groups" => ["column:read"]]
+            context: ["groups" => ["columns:read"]]
         );
     }
 }

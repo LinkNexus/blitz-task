@@ -26,16 +26,6 @@ class TeamRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findDefaultByUser($userId)
-    {
-        return $this->createQueryBuilder('t')
-            ->andWhere('t.isDefault = true')
-            ->andWhere('t.creator = :userId')
-            ->setParameter('userId', $userId)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
     //    /**
     //     * @return Team[] Returns an array of Team objects
     //     */

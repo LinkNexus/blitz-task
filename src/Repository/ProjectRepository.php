@@ -30,22 +30,6 @@ class ProjectRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /**
-     * Finds the given user's default project
-     * @param int $userId The user id
-     * @return Project|null The default project
-     */
-    public function findDefaultByUser(int $userId): ?Project
-    {
-        return $this->createQueryBuilder('p')
-            ->leftJoin("p.team", "t")
-            ->innerJoin('t.members', 'm')
-            ->where('m.id = :user AND p.isDefault = true')
-            ->setParameter('user', $userId)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
     //    /**
     //     * @return Project[] Returns an array of Project objects
     //     */

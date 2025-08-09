@@ -20,7 +20,7 @@ import {RegisterPage} from "@/pages/auth/register-page.tsx";
 import {ResetPasswordPage} from "@/pages/auth/reset-password-page.tsx";
 import {DashboardPage} from "@/pages/dashboard-page.tsx";
 import {InboxPage} from "@/pages/inbox-page.tsx";
-import {IssuesBoardPage} from "@/pages/issues-board-page.tsx";
+import {IssuesBoardPage} from "@/pages/issues-board/issues-board-page.tsx";
 import {ProjectsPage} from "@/pages/projects-page.tsx";
 import {useEffect} from "react";
 import {Link, Redirect, Route, Switch, useLocation} from "wouter";
@@ -31,7 +31,7 @@ import type {Project, Team} from "@/types.ts";
 import {toast} from "sonner";
 
 export function App() {
-  const {status, authenticate} = useAuth();
+  const {user, status, authenticate, lastRequestedUrl, setLastRequestedUrl} = useAuth();
   const [location] = useLocation();
 
   const {
@@ -68,7 +68,7 @@ export function App() {
   const activeTeam = teams.find(team => team.id === activeTeamId);
 
   useEffect(() => {
-    if (teams.length === 0) {
+    if (teams.length === 0 && user?.id) {
       apiFetch<Team[]>("/api/teams")
         .then((data: Team[]) => {
           setTeams(data);
@@ -78,7 +78,7 @@ export function App() {
           console.error("Error fetching teams:", error);
         });
     }
-  }, [teams.length]);
+  }, [teams.length, user?.id]);
 
   useEffect(() => {
     if (activeTeam && !activeTeam.projects) {
@@ -95,7 +95,7 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {(status === "unknown" || !activeTeam) && <LoadingPage/>}
+      {(status === "unknown" || (status === "authenticated" && !activeTeam)) && <LoadingPage/>}
 
       {status === "authenticated" && (
         <ThemeProvider>
@@ -134,7 +134,7 @@ export function App() {
                   <Route path="/issues-board" component={IssuesBoardPage}/>
                   <Route path="/projects" component={ProjectsPage}/>
                   <Route path="/ai-chat" component={AIAssistantPage}/>
-                  <Route component={() => <Redirect to="/dashboard"/>}/>
+                  <Route component={() => <Redirect to={lastRequestedUrl || "/dashboard"}/>}/>
                 </Switch>
               </div>
             </SidebarInset>
@@ -157,7 +157,11 @@ export function App() {
               <Route path="/register" component={RegisterPage}/>
               <Route path="/forgot-password" component={ForgotPasswordPage}/>
               <Route path="/reset-password" component={ResetPasswordPage}/>
-              <Route component={() => <Redirect to="/login"/>}/>
+              <Route component={() => {
+                setLastRequestedUrl(location);
+                return <Redirect to="/login"/>
+              }}
+              />
             </Switch>
           </div>
         </div>

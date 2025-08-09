@@ -1,13 +1,26 @@
-import {Button} from "@/components/ui/button.tsx";
-import {Badge} from "@/components/ui/badge.tsx";
-import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.tsx";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card.tsx";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
+import type { Task } from "@/types.ts";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   AlertCircle,
   Calendar,
@@ -15,20 +28,18 @@ import {
   Circle,
   Clock,
   Flag,
+  GripVertical,
   MessageSquare,
   MoreHorizontal,
   Paperclip,
-  GripVertical
 } from "lucide-react";
-import type {Task} from "@/types.ts";
-import {useSortable} from '@dnd-kit/sortable';
-import {CSS} from '@dnd-kit/utilities';
 
 interface TaskCardProps {
   task: Task;
+  columnName?: string; // Add optional column name prop
 }
 
-export function TaskCard({task}: TaskCardProps) {
+export function TaskCard({ task, columnName }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -39,7 +50,7 @@ export function TaskCard({task}: TaskCardProps) {
   } = useSortable({
     id: `task-${task.id}`,
     data: {
-      type: 'task',
+      type: "task",
       task,
     },
   });
@@ -49,18 +60,21 @@ export function TaskCard({task}: TaskCardProps) {
     transition,
   };
 
-  const isOverdue = task.dueAt !== null && new Date(task.dueAt) < new Date() && task.relatedColumn.name !== "Done";
+  const isOverdue =
+    task.dueAt !== null &&
+    new Date(task.dueAt) < new Date() &&
+    columnName !== "Done";
 
   const getPriorityIcon = (priority: Task["priority"]) => {
     switch (priority) {
       case "urgent":
-        return <AlertCircle className="w-4 h-4 text-red-500"/>;
+        return <AlertCircle className="w-4 h-4 text-red-500" />;
       case "high":
-        return <Flag className="w-4 h-4 text-orange-500"/>;
+        return <Flag className="w-4 h-4 text-orange-500" />;
       case "medium":
-        return <Circle className="w-4 h-4 text-yellow-500"/>;
+        return <Circle className="w-4 h-4 text-yellow-500" />;
       case "low":
-        return <CheckCircle className="w-4 h-4 text-green-500"/>;
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
     }
   };
 
@@ -79,55 +93,62 @@ export function TaskCard({task}: TaskCardProps) {
 
   const getLabelColor = (labelName: string) => {
     const colors = {
-      "Frontend": "bg-blue-100 text-blue-800",
-      "Backend": "bg-purple-100 text-purple-800",
-      "Bug": "bg-red-100 text-red-800",
-      "Feature": "bg-green-100 text-green-800",
-      "Design": "bg-pink-100 text-pink-800",
-      "Testing": "bg-indigo-100 text-indigo-800",
+      Frontend: "bg-blue-100 text-blue-800",
+      Backend: "bg-purple-100 text-purple-800",
+      Bug: "bg-red-100 text-red-800",
+      Feature: "bg-green-100 text-green-800",
+      Design: "bg-pink-100 text-pink-800",
+      Testing: "bg-indigo-100 text-indigo-800",
     };
-    return colors[labelName as keyof typeof colors] || "bg-gray-100 text-gray-800";
+    return (
+      colors[labelName as keyof typeof colors] || "bg-gray-100 text-gray-800"
+    );
   };
 
   return (
-    <Card 
+    <Card
       ref={setNodeRef}
       style={style}
       className={`mb-2 sm:mb-3 transition-all bg-card ${
-        isDragging 
-          ? 'opacity-50 shadow-lg z-50' 
-          : 'hover:shadow-md'
+        isDragging ? "opacity-50 shadow-lg z-50" : "hover:shadow-md"
       }`}
     >
       <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-1 sm:gap-2">
             {getPriorityIcon(task.priority)}
-            <Badge variant="outline" className={`text-xs ${getPriorityColor(task.priority)}`}>
+            <Badge
+              variant="outline"
+              className={`text-xs ${getPriorityColor(task.priority)}`}
+            >
               <span className="hidden sm:inline">{task.priority}</span>
-              <span className="sm:hidden">{task.priority.charAt(0).toUpperCase()}</span>
+              <span className="sm:hidden">
+                {task.priority.charAt(0).toUpperCase()}
+              </span>
             </Badge>
           </div>
           <div className="flex items-center gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-5 w-5 sm:h-6 sm:w-6 p-0"
                 >
-                  <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4"/>
+                  <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4" />
                 </Button>
               </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-              <DropdownMenuItem>Move to...</DropdownMenuItem>
-              <DropdownMenuItem>Assign to...</DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>Edit</DropdownMenuItem>
+                <DropdownMenuItem>Move to...</DropdownMenuItem>
+                <DropdownMenuItem>Assign to...</DropdownMenuItem>
+                <DropdownMenuItem className="text-red-600">
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {/* Drag Handle */}
-            <div 
+            <div
               className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted/50 rounded transition-colors"
               {...listeners}
               {...attributes}
@@ -150,7 +171,9 @@ export function TaskCard({task}: TaskCardProps) {
             <Badge
               key={label.id}
               variant="secondary"
-              className={`text-xs px-1 sm:px-2 py-0 ${getLabelColor(label.name)}`}
+              className={`text-xs px-1 sm:px-2 py-0 ${getLabelColor(
+                label.name
+              )}`}
             >
               {label.name}
             </Badge>
@@ -162,22 +185,26 @@ export function TaskCard({task}: TaskCardProps) {
           <div className="flex items-center gap-2 sm:gap-3">
             {task.dueAt !== null && (
               <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3"/>
-                <span className={`text-xs ${isOverdue ? "text-red-600 font-medium" : ""}`}>
-                  {new Date(task.dueAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric'
+                <Calendar className="w-3 h-3" />
+                <span
+                  className={`text-xs ${
+                    isOverdue ? "text-red-600 font-medium" : ""
+                  }`}
+                >
+                  {new Date(task.dueAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
                   })}
                 </span>
-                {isOverdue && <Clock className="w-3 h-3 text-red-600"/>}
+                {isOverdue && <Clock className="w-3 h-3 text-red-600" />}
               </div>
             )}
             <div className="hidden sm:flex items-center gap-1">
-              <MessageSquare className="w-3 h-3"/>
+              <MessageSquare className="w-3 h-3" />
               <span>3</span>
             </div>
             <div className="hidden sm:flex items-center gap-1">
-              <Paperclip className="w-3 h-3"/>
+              <Paperclip className="w-3 h-3" />
               <span>2</span>
             </div>
           </div>
@@ -185,16 +212,21 @@ export function TaskCard({task}: TaskCardProps) {
           {/* Assignees */}
           <div className="flex -space-x-1">
             {task.assignees.slice(0, 2).map((assignee) => (
-              <Avatar key={assignee.id} className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-background">
-                <AvatarImage src="" alt={assignee.name}/>
+              <Avatar
+                key={assignee.id}
+                className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-background"
+              >
+                <AvatarImage src="" alt={assignee.name} />
                 <AvatarFallback className="text-xs">
-                  {assignee.name.split(' ').map(n => n[0]).join('')}
+                  {assignee.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
                 </AvatarFallback>
               </Avatar>
             ))}
             {task.assignees.length > 2 && (
-              <div
-                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs">
                 +{task.assignees.length - 2}
               </div>
             )}

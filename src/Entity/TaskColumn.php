@@ -14,19 +14,19 @@ class TaskColumn
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["column:read"])]
+    #[Groups(["columns:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["column:read"])]
+    #[Groups(["columns:read"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["column:read"])]
+    #[Groups(["columns:read"])]
     private ?string $color = null;
 
     #[ORM\Column]
-    #[Groups(["column:read"])]
+    #[Groups(["columns:read"])]
     private ?float $score = null;
 
     #[ORM\ManyToOne(inversedBy: 'columns')]
@@ -37,7 +37,7 @@ class TaskColumn
      * @var Collection<int, Task>
      */
     #[ORM\OneToMany(targetEntity: Task::class, mappedBy: 'relatedColumn', cascade: ["remove"], orphanRemoval: true)]
-    #[Groups(["column:read"])]
+    #[Groups(["columns:read"])]
     private Collection $tasks;
 
     public function __construct()

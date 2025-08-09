@@ -21,18 +21,6 @@ class TeamsController extends AbstractController
     {
     }
 
-    #[Route("/default", name: "default", methods: ["GET"])]
-    public function getDefaultTeam(
-        #[CurrentUser] User $user
-    ): JsonResponse
-    {
-        return $this->json(
-            $this->entityManager->getRepository(Team::class)
-                ->findDefaultByUser($user->getId()),
-            context: ["groups" => ["teams:read"]]
-        );
-    }
-
     #[Route("", name: "list", methods: ["GET"])]
     public function index(
         #[CurrentUser] User $user
