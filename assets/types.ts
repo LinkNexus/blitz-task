@@ -33,12 +33,12 @@ export interface Task {
   priority: "low" | "medium" | "high" | "urgent";
   assignees: Pick<User, "id" | "name">[];
   dueAt: string | null;
-  labels: TaskLabel[];
+  labels: Label[];
   createdAt: string;
-  position: number;
+  score: number;
 }
 
-export interface TaskLabel {
+export interface Label {
   id: number;
   name: string;
 }

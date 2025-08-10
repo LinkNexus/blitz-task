@@ -17,36 +17,37 @@ class Task
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["columns:read"])]
+    #[Groups(["columns:read", "tasks:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["columns:read"])]
+    #[Groups(["columns:read", "tasks:read"])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(["columns:read", "tasks:read"])]
     private ?string $description = null;
 
     #[ORM\Column(enumType: TaskPriority::class)]
-    #[Groups(["columns:read"])]
+    #[Groups(["columns:read", "tasks:read"])]
     private ?TaskPriority $priority = TaskPriority::MEDIUM;
 
     /**
      * @var Collection<int, User>
      */
     #[ORM\ManyToMany(targetEntity: User::class)]
-    #[Groups(["columns:read"])]
+    #[Groups(["columns:read", "tasks:read"])]
     private Collection $assignees;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["columns:read"])]
+    #[Groups(["columns:read", "tasks:read"])]
     private ?DateTimeImmutable $dueAt = null;
 
     /**
-     * @var Collection<int, TaskLabel>
+     * @var Collection<int, Label>
      */
-    #[ORM\ManyToMany(targetEntity: TaskLabel::class)]
-    #[Groups(["columns:read"])]
+    #[ORM\ManyToMany(targetEntity: Label::class)]
+    #[Groups(["columns:read", "tasks:read"])]
     private Collection $labels;
 
     #[ORM\Column]
@@ -56,12 +57,13 @@ class Task
     #[ORM\JoinColumn(nullable: false)]
     private ?TaskColumn $relatedColumn = null;
 
+    #[ORM\Column]
+    #[Groups(["columns:read", "tasks:read"])]
+    private ?float $score = null;
+
     #[ORM\ManyToOne(inversedBy: 'tasks')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Project $project = null;
-
-    #[ORM\Column]
-    private ?float $score = null;
 
     public function __construct()
     {
@@ -148,14 +150,14 @@ class Task
     }
 
     /**
-     * @return Collection<int, TaskLabel>
+     * @return Collection<int, Label>
      */
     public function getLabels(): Collection
     {
         return $this->labels;
     }
 
-    public function addLabel(TaskLabel $label): static
+    public function addLabel(Label $label): static
     {
         if (!$this->labels->contains($label)) {
             $this->labels->add($label);
@@ -164,7 +166,7 @@ class Task
         return $this;
     }
 
-    public function removeLabel(TaskLabel $label): static
+    public function removeLabel(Label $label): static
     {
         $this->labels->removeElement($label);
 
@@ -195,18 +197,6 @@ class Task
         return $this;
     }
 
-    public function getProject(): ?Project
-    {
-        return $this->project;
-    }
-
-    public function setProject(?Project $project): static
-    {
-        $this->project = $project;
-
-        return $this;
-    }
-
     public function getScore(): ?float
     {
         return $this->score;
@@ -215,6 +205,18 @@ class Task
     public function setScore(float $score): static
     {
         $this->score = $score;
+
+        return $this;
+    }
+
+    public function getProject(): ?Project
+    {
+        return $this->project;
+    }
+
+    public function setProject(?Project $project): static
+    {
+        $this->project = $project;
 
         return $this;
     }

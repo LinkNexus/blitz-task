@@ -50,6 +50,18 @@ class TaskRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    public function findHighestTaskScore(int $columnId): int
+    {
+        $result = $this->createQueryBuilder('t')
+            ->select('MAX(t.score)')
+            ->andWhere('t.relatedColumn = :columnId')
+            ->setParameter('columnId', $columnId)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result !== null ? (int) $result : 0;
+    }
+
     //    /**
     //     * @return Task[] Returns an array of Task objects
     //     */

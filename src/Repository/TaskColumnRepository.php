@@ -29,7 +29,7 @@ class TaskColumnRepository extends ServiceEntityRepository
             ->andWhere('c.project = :projectId')
             ->setParameter('projectId', $projectId)
             ->orderBy('c.score', 'ASC')
-            ->addOrderBy('t.position', 'ASC')
+            ->addOrderBy('t.score', 'DESC')
             ->getQuery()
             ->getResult();
     }

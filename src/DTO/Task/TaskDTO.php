@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTO;
+namespace App\DTO\Task;
 
 use App\Enum\TaskPriority;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -14,15 +14,17 @@ class TaskDTO
 
     public TaskPriority $priority = TaskPriority::MEDIUM;
 
-    #[Assert\DateTime(message: "The dueAt property must be in a valid date-time format.")]
+    #[Assert\DateTime(format: "Y-m-d\TH:i:s.v\Z", message: "The dueAt property must be in a valid date-time format.")]
     public ?string $dueAt = null;
 
     /** @var string[] */
-    public array $labels = [];
+    public array $labelIds = [];
+
+    /** @var string[] */
+    public array $assigneeIds = [];
 
     #[Assert\NotBlank(message: "The column field cannot be empty.")]
-    public int $column;
+    public int $columnId;
 
-    #[Assert\NotBlank(message: "The score field cannot be empty.")]
-    public float $score;
+    public ?float $score = null;
 }

@@ -1,5 +1,5 @@
 export interface ApiFetchOptions extends Omit<RequestInit, "body"> {
-  data?: Record<string, any> | FormData | null;
+  data?: Record<string, any> | Record<string, any>[] | FormData | null;
   contentType?: "json" | "form-data";
   accept?: "json" | "text";
 }
@@ -12,7 +12,7 @@ export async function apiFetch<T>(
     accept: "json",
   }
 ) {
-  const { data = null, contentType = "json", accept = "json" } = options;
+  const {data = null, contentType = "json", accept = "json"} = options;
   let headers: Record<string, string> = {};
 
   if (data && !(data instanceof FormData) && contentType === "json")
@@ -32,7 +32,7 @@ export async function apiFetch<T>(
       ...headers,
       ...options.headers,
     },
-    method: options.method ?? options.data ? "POST" : "GET",
+    method: options.method ? options.method : options.data ? "POST" : "GET",
   });
 
   if (!response.ok) {

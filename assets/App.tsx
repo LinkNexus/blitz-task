@@ -39,7 +39,8 @@ export function App() {
     toggleSidebar,
     setTeams,
     teams,
-    setProjects
+    setProjects,
+    activeTeamId
   } = useAppStore(state => state);
 
   // Function to get page title from current location
@@ -64,7 +65,7 @@ export function App() {
     authenticate();
   }, []);
 
-  const {activeTeamId} = useParamsNavigation();
+  useParamsNavigation();
   const activeTeam = teams.find(team => team.id === activeTeamId);
 
   useEffect(() => {

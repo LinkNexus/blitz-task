@@ -49,8 +49,4 @@ export function useParamsNavigation() {
       setActiveProjectId(parseInt(projectId));
     }
   }, [activeTeamId, defaultTeam?.id, activeProjectId, projectId]);
-
-  return {
-    activeTeamId
-  }
 }

@@ -1,5 +1,5 @@
 import type { Theme } from "@/components/custom/theme-provider.tsx";
-import type { Project, TaskColumn, Team, User } from "@/types.ts";
+import type { Project, Task, TaskColumn, Team, User } from "@/types.ts";
 import { combine, persist } from "zustand/middleware";
 import { create } from "zustand/react";
 
@@ -87,6 +87,54 @@ export const useAppStore = create(
             };
           });
         },
+        addTask(columnId: number, task: Task) {
+          set((state) => {
+            return {
+              teams: state.teams.map((t) => ({
+                ...t,
+                projects: t.projects?.map((p) => ({
+                  ...p,
+                  columns: p.columns?.map((c) => {
+                    if (
+                      c.id === columnId &&
+                      !c.tasks.some((t) => t.id === task.id)
+                    ) {
+                      return {
+                        ...c,
+                        tasks: [...c.tasks, task],
+                      };
+                    }
+                    return c;
+                  }),
+                })),
+              })),
+            };
+          });
+        },
+        updateTask(updatedTask: Task) {
+          set((state) => ({
+            teams: state.teams.map((t) => ({
+              ...t,
+              projects: t.projects?.map((p) => ({
+                ...p,
+                columns: p.columns?.map((c) => {
+                  if (c.tasks.some((t) => t.id === updatedTask.id)) {
+                    return {
+                      ...c,
+                      tasks: c.tasks.map((t) => {
+                        if (t.id === updatedTask.id) {
+                          return updatedTask;
+                        }
+                        return t;
+                      }),
+                    };
+                  }
+                  return c;
+                }),
+              })),
+            })),
+          }));
+        },
         setColumns(projectId: number, columns: TaskColumn[]) {
           set((state) => {
             return {
@@ -110,50 +158,12 @@ export const useAppStore = create(
             };
           });
         },
-        // Helper function to normalize task positions in a column
-        normalizeTaskPositions: (projectId: number, columnId: number) => {
-          set((state) => {
-            return {
-              teams: state.teams.map((t) => {
-                if (t.projects?.some((p) => p.id === projectId)) {
-                  return {
-                    ...t,
-                    projects: t.projects.map((p) => {
-                      if (p.id === projectId && p.columns) {
-                        return {
-                          ...p,
-                          columns: p.columns.map((col) => {
-                            if (col.id === columnId) {
-                              const sortedTasks = [...col.tasks].sort(
-                                (a, b) => a.position - b.position
-                              );
-                              return {
-                                ...col,
-                                tasks: sortedTasks.map((task, index) => ({
-                                  ...task,
-                                  position: index,
-                                })),
-                              };
-                            }
-                            return col;
-                          }),
-                        };
-                      }
-                      return p;
-                    }),
-                  };
-                }
-                return t;
-              }),
-            };
-          });
-        },
         moveTaskBetweenColumns: (
           projectId: number,
           taskId: number,
           sourceColumnId: number,
           targetColumnId: number,
-          newPosition: number
+          newScore: number
         ) => {
           set((state) => {
             return {
@@ -187,7 +197,7 @@ export const useAppStore = create(
                                   ...col,
                                   tasks: [
                                     ...col.tasks,
-                                    { ...taskToMove, position: newPosition },
+                                    { ...taskToMove, score: newScore },
                                   ],
                                 };
                               }
@@ -209,7 +219,7 @@ export const useAppStore = create(
           projectId: number,
           columnId: number,
           taskId: number,
-          newPosition: number
+          newScore: number
         ) {
           set((state) => {
             return {
@@ -227,7 +237,7 @@ export const useAppStore = create(
                                 ...col,
                                 tasks: col.tasks.map((task) =>
                                   task.id === taskId
-                                    ? { ...task, position: newPosition }
+                                    ? { ...task, score: newScore }
                                     : task
                                 ),
                               };

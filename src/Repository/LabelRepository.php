@@ -2,25 +2,25 @@
 
 namespace App\Repository;
 
-use App\Entity\TaskLabel;
+use App\Entity\Label;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 /**
- * @extends ServiceEntityRepository<TaskLabel>
+ * @extends ServiceEntityRepository<Label>
  */
-class TaskLabelRepository extends ServiceEntityRepository
+class LabelRepository extends ServiceEntityRepository
 {
     public function __construct(
         ManagerRegistry                   $registry,
         private readonly SluggerInterface $slugger
     )
     {
-        parent::__construct($registry, TaskLabel::class);
+        parent::__construct($registry, Label::class);
     }
 
-    public function findBySlug(string $slug): ?TaskLabel
+    public function findBySlug(string $slug): ?Label
     {
         return $this->findOneBy([
             'slug' => $this->slugger->slug($slug)->lower()->toString()
@@ -28,7 +28,7 @@ class TaskLabelRepository extends ServiceEntityRepository
     }
 
     //    /**
-    //     * @return TaskLabel[] Returns an array of TaskLabel objects
+    //     * @return Label[] Returns an array of Label objects
     //     */
     //    public function findByExampleField($value): array
     //    {
@@ -42,7 +42,7 @@ class TaskLabelRepository extends ServiceEntityRepository
     //        ;
     //    }
 
-    //    public function findOneBySomeField($value): ?TaskLabel
+    //    public function findOneBySomeField($value): ?Label
     //    {
     //        return $this->createQueryBuilder('t')
     //            ->andWhere('t.exampleField = :val')

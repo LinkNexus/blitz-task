@@ -39,7 +39,7 @@ export function KanbanColumn({
   });
 
   // Sort tasks by their order within the column
-  const sortedTasks = [...tasks].sort((a, b) => a.position - b.position);
+  const sortedTasks = [...tasks].sort((a, b) => b.score - a.score);
   const taskIds = sortedTasks.map((task) => `task-${task.id}`);
   return (
     <div className="flex flex-col min-w-[280px] sm:min-w-[300px] flex-shrink-0">

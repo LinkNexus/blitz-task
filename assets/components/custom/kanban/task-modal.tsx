@@ -18,7 +18,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/
 import {Textarea} from "@/components/ui/textarea.tsx";
 import {apiFetch} from "@/lib/fetch.ts";
 import {cn} from "@/lib/utils.ts";
-import type {Task, TaskColumn, TaskLabel} from "@/types.ts";
+import type {Label, Task, TaskColumn} from "@/types.ts";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {format} from "date-fns";
 import {AlertCircle, Calendar as CalendarIcon, Flag, Loader2, Plus, Tag, X,} from "lucide-react";
@@ -26,6 +26,7 @@ import {useEffect, useState} from "react";
 import {useForm} from "react-hook-form";
 import {toast} from "sonner";
 import {z} from "zod";
+import {useAppStore} from "@/lib/store.ts";
 
 const taskSchema = z.object({
   name: z
@@ -49,8 +50,6 @@ type TaskFormData = z.infer<typeof taskSchema>;
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onTaskCreated?: (task: Task) => void;
-  onTaskUpdated?: (task: Task) => void;
   task?: Task | null; // For editing existing task
   columns: TaskColumn[];
   defaultColumnId?: number; // Default column when creating new task
@@ -59,8 +58,6 @@ interface TaskModalProps {
 export function TaskModal({
   isOpen,
   onClose,
-  onTaskCreated,
-  onTaskUpdated,
   task,
   columns,
   defaultColumnId,
@@ -114,6 +111,8 @@ export function TaskModal({
   const watchedAssigneeIds = watch("assigneeIds") || [];
   const watchedLabelIds = watch("labelIds") || [];
 
+  const {addTask, updateTask} = useAppStore(state => state);
+
   // Update the form when defaultColumnId changes (for new tasks)
   useEffect(() => {
     if (!isEditing && defaultColumnId) {
@@ -145,45 +144,21 @@ export function TaskModal({
 
   const onSubmit = async (data: TaskFormData) => {
     try {
-      const formData = new FormData();
-
-      formData.append("name", data.name);
-      if (data.description) formData.append("description", data.description);
-      formData.append("priority", data.priority);
-      formData.append("columnId", data.columnId.toString());
-
-      if (data.assigneeIds && data.assigneeIds.length > 0) {
-        data.assigneeIds.forEach((id) =>
-          formData.append("assigneeIds[]", id.toString())
-        );
-      }
-
-      if (data.labelIds && data.labelIds.length > 0) {
-        data.labelIds.forEach((id) =>
-          formData.append("labelIds[]", id.toString())
-        );
-      }
-
-      if (data.dueAt) {
-        formData.append("dueAt", data.dueAt.toISOString());
-      }
-
-      const endpoint = isEditing ? `/api/tasks/${task.id}` : "/api/tasks";
-      const method = isEditing ? "PUT" : "POST";
-
-      const createdOrUpdatedTask = await apiFetch<Task>(endpoint, {
-        method,
-        data: formData,
-        contentType: "form-data",
+      const createdOrUpdatedTask = await apiFetch<Task>(isEditing ? `/api/tasks/${task.id}` : "/api/tasks", {
+        method: isEditing ? "PUT" : "POST",
+        data: {
+          ...data,
+          dueAt: data.dueAt?.toISOString(),
+        },
       });
 
       if (isEditing) {
-        onTaskUpdated?.(createdOrUpdatedTask);
+        updateTask(createdOrUpdatedTask);
         toast.success(
           `Task "${createdOrUpdatedTask.name}" updated successfully`
         );
       } else {
-        onTaskCreated?.(createdOrUpdatedTask);
+        addTask(data.columnId, createdOrUpdatedTask);
         toast.success(
           `Task "${createdOrUpdatedTask.name}" created successfully`
         );
@@ -251,7 +226,7 @@ export function TaskModal({
     setIsCreatingLabel(true);
     try {
       // Create the new label via API
-      const newLabel = await apiFetch<TaskLabel>("/api/labels", {
+      const newLabel = await apiFetch<Label>("/api/labels", {
         method: "POST",
         data: {name: trimmedName},
       });
@@ -409,6 +384,7 @@ export function TaskModal({
                   <FormItem>
                     <FormLabel>Column *</FormLabel>
                     <Select
+                      disabled={isEditing}
                       onValueChange={(value) => field.onChange(parseInt(value))}
                       defaultValue={field.value?.toString()}
                     >

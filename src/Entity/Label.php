@@ -2,25 +2,22 @@
 
 namespace App\Entity;
 
-use App\Repository\TaskLabelRepository;
+use App\Repository\LabelRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
-#[ORM\Entity(repositoryClass: TaskLabelRepository::class)]
-class TaskLabel
+#[ORM\Entity(repositoryClass: LabelRepository::class)]
+class Label
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["columns:read"])]
+    #[Groups(["columns:read", "tasks:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["columns:read"])]
+    #[Groups(["columns:read", "tasks:read"])]
     private ?string $name = null;
-
-    #[ORM\Column(length: 255)]
-    private ?string $slug = null;
 
     public function getId(): ?int
     {
@@ -35,18 +32,6 @@ class TaskLabel
     public function setName(string $name): static
     {
         $this->name = $name;
-
-        return $this;
-    }
-
-    public function getSlug(): ?string
-    {
-        return $this->slug;
-    }
-
-    public function setSlug(string $slug): static
-    {
-        $this->slug = $slug;
 
         return $this;
     }

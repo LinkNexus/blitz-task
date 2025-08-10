@@ -2,38 +2,39 @@
 
 ## Summary
 
-Updated the Task interface and all related components to use `position` instead of `score` for determining task order within columns.
+Updated the Task interface and all related components to use `position` instead of `score` for determining task order
+within columns.
 
 ## Frontend Changes Made
 
 ### 1. Types Update
 
--   **File**: `assets/types.ts`
--   **Change**: Updated Task interface to use `position: number` instead of `score: number`
+- **File**: `assets/types.ts`
+- **Change**: Updated Task interface to use `position: number` instead of `score: number`
 
 ### 2. Store Methods Update
 
--   **File**: `assets/lib/store.ts`
--   **Changes**:
-    -   `moveTaskBetweenColumns()`: Parameter `newScore` → `newPosition`
-    -   `reorderTaskInColumn()`: Parameter `newScore` → `newPosition`
-    -   Updated all internal references from `score` to `position`
+- **File**: `assets/lib/store.ts`
+- **Changes**:
+    - `moveTaskBetweenColumns()`: Parameter `newScore` → `newPosition`
+    - `reorderTaskInColumn()`: Parameter `newScore` → `newPosition`
+    - Updated all internal references from `score` to `position`
 
 ### 3. Component Updates
 
--   **File**: `assets/components/custom/kanban/kanban-column.tsx`
+- **File**: `assets/components/custom/kanban/kanban-column.tsx`
 
-    -   Updated task sorting: `a.score - b.score` → `a.position - b.position`
+    - Updated task sorting: `a.score - b.score` → `a.position - b.position`
 
--   **File**: `assets/pages/issues-board/issues-board-page.tsx`
-    -   Updated `getTasksForColumn()` sorting logic
-    -   Updated drag & drop position calculations
-    -   Updated method calls to use `position` instead of `score`
+- **File**: `assets/pages/issues-board/issues-board-page.tsx`
+    - Updated `getTasksForColumn()` sorting logic
+    - Updated drag & drop position calculations
+    - Updated method calls to use `position` instead of `score`
 
 ### 4. Mock Data Update
 
--   **File**: `assets/lib/mock-data.ts`
--   **Change**: All task objects updated to use `position` property instead of `score`
+- **File**: `assets/lib/mock-data.ts`
+- **Change**: All task objects updated to use `position` property instead of `score`
 
 ## Backend Requirements
 
@@ -44,9 +45,10 @@ The backend needs to be updated to reflect these changes:
 Ensure the task table uses `position` column instead of `score`:
 
 ```sql
--- If migration exists with score, create new migration:
+-- If migrations exists with score, create new migrations:
 ALTER TABLE task DROP COLUMN score;
-ALTER TABLE task ADD COLUMN position INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE task
+    ADD COLUMN position INTEGER NOT NULL DEFAULT 0;
 ```
 
 ### 2. Task Entity Update
@@ -138,6 +140,6 @@ After backend updates:
 
 ## Notes
 
--   Column entities still use `score` for ordering - this was not changed
--   The `useKanbanDragDrop` hook appears to be unused legacy code and still references the old structure
--   All active components now consistently use `position` for task ordering
+- Column entities still use `score` for ordering - this was not changed
+- The `useKanbanDragDrop` hook appears to be unused legacy code and still references the old structure
+- All active components now consistently use `position` for task ordering
