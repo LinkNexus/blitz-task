@@ -80,7 +80,6 @@ export const IssuesBoardPage = memo(function () {
   };
 
   async function handleDragEnd(event: any) {
-    let data = {} as { id: number; columnId?: number; score: number };
     const {active, over} = event;
     setActiveTask(null);
 
