@@ -16,40 +16,6 @@ class TaskRepository extends ServiceEntityRepository
         parent::__construct($registry, Task::class);
     }
 
-    /**
-     * Find tasks in a column
-     * @param int $columnId The column id
-     * @param int $offset The offset to start from
-     * @param int $limit The number of tasks to return
-     * @return Task[] The tasks in the column
-     */
-    public function findTasksByColumn(int $columnId, int $offset, int $limit = 5): array
-    {
-        return $this->createQueryBuilder('t')
-            ->andWhere('t.relatedColumn = :columnId')
-            ->setParameter('columnId', $columnId)
-            ->orderBy('t.position', 'ASC')
-            ->setFirstResult($offset)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * Find the number of tasks in a column
-     * @param int $columnId The column id
-     * @return int The number of tasks in the column
-     */
-    public function findTaskCountByColumn(int $columnId): int
-    {
-        return $this->createQueryBuilder('t')
-            ->select('COUNT(t.id)')
-            ->andWhere('t.relatedColumn = :columnId')
-            ->setParameter('columnId', $columnId)
-            ->getQuery()
-            ->getSingleScalarResult();
-    }
-
     public function findHighestTaskScore(int $columnId): int
     {
         $result = $this->createQueryBuilder('t')
@@ -59,7 +25,7 @@ class TaskRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
 
-        return $result !== null ? (int) $result : 0;
+        return $result !== null ? (int)$result : 0;
     }
 
     //    /**

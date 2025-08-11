@@ -21,9 +21,11 @@ export const IssuesBoardPage = memo(function () {
     moveTaskBetweenColumns,
     reorderTaskInColumn,
   } = useAppStore((state) => state);
+
   const project = teams
     .flatMap((t) => t.projects)
     .find((p) => p?.id === activeProjectId);
+
   const columns = project?.columns;
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -291,6 +293,7 @@ export const IssuesBoardPage = memo(function () {
               return (
                 <KanbanColumn
                   key={column.id}
+                  project={project}
                   column={column}
                   tasks={tasks}
                   onAddColumnBetween={handleAddColumnBetween}
@@ -310,11 +313,7 @@ export const IssuesBoardPage = memo(function () {
           <div className="rotate-3 opacity-90">
             <TaskCard
               task={activeTask}
-              columnName={
-                columns?.find((col) =>
-                  col.tasks?.some((t) => t.id === activeTask.id),
-                )?.name
-              }
+              project={project}
             />
           </div>
         )}

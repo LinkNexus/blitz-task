@@ -191,4 +191,36 @@ final class TasksController extends AbstractController
         $this->entityManager->flush();
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
+
+    #[Route("/{id}", name: "delete", methods: ["DELETE"])]
+    public function delete(
+        int                 $id,
+        #[CurrentUser] User $user
+    ): JsonResponse
+    {
+        /** @var ?Task $task */
+        $task = $this->entityManager
+            ->createQueryBuilder()
+            ->select("task")
+            ->from(Task::class, "task")
+            ->leftJoin("task.project", "project")
+            ->addSelect("project")
+            ->leftJoin("project.team", "team")
+            ->addSelect("team")
+            ->andWhere("task.id = :taskId")
+            ->setParameter("taskId", $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (!$task) {
+            return $this->json([
+                "error" => "The task with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $this->denyAccessUnlessGranted("TEAM_MEMBER", $task->getProject()->getTeam());
+        $this->entityManager->remove($task);
+        $this->entityManager->flush();
+        return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
 }

@@ -1,21 +1,19 @@
-import { Badge } from "@/components/ui/badge.tsx";
-import { Button } from "@/components/ui/button.tsx";
+import {Badge} from "@/components/ui/badge.tsx";
+import {Button} from "@/components/ui/button.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
-import type { Task, TaskColumn } from "@/types.ts";
-import { useDroppable } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react";
-import { TaskCard } from "./task-card.tsx";
+import type {Project, Task, TaskColumn} from "@/types.ts";
+import {useDroppable} from "@dnd-kit/core";
+import {SortableContext, verticalListSortingStrategy,} from "@dnd-kit/sortable";
+import {Edit, MoreHorizontal, Plus, Trash} from "lucide-react";
+import {TaskCard} from "./task-card.tsx";
 
 interface KanbanColumnProps {
+  project: Project;
   column: TaskColumn;
   tasks: Task[];
   onAddColumnBetween?: (afterColumnId: number) => void;
@@ -24,13 +22,14 @@ interface KanbanColumnProps {
 }
 
 export function KanbanColumn({
+  project,
   column,
   tasks,
   onAddColumnBetween,
   onTaskEdit,
   onAddTask,
 }: KanbanColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({
+  const {setNodeRef, isOver} = useDroppable({
     id: `column-${column.id}`,
     data: {
       type: "column",
@@ -48,7 +47,7 @@ export function KanbanColumn({
         <div className="flex items-center gap-1 sm:gap-2">
           <div
             className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
-            style={{ backgroundColor: column.color }}
+            style={{backgroundColor: column.color}}
           />
           <h3 className="font-semibold text-xs sm:text-sm">{column.name}</h3>
           <Badge variant="secondary" className="text-xs">
@@ -62,21 +61,21 @@ export function KanbanColumn({
               size="sm"
               className="h-5 w-5 sm:h-6 sm:w-6 p-0"
             >
-              <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4" />
+              <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4"/>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenu>
               <DropdownMenuTrigger>
                 <DropdownMenuItem>
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-4 h-4 mr-2"/>
                   Add column
                 </DropdownMenuItem>
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
-                // onClick={() => onAddColumnBetween?.(column.id)}
+                  // onClick={() => onAddColumnBetween?.(column.id)}
                 >
                   Before
                 </DropdownMenuItem>
@@ -88,11 +87,11 @@ export function KanbanColumn({
               </DropdownMenuContent>
             </DropdownMenu>
             <DropdownMenuItem>
-              <Edit className="w-4 h-4 mr-2" />
+              <Edit className="w-4 h-4 mr-2"/>
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem className="text-red-600">
-              <Trash className="w-4 h-4 mr-2 text-red-600" />
+              <Trash className="w-4 h-4 mr-2 text-red-600"/>
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -113,7 +112,7 @@ export function KanbanColumn({
             <TaskCard
               key={task.id}
               task={task}
-              columnName={column.name}
+              project={project}
               onEdit={onTaskEdit}
             />
           ))}
@@ -125,7 +124,7 @@ export function KanbanColumn({
           className="w-full h-10 sm:h-12 border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors text-xs sm:text-sm"
           onClick={() => onAddTask?.(column.id)}
         >
-          <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2"/>
           Add task
         </Button>
       </div>

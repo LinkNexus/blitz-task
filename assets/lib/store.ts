@@ -1,7 +1,7 @@
-import type { Theme } from "@/components/custom/theme-provider.tsx";
-import type { Project, Task, TaskColumn, Team, User } from "@/types.ts";
-import { combine, persist } from "zustand/middleware";
-import { create } from "zustand/react";
+import type {Theme} from "@/components/custom/theme-provider.tsx";
+import type {Project, Task, TaskColumn, Team, User} from "@/types.ts";
+import {combine, persist} from "zustand/middleware";
+import {create} from "zustand/react";
 
 export const useAppStore = create(
   persist(
@@ -16,17 +16,17 @@ export const useAppStore = create(
         teams: [] as Team[],
       },
       (set) => ({
-        setUser: (user: User | null) => set({ user }),
+        setUser: (user: User | null) => set({user}),
         toggleSidebar: () =>
           set((state) => ({
             sidebarState: state.sidebarState === "open" ? "closed" : "open",
           })),
-        setTheme: (theme: Theme) => set({ theme }),
-        setLastRequestedUrl: (url: string) => set({ lastRequestedUrl: url }),
-        setActiveTeamId: (teamId: number) => set({ activeTeamId: teamId }),
+        setTheme: (theme: Theme) => set({theme}),
+        setLastRequestedUrl: (url: string) => set({lastRequestedUrl: url}),
+        setActiveTeamId: (teamId: number) => set({activeTeamId: teamId}),
         setActiveProjectId: (projectId: number) =>
-          set({ activeProjectId: projectId }),
-        setTeams: (teams: Team[]) => set({ teams }),
+          set({activeProjectId: projectId}),
+        setTeams: (teams: Team[]) => set({teams}),
         setProjects: (teamId: number, projects: Project[]) =>
           set((state) => {
             return {
@@ -135,6 +135,25 @@ export const useAppStore = create(
             })),
           }));
         },
+        deleteTask(taskId: number) {
+          set(state => ({
+            teams: state.teams.map(t => ({
+              ...t,
+              projects: t.projects?.map(p => ({
+                ...p,
+                columns: p.columns?.map(c => {
+                  if (c.tasks.some(t => t.id === taskId)) {
+                    return {
+                      ...c,
+                      tasks: c.tasks.filter(t => t.id !== taskId)
+                    }
+                  }
+                  return c;
+                })
+              }))
+            }))
+          }))
+        },
         setColumns(projectId: number, columns: TaskColumn[]) {
           set((state) => {
             return {
@@ -197,7 +216,7 @@ export const useAppStore = create(
                                   ...col,
                                   tasks: [
                                     ...col.tasks,
-                                    { ...taskToMove, score: newScore },
+                                    {...taskToMove, score: newScore},
                                   ],
                                 };
                               }
@@ -237,7 +256,7 @@ export const useAppStore = create(
                                 ...col,
                                 tasks: col.tasks.map((task) =>
                                   task.id === taskId
-                                    ? { ...task, score: newScore }
+                                    ? {...task, score: newScore}
                                     : task
                                 ),
                               };
