@@ -40,7 +40,7 @@ export function useParamsNavigation() {
   }, [activeTeamId, teamId]);
 
   useEffect(() => {
-    if (activeProjectId && defaultTeam?.id === activeTeamId) {
+    if (activeProjectId) {
       setParams(prev => {
         prev.set("projectId", activeProjectId.toString());
         return prev;

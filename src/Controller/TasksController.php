@@ -30,7 +30,7 @@ final class TasksController extends AbstractController
         private readonly LabelRepository        $labelRepository,
         private readonly UserRepository         $userRepository,
         private readonly TaskColumnRepository   $taskColumnRepository,
-        private readonly ProjectRepository      $projectRepository
+        private readonly ProjectRepository      $projectRepository,
     )
     {
     }
@@ -41,15 +41,21 @@ final class TasksController extends AbstractController
         #[CurrentUser] User          $user
     ): JsonResponse
     {
-        $column = $this->taskColumnRepository->find($dto->columnId);
+        $column = $this->taskColumnRepository->findWithProjectAndTeam($dto->columnId);
 
         if (null === $column) {
             return $this->json([
-                "error" => "Column not found"
+                "violations" => [
+                    [
+                        "propertyPath" => "columnId",
+                        "title" => "The Column with the given ID does not exist."
+                    ]
+                ]
             ], Response::HTTP_NOT_FOUND);
         }
 
-        $team = $column->getProject()->getTeam();
+        $project = $column->getProject();
+        $team = $project->getTeam();
         $this->denyAccessUnlessGranted("TEAM_MEMBER", $team);
 
         $task = new Task()
@@ -58,7 +64,8 @@ final class TasksController extends AbstractController
             ->setRelatedColumn($column)
             ->setPriority($dto->priority)
             ->setDueAt(new DateTimeImmutable($dto->dueAt))
-            ->setScore($this->taskRepository->findHighestTaskScore($column->getId()) + 100);
+            ->setScore($this->taskRepository->findHighestTaskScore($column->getId()) + 100)
+            ->setProject($project);
 
         foreach ($dto->labelIds as $id) {
             $label = $this->labelRepository->find($id);
@@ -91,7 +98,7 @@ final class TasksController extends AbstractController
         #[CurrentUser] User          $user
     ): JsonResponse
     {
-        $column = $this->taskColumnRepository->find($dto->columnId);
+        $column = $this->taskColumnRepository->findWithProjectAndTeam($dto->columnId);
 
         if (null === $column) {
             return $this->json([
@@ -136,7 +143,6 @@ final class TasksController extends AbstractController
         }
 
         $this->entityManager->flush();
-
         return $this->json($task, Response::HTTP_OK, context: ["groups" => ["tasks:read"]]);
     }
 
@@ -152,21 +158,31 @@ final class TasksController extends AbstractController
      */
     #[Route("/move", name: "move", methods: ["POST"])]
     public function move(
-        #[MapRequestPayload(type: MoveTaskDTO::class)] array $dtos,
-        #[MapQueryParameter] int                             $teamId
+        #[MapRequestPayload] MoveTaskDTO $dto,
+        #[MapQueryParameter] int         $projectId
     ): JsonResponse
     {
-//        $project = $this->projectRepository->find($projectId);
-//        $team = $project->getTeam();
+        $project = $this->projectRepository->findWithTeam($projectId);
 
-//        $this->denyAccessUnlessGranted("TEAM_MEMBER", $team);
+        if (!$project) {
+            return $this->json([
+                "error" => "The project with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
 
-        foreach ($dtos as $dto) {
-            $task = $this->taskRepository->find($dto->id);
+        $team = $project->getTeam();
+        $this->denyAccessUnlessGranted("TEAM_MEMBER", $team);
 
+        /** @var ?Task $task */
+        $task = $this->taskRepository->find($dto->id);
+
+        if ($task && $project->getTasks()->contains($task)) {
             if ($dto->columnId) {
                 $column = $this->taskColumnRepository->find($dto->columnId);
-                $task->setRelatedColumn($column);
+
+                if ($column && $project->getColumns()->contains($column)) {
+                    $task->setRelatedColumn($column);
+                }
             }
 
             $task->setScore($dto->score);

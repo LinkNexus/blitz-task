@@ -30,6 +30,22 @@ class ProjectRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Find a project with its associated team
+     * @param int $projectId The project id
+     * @return ?Project The project with its team
+     */
+    public function findWithTeam(int $projectId): ?Project
+    {
+        return $this->createQueryBuilder("p")
+            ->leftJoin("p.team", "t")
+            ->addSelect("t")
+            ->andWhere("p.id = :projectId")
+            ->setParameter("projectId", $projectId)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     //    /**
     //     * @return Project[] Returns an array of Project objects
     //     */

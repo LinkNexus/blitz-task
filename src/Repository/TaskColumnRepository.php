@@ -34,6 +34,24 @@ class TaskColumnRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Find a column by its id with the project and team
+     * @param int $columnId The column id
+     * @return ?TaskColumn The column with the project and team
+     */
+    public function findWithProjectAndTeam(int $columnId): ?TaskColumn
+    {
+        return $this->createQueryBuilder("c")
+            ->leftJoin("c.project", "p")
+            ->addSelect("p")
+            ->leftJoin("p.team", "t")
+            ->addSelect("t")
+            ->andWhere("c.id = :columnId")
+            ->setParameter("columnId", $columnId)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     //    /**
     //     * @return TaskColumn[] Returns an array of TaskColumn objects
     //     */

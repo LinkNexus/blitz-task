@@ -43,6 +43,16 @@ export const IssuesBoardPage = memo(function () {
     [project, setColumns],
   );
 
+  useEffect(() => {
+    if (project?.id && !project.columns) {
+      fetchColumns({
+        searchParams: {
+          projectId: project.id,
+        },
+      });
+    }
+  }, [project?.id]);
+
   const {
     isOpen: isTaskModalOpen,
     currentTask,
@@ -52,27 +62,9 @@ export const IssuesBoardPage = memo(function () {
     closeModal,
   } = useTaskModal();
 
-  const handleTaskEdit = (task: Task) => {
-    openEditModal(task);
-  };
-
-  const handleAddTaskToColumn = (columnId: number) => {
-    openCreateModal(columnId);
-  };
-
-  useEffect(() => {
-    if (project?.id) {
-      fetchColumns({
-        searchParams: {
-          projectId: project.id,
-        },
-      });
-    }
-  }, [project?.id]);
-
   // Custom function to get tasks for a column since they're now embedded
   const getTasksForColumn = (column: TaskColumn) => {
-    return column.tasks?.sort((a, b) => a.score - b.score) || [];
+    return column.tasks?.sort((a, b) => b.score - a.score) || [];
   };
 
   // Simple drag handlers for now - will implement full functionality later
@@ -88,6 +80,7 @@ export const IssuesBoardPage = memo(function () {
   };
 
   async function handleDragEnd(event: any) {
+    let data = {} as { id: number; columnId?: number; score: number };
     const {active, over} = event;
     setActiveTask(null);
 
@@ -134,6 +127,14 @@ export const IssuesBoardPage = memo(function () {
             targetColumnId,
             newScore,
           );
+
+          await apiFetch(`/api/tasks/move?projectId=${project.id}`, {
+            data: {
+              id: activeTaskId,
+              columnId: targetColumnId,
+              score: newScore
+            }
+          });
         }
       }
       return;
@@ -163,7 +164,7 @@ export const IssuesBoardPage = memo(function () {
 
       if (sourceColumn.id === targetColumn.id) {
         // Reordering within same column
-        const columnTasks = getTasksForColumn(targetColumn).sort((a, b) => b.score - a.score);
+        const columnTasks = getTasksForColumn(targetColumn);
         const sourceIndex = columnTasks.findIndex((t) => t.id === activeTaskId);
         const targetIndex = columnTasks.findIndex((t) => t.id === overTaskId);
 
@@ -202,11 +203,10 @@ export const IssuesBoardPage = memo(function () {
         );
 
         await apiFetch(`/api/tasks/move?projectId=${project.id}`, {
-          data: columnTasks.map(t => ({
-              id: t.id,
-              score: t.id === activeTaskId ? newScore : t.score
-            })
-          )
+          data: {
+            id: sourceTask.id,
+            score: newScore
+          }
         });
       } else {
         // Moving to different column at specific position
@@ -220,7 +220,7 @@ export const IssuesBoardPage = memo(function () {
 
         if (targetIndex === 0) {
           // Inserting at the beginning
-          newScore = targetTask.score / 2;
+          newScore = targetTask.score + 100;
         } else {
           // Inserting between tasks
           const prevTask = targetColumnTasks[targetIndex - 1];
@@ -234,8 +234,17 @@ export const IssuesBoardPage = memo(function () {
           targetColumn.id,
           newScore,
         );
+
+        await apiFetch(`/api/tasks/move?projectId=${project.id}`, {
+          data: {
+            id: activeTaskId,
+            columnId: targetColumn.id,
+            score: newScore
+          }
+        });
       }
     }
+
   }
 
   const handleFilter = () => {
@@ -286,8 +295,8 @@ export const IssuesBoardPage = memo(function () {
                   column={column}
                   tasks={tasks}
                   onAddColumnBetween={handleAddColumnBetween}
-                  onTaskEdit={handleTaskEdit}
-                  onAddTask={handleAddTaskToColumn}
+                  onTaskEdit={openEditModal}
+                  onAddTask={openCreateModal}
                 />
               );
             })}
