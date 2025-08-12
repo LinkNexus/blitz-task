@@ -7,10 +7,11 @@ use App\Entity\TaskColumn;
 use App\Event\ProjectCreatedEvent;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 final readonly class ProjectCreatedSubscriber implements EventSubscriberInterface
 {
-    public function __construct(private EntityManagerInterface $entityManager)
+    public function __construct(private EntityManagerInterface $entityManager, private SluggerInterface $slugger)
     {
     }
 
@@ -39,12 +40,14 @@ final readonly class ProjectCreatedSubscriber implements EventSubscriberInterfac
                 ->setProject($project);
 
             if ($c === "To Do") {
+                $labelName = "First Steps";
                 $label = $this->entityManager->getRepository(Label::class)
-                    ->findOneBy(["name" => "First Steps"]);
+                    ->findOneBySlug($labelName);
 
                 if (null === $label) {
                     $label = new Label()
-                        ->setName("First Steps");
+                        ->setName($labelName)
+                        ->setSlug($this->slugger->slug($labelName)->lower()->toString());
                     $this->entityManager->persist($label);
                 }
 

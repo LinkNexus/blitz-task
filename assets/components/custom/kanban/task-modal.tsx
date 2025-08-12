@@ -16,17 +16,19 @@ import {Input} from "@/components/ui/input.tsx";
 import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover.tsx";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select.tsx";
 import {Textarea} from "@/components/ui/textarea.tsx";
-import {apiFetch} from "@/lib/fetch.ts";
-import {cn} from "@/lib/utils.ts";
-import type {Label, Task, TaskColumn} from "@/types.ts";
+import {useApiFetch} from "@/hooks/useFetch.ts";
+import {useThrottle} from "@/hooks/useThrottle.ts";
+import {ApiError, apiFetch} from "@/lib/fetch.ts";
+import {useAppStore} from "@/lib/store.ts";
+import {cn, getLabelColor, getPriorityIcon} from "@/lib/utils.tsx";
+import type {FormErrors, Label, Task, TaskColumn, User} from "@/types.ts";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {format} from "date-fns";
-import {AlertCircle, Calendar as CalendarIcon, Flag, Loader2, Plus, Tag, X,} from "lucide-react";
+import {Calendar as CalendarIcon, Loader2, Plus, Tag, X,} from "lucide-react";
 import {useEffect, useState} from "react";
 import {useForm} from "react-hook-form";
 import {toast} from "sonner";
 import {z} from "zod";
-import {useAppStore} from "@/lib/store.ts";
 
 const taskSchema = z.object({
   name: z
@@ -63,25 +65,16 @@ export function TaskModal({
   defaultColumnId,
 }: TaskModalProps) {
   const isEditing = !!task;
-  const [availableLabels, setAvailableLabels] = useState(
-    Array.from(
-      new Map(
-        columns.flatMap(c => c.tasks)
-          .flatMap(t => t.labels)
-          .map(l => [l.id, l])
-      ).values()
-    )
-  );
+
+  // Labels
+  const [labels, setLabels] = useState<Label[]>([]);
+  const [searchedLabels, setSearchedLabels] = useState<Label[]>([]);
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
   const [labelSearchValue, setLabelSearchValue] = useState("");
-  const users = Array.from(
-    new Map(
-      columns.flatMap(c => c.tasks)
-        .flatMap(t => t.assignees)
-        .map(user => [user.id, user])
-    ).values()
-  );
+  const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
 
+  const users = [] as User[];
+  const {addTask, updateTask} = useAppStore(state => state);
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
@@ -110,8 +103,7 @@ export function TaskModal({
 
   const watchedAssigneeIds = watch("assigneeIds") || [];
   const watchedLabelIds = watch("labelIds") || [];
-
-  const {addTask, updateTask} = useAppStore(state => state);
+  const watchedDueAt = watch("dueAt");
 
   // Update the form when defaultColumnId changes (for new tasks)
   useEffect(() => {
@@ -130,6 +122,8 @@ export function TaskModal({
         : // For new tasks, use defaultColumnId or first column
         defaultColumnId || columns[0]?.id;
 
+      setLabels(task?.labels || []);
+
       reset({
         name: task?.name || "",
         description: task?.description || "",
@@ -142,15 +136,19 @@ export function TaskModal({
     }
   }, [isOpen, task, defaultColumnId, columns, reset]);
 
-  const onSubmit = async (data: TaskFormData) => {
+  async function onSubmit(data: TaskFormData) {
+    console.log(data.dueAt);
     try {
-      const createdOrUpdatedTask = await apiFetch<Task>(isEditing ? `/api/tasks/${task.id}` : "/api/tasks", {
-        method: isEditing ? "PUT" : "POST",
-        data: {
-          ...data,
-          dueAt: data.dueAt?.toISOString(),
-        },
-      });
+      const createdOrUpdatedTask = await apiFetch<Task>(
+        isEditing ? `/api/tasks/${task.id}` : "/api/tasks",
+        {
+          method: isEditing ? "PUT" : "POST",
+          data: {
+            ...data,
+            dueAt: data.dueAt?.toISOString(),
+          },
+        }
+      );
 
       if (isEditing) {
         updateTask(createdOrUpdatedTask);
@@ -171,117 +169,94 @@ export function TaskModal({
         isEditing ? "Failed to update task" : "Failed to create task"
       );
     }
-  };
+  }
 
-  const handleClose = () => {
+  function handleClose() {
     reset();
+    setLabelSearchValue("");
     onClose();
-  };
+  }
 
-  const addAssignee = (userId: number) => {
+  function addAssignee(userId: number) {
     if (!watchedAssigneeIds.includes(userId)) {
       setValue("assigneeIds", [...watchedAssigneeIds, userId]);
     }
-  };
+  }
 
-  const removeAssignee = (userId: number) => {
+  function removeAssignee(userId: number) {
     setValue(
       "assigneeIds",
       watchedAssigneeIds.filter((id) => id !== userId)
     );
-  };
+  }
 
-  const addLabel = (labelId: number) => {
-    const currentIds = watchedLabelIds;
-    if (!currentIds.includes(labelId)) {
-      setValue("labelIds", [...currentIds, labelId]);
+  const {callback: searchLabels, pending: isSearchingLabels} = useApiFetch("/api/labels", {
+    onSuccess: setSearchedLabels,
+    onError(error) {
+      console.error("Failed to fetch labels:", error);
+    },
+  });
+
+  const throttledSearchLabels = useThrottle(searchLabels, 300);
+
+  useEffect(() => {
+    if (isLabelModalOpen) {
+      throttledSearchLabels({
+        searchParams: {
+          query: labelSearchValue.trim()
+        }
+      })
+    }
+  }, [labelSearchValue, isLabelModalOpen]);
+
+  function addLabel(label: Label) {
+    if (!watchedLabelIds.includes(label.id)) {
+      setLabels([...labels, label]);
+      setValue("labelIds", [...watchedLabelIds, label.id]);
     }
     // Clear search when label is added
     setLabelSearchValue("");
-  };
+  }
 
-  const removeLabel = (labelId: number) => {
+  function removeLabel(labelId: number) {
     setValue(
       "labelIds",
       watchedLabelIds.filter((id) => id !== labelId)
     );
-  };
+  }
 
-  const createNewLabel = async (labelName: string) => {
+  function createLabel(labelName: string) {
     const trimmedName = labelName.trim();
+
     if (!trimmedName) return;
 
-    // Check if label already exists (case-insensitive)
-    const existingLabel = availableLabels.find(
-      (label) => label.name.toLowerCase() === trimmedName.toLowerCase()
-    );
-
+    const existingLabel = searchedLabels.find(l => l.name.toLowerCase() === trimmedName.toLowerCase());
     if (existingLabel) {
-      // If label exists, just add it instead of creating a new one
-      addLabel(existingLabel.id);
-      toast.info(`Label "${existingLabel.name}" already exists and was added`);
+      addLabel(existingLabel);
       return;
     }
 
     setIsCreatingLabel(true);
-    try {
-      // Create the new label via API
-      const newLabel = await apiFetch<Label>("/api/labels", {
-        method: "POST",
-        data: {name: trimmedName},
-      });
-
-      // Add the new label to available labels
-      setAvailableLabels((prev) => [...prev, newLabel]);
-
-      // Automatically add the new label to the task
-      addLabel(newLabel.id);
-
-      toast.success(`Label "${newLabel.name}" created and added`);
-    } catch (error) {
-      console.error("Failed to create label:", error);
-      toast.error("Failed to create label");
-    } finally {
-      setIsCreatingLabel(false);
-      // Clear search after creating label
-      setLabelSearchValue("");
-    }
-  };
-
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return <AlertCircle className="w-4 h-4 text-red-500"/>;
-      case "high":
-        return <Flag className="w-4 h-4 text-orange-500"/>;
-      case "medium":
-        return <Flag className="w-4 h-4 text-yellow-500"/>;
-      case "low":
-        return <Flag className="w-4 h-4 text-green-500"/>;
-      default:
-        return <Flag className="w-4 h-4 text-gray-500"/>;
-    }
-  };
-
-  const getLabelColor = (labelName: string) => {
-    const colors = {
-      Frontend: "bg-blue-100 text-blue-800",
-      Backend: "bg-purple-100 text-purple-800",
-      Bug: "bg-red-100 text-red-800",
-      Feature: "bg-green-100 text-green-800",
-      Design: "bg-pink-100 text-pink-800",
-      Testing: "bg-indigo-100 text-indigo-800",
-    };
-    return (
-      colors[labelName as keyof typeof colors] || "bg-gray-100 text-gray-800"
-    );
-  };
+    apiFetch<Label>("/api/labels", {
+      data: {
+        name: trimmedName
+      }
+    })
+      .then(l => {
+        setSearchedLabels([l, ...searchedLabels]);
+        addLabel(l);
+      })
+      .catch((err: ApiError<FormErrors | any>) => {
+        console.error("Failed to create label:", err);
+        err.data.violations?.forEach((v: { title: string }) => {
+          toast.error(v.title);
+        })
+      })
+      .finally(() => setIsCreatingLabel(false));
+  }
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={handleClose}
-    >
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -432,12 +407,12 @@ export function TaskModal({
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
+                            "flex-1 pl-3 text-left font-normal",
+                            !watchedDueAt && "text-muted-foreground"
                           )}
                         >
-                          {field.value ? (
-                            format(field.value, "PPP")
+                          {watchedDueAt ? (
+                            format(watchedDueAt, "PPP")
                           ) : (
                             <span>Pick a date</span>
                           )}
@@ -490,6 +465,7 @@ export function TaskModal({
                         key={userId}
                         variant="secondary"
                         className="flex items-center gap-1"
+                        onClick={() => console.log(userId)}
                       >
                         <Avatar className="w-4 h-4">
                           <AvatarImage src="" alt={user.name}/>
@@ -501,10 +477,11 @@ export function TaskModal({
                           </AvatarFallback>
                         </Avatar>
                         <span>{user.name}</span>
-                        <X
-                          className="w-3 h-3 cursor-pointer"
-                          onClick={() => removeAssignee(userId)}
-                        />
+                        <div onClick={() => removeAssignee(userId)}>
+                          <X
+                            className="w-3 h-3 cursor-pointer"
+                          />
+                        </div>
                       </Badge>
                     );
                   })}
@@ -557,23 +534,21 @@ export function TaskModal({
               {watchedLabelIds.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {watchedLabelIds.map((labelId) => {
-                    const label = availableLabels.find((l) => l.id === labelId);
+                    const label = labels.find((l) => l.id === labelId);
                     if (!label) return null;
 
                     return (
                       <Badge
                         key={labelId}
                         variant="secondary"
-                        className={cn(
-                          "flex items-center gap-1",
-                          getLabelColor(label.name)
-                        )}
+                        className="flex items-center gap-1"
                       >
                         <span>{label.name}</span>
-                        <X
-                          className="w-3 h-3 cursor-pointer"
-                          onClick={() => removeLabel(labelId)}
-                        />
+                        <div onClick={() => removeLabel(labelId)}>
+                          <X
+                            className="w-3 h-3 cursor-pointer"
+                          />
+                        </div>
                       </Badge>
                     );
                   })}
@@ -582,7 +557,10 @@ export function TaskModal({
 
               {/* Add Labels */}
               <Popover
-                onOpenChange={(open) => !open && setLabelSearchValue("")}
+                onOpenChange={(open) => {
+                  setIsLabelModalOpen(open);
+                  !open && setLabelSearchValue("");
+                }}
               >
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="w-full">
@@ -591,69 +569,94 @@ export function TaskModal({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
-                  <Command>
+                  <Command shouldFilter={false}>
                     <CommandInput
                       placeholder="Search or create labels..."
                       value={labelSearchValue}
                       onValueChange={setLabelSearchValue}
                     />
-                    <CommandEmpty>
-                      {labelSearchValue.trim() && (
-                        <div className="p-2">
-                          <CommandItem
-                            onSelect={() => createNewLabel(labelSearchValue)}
-                            className="cursor-pointer"
-                            disabled={isCreatingLabel}
-                          >
-                            {isCreatingLabel ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
-                            ) : (
-                              <Tag className="w-4 h-4 mr-2"/>
-                            )}
-                            <span>Create "{labelSearchValue}"</span>
-                          </CommandItem>
-                        </div>
-                      )}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {/* Show "Create new" option even when there are existing labels */}
-                      {labelSearchValue.trim() &&
-                        !availableLabels.some(
-                          (label) =>
-                            label.name.toLowerCase() ===
-                            labelSearchValue.toLowerCase()
-                        ) && (
-                          <CommandItem
-                            onSelect={() => createNewLabel(labelSearchValue)}
-                            className="cursor-pointer border-b"
-                            disabled={isCreatingLabel}
-                          >
-                            {isCreatingLabel ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
-                            ) : (
-                              <Tag className="w-4 h-4 mr-2"/>
-                            )}
-                            <span>Create "{labelSearchValue}"</span>
-                          </CommandItem>
-                        )}
 
-                      {availableLabels
-                        .filter((label) => !watchedLabelIds.includes(label.id))
-                        .map((label) => (
-                          <CommandItem
-                            key={label.id}
-                            onSelect={() => addLabel(label.id)}
-                          >
-                            <div
-                              className={cn(
-                                "w-3 h-3 rounded-full mr-2",
-                                getLabelColor(label.name)
+                    {/* Show loading state when searching */}
+                    {isSearchingLabels && (
+                      <div className="flex items-center justify-center p-4">
+                        <Loader2 className="w-4 h-4 animate-spin mr-2"/>
+                        <span className="text-sm text-muted-foreground">
+                            {labelSearchValue
+                              ? "Searching labels..."
+                              : "Loading labels..."}
+                          </span>
+                      </div>
+                    )}
+
+                    {!isSearchingLabels &&
+                      (labelSearchValue.length === 0 ||
+                        labelSearchValue.length >= 2) && (
+                        <>
+                          <CommandEmpty>
+                            {labelSearchValue.trim() && (
+                              <div className="p-2">
+                                <CommandItem
+                                  onSelect={() =>
+                                    createLabel(labelSearchValue)
+                                  }
+                                  className="cursor-pointer"
+                                  disabled={isCreatingLabel}
+                                >
+                                  {isCreatingLabel ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
+                                  ) : (
+                                    <Tag className="w-4 h-4 mr-2"/>
+                                  )}
+                                  <span>Create "{labelSearchValue.trim()}"</span>
+                                </CommandItem>
+                              </div>
+                            )}
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {/* Show "Create new" option even when there are existing labels */}
+                            {labelSearchValue.trim() &&
+                              !searchedLabels.some(
+                                (label) =>
+                                  label.name.toLowerCase() ===
+                                  labelSearchValue.toLowerCase().trim()
+                              ) && (
+                                <CommandItem
+                                  onSelect={() =>
+                                    createLabel(labelSearchValue)
+                                  }
+                                  className="cursor-pointer border-b"
+                                  disabled={isCreatingLabel}
+                                >
+                                  {isCreatingLabel ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
+                                  ) : (
+                                    <Tag className="w-4 h-4 mr-2"/>
+                                  )}
+                                  <span>Create "{labelSearchValue}"</span>
+                                </CommandItem>
                               )}
-                            />
-                            <span>{label.name}</span>
-                          </CommandItem>
-                        ))}
-                    </CommandGroup>
+
+                            {searchedLabels
+                              .filter(
+                                (label) => !watchedLabelIds.includes(label.id)
+                              )
+                              .map((label) => (
+                                <CommandItem
+                                  key={label.id}
+                                  onSelect={() => addLabel(label)}
+                                >
+                                  <div
+                                    className="w-3 h-3 rounded-full mr-2"
+                                    style={{
+                                      backgroundColor: getLabelColor(label.name)
+                                    }}
+                                  />
+                                  <span>{label.name}</span>
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </>
+                      )}
                   </Command>
                 </PopoverContent>
               </Popover>

@@ -98,7 +98,7 @@ export function App() {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {(status === "unknown" || (status === "authenticated" && !activeTeam)) && <LoadingPage/>}
 
-      {status === "authenticated" && (
+      {status === "authenticated" && activeTeam && (
         <ThemeProvider>
           <SidebarProvider
             open={sidebarState === "open"}

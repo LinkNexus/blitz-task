@@ -113,12 +113,8 @@ final class TasksController extends AbstractController
         $task->setName($dto->name)
             ->setDescription($dto->description)
             ->setRelatedColumn($column)
-            ->setPriority($dto->priority);
-
-        // Update due date if provided
-        if ($dto->dueAt !== null) {
-            $task->setDueAt(new DateTimeImmutable($dto->dueAt));
-        }
+            ->setPriority($dto->priority)
+            ->setDueAt($dto->dueAt ? new DateTimeImmutable($dto->dueAt) : null);
 
         // Clear existing labels and add new ones
         $task->getLabels()->clear();

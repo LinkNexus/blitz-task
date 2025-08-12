@@ -7,7 +7,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class TaskDTO
 {
-    #[Assert\NotBlank(message: "The name field cannot be empty.")]
+    #[Assert\NotBlank(message: "The name field cannot be empty.", normalizer: "trim")]
     public string $name;
 
     public ?string $description = null;

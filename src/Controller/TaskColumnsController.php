@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\Project;
 use App\Entity\TaskColumn;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -28,6 +29,18 @@ class TaskColumnsController extends AbstractController
         #[MapQueryParameter] int $projectId
     ): Response
     {
+        $project = $this->entityManager
+            ->getRepository(Project::class)
+            ->findWithTeam($projectId);
+
+        if (!$project) {
+            return $this->json([
+                "error" => "The project with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $this->denyAccessUnlessGranted("TEAM_MEMBER", $project->getTeam());
+
         return $this->json(
             $this->entityManager->getRepository(TaskColumn::class)
                 ->findByProject($projectId),

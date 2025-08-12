@@ -3,7 +3,7 @@
 import * as React from "react"
 import * as SliderPrimitive from "@radix-ui/react-slider"
 
-import { cn } from "@/lib/utils"
+import {cn} from "@/lib/utils.tsx"
 
 function Slider({
   className,
@@ -49,7 +49,7 @@ function Slider({
           )}
         />
       </SliderPrimitive.Track>
-      {Array.from({ length: _values.length }, (_, index) => (
+      {Array.from({length: _values.length}, (_, index) => (
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
@@ -60,4 +60,4 @@ function Slider({
   )
 }
 
-export { Slider }
+export {Slider}

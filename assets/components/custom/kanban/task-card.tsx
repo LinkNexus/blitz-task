@@ -64,7 +64,7 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
   } = useAppStore(state => state);
 
   function handleMove(toColumn: TaskColumn) {
-    const newScore = Math.max(...toColumn.tasks.map(t => t.score)) + 100
+    const newScore = toColumn.tasks.length > 0 ? Math.max(...toColumn.tasks.map(t => t.score)) + 100 : 100;
 
     moveTaskBetweenColumns(
       project.id,
@@ -130,20 +130,6 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
     }
   };
 
-  const getLabelColor = (labelName: string) => {
-    const colors = {
-      Frontend: "bg-blue-100 text-blue-800",
-      Backend: "bg-purple-100 text-purple-800",
-      Bug: "bg-red-100 text-red-800",
-      Feature: "bg-green-100 text-green-800",
-      Design: "bg-pink-100 text-pink-800",
-      Testing: "bg-indigo-100 text-indigo-800",
-    };
-    return (
-      colors[labelName as keyof typeof colors] || "bg-gray-100 text-gray-800"
-    );
-  };
-
   return (
     <Card
       ref={setNodeRef}
@@ -182,11 +168,11 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <DropdownMenuTrigger>
                       Move to...
-                    </DropdownMenuItem>
-                  </DropdownMenuTrigger>
+                    </DropdownMenuTrigger>
+                  </DropdownMenuItem>
                   <DropdownMenuContent>
                     {project.columns!.filter(c => c.id !== currentColumn.id).map(c => (
                       <DropdownMenuItem
@@ -234,9 +220,7 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
             <Badge
               key={label.id}
               variant="secondary"
-              className={`text-xs px-1 sm:px-2 py-0 ${getLabelColor(
-                label.name
-              )}`}
+              className={`text-xs px-1 sm:px-2 py-0`}
             >
               {label.name}
             </Badge>

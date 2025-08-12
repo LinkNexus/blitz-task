@@ -20,10 +20,15 @@ class LabelRepository extends ServiceEntityRepository
         parent::__construct($registry, Label::class);
     }
 
-    public function findBySlug(string $slug): ?Label
+    /**
+     * Search a label by its slug
+     * @param string $name The name of the label
+     * @return ?Label The entity instance or null if not found
+     */
+    public function findOneBySlug(string $name): ?Label
     {
         return $this->findOneBy([
-            'slug' => $this->slugger->slug($slug)->lower()->toString()
+            'slug' => $this->slugger->slug($name)->lower()->toString()
         ]);
     }
 

@@ -11,7 +11,7 @@ class CreateUserDTO
     #[Assert\NotBlank(message: "The email field cannot be empty.")]
     public ?string $email = null;
 
-    #[Assert\NotBlank(message: "The name field cannot be empty.")]
+    #[Assert\NotBlank(message: "The name field cannot be empty.", normalizer: "trim")]
     #[Assert\Length(min: 2, max: 255, minMessage: "The name must be at least {{ limit }} characters long.", maxMessage: "The name cannot be longer than {{ limit }} characters.")]
     #[Assert\Regex(pattern: '/^[a-zA-Z0-9_ ]+$/', message: "The name can only contain alphanumeric characters, spaces and underscores.")]
     public ?string $name = null;
