@@ -20,6 +20,8 @@ class TeamRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder("t")
             ->innerJoin('t.members', 'm')
+            ->leftJoin("t.members", "members")
+            ->addSelect('members')
             ->andWhere('m.id = :userId')
             ->setParameter('userId', $userId)
             ->getQuery()

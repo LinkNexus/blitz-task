@@ -21,7 +21,7 @@ import {useThrottle} from "@/hooks/useThrottle.ts";
 import {ApiError, apiFetch} from "@/lib/fetch.ts";
 import {useAppStore} from "@/lib/store.ts";
 import {cn, getLabelColor, getPriorityIcon} from "@/lib/utils.tsx";
-import type {FormErrors, Label, Task, TaskColumn, User} from "@/types.ts";
+import type {FormErrors, Label, Task, TaskColumn, Team, User} from "@/types.ts";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {format} from "date-fns";
 import {Calendar as CalendarIcon, Loader2, Plus, Tag, X,} from "lucide-react";
@@ -55,6 +55,7 @@ interface TaskModalProps {
   task?: Task | null; // For editing existing task
   columns: TaskColumn[];
   defaultColumnId?: number; // Default column when creating new task
+  teamMembers: Team["members"];
 }
 
 export function TaskModal({
@@ -63,6 +64,7 @@ export function TaskModal({
   task,
   columns,
   defaultColumnId,
+  teamMembers
 }: TaskModalProps) {
   const isEditing = !!task;
 
@@ -457,7 +459,7 @@ export function TaskModal({
               {watchedAssigneeIds.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {watchedAssigneeIds.map((userId) => {
-                    const user = users.find((u) => u.id === userId);
+                    const user = teamMembers.find((u) => u.id === userId);
                     if (!user) return null;
 
                     return (
@@ -501,7 +503,7 @@ export function TaskModal({
                     <CommandInput placeholder="Search users..."/>
                     <CommandEmpty>No users found.</CommandEmpty>
                     <CommandGroup>
-                      {users
+                      {teamMembers
                         .filter((user) => !watchedAssigneeIds.includes(user.id))
                         .map((user) => (
                           <CommandItem

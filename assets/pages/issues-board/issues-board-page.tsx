@@ -15,6 +15,7 @@ import {apiFetch} from "@/lib/fetch.ts";
 
 export const IssuesBoardPage = memo(function () {
   const {
+    activeTeamId,
     activeProjectId,
     teams,
     setColumns,
@@ -22,6 +23,7 @@ export const IssuesBoardPage = memo(function () {
     reorderTaskInColumn,
   } = useAppStore((state) => state);
 
+  const team = teams.find(t => t.id === activeTeamId);
   const project = teams
     .flatMap((t) => t.projects)
     .find((p) => p?.id === activeProjectId);
@@ -88,6 +90,7 @@ export const IssuesBoardPage = memo(function () {
     if (!over || !project?.id || !columns) return;
 
     const activeTaskId = parseInt(active.id.replace("task-", ""));
+    const endpoint = `/api/tasks/move?projectId=${project.id}`;
 
     // Find source column and task
     let sourceColumn: TaskColumn | undefined;
@@ -129,7 +132,7 @@ export const IssuesBoardPage = memo(function () {
             newScore,
           );
 
-          await apiFetch(`/api/tasks/move?projectId=${project.id}`, {
+          await apiFetch(endpoint, {
             data: {
               id: activeTaskId,
               columnId: targetColumnId,
@@ -203,7 +206,7 @@ export const IssuesBoardPage = memo(function () {
           newScore,
         );
 
-        await apiFetch(`/api/tasks/move?projectId=${project.id}`, {
+        await apiFetch(endpoint, {
           data: {
             id: sourceTask.id,
             score: newScore
@@ -236,7 +239,7 @@ export const IssuesBoardPage = memo(function () {
           newScore,
         );
 
-        await apiFetch(`/api/tasks/move?projectId=${project.id}`, {
+        await apiFetch(endpoint, {
           data: {
             id: activeTaskId,
             columnId: targetColumn.id,
@@ -267,7 +270,7 @@ export const IssuesBoardPage = memo(function () {
   //   deleteTask(taskId);
   // };
 
-  if (!project || !columns) {
+  if (!team || !project || !columns) {
     return <KanbanBoardLoader/>;
   }
 
@@ -302,7 +305,6 @@ export const IssuesBoardPage = memo(function () {
                 />
               );
             })}
-
           <AddColumnButton/>
         </div>
       </div>
@@ -326,6 +328,7 @@ export const IssuesBoardPage = memo(function () {
         task={currentTask}
         columns={columns || []}
         defaultColumnId={defaultColumnId}
+        teamMembers={team.members}
       />
     </DndContext>
   );

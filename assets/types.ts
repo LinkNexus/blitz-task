@@ -17,6 +17,7 @@ export interface Team {
   name: string;
   isDefault: boolean;
   projects?: Project[];
+  members: Pick<User, "id" | "name">[];
 }
 
 export interface Project {

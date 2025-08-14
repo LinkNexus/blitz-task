@@ -35,6 +35,7 @@ class Team
      * @var Collection<int, User>
      */
     #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'teams')]
+    #[Groups(["teams:read"])]
     private Collection $members;
 
     #[ORM\ManyToOne]
