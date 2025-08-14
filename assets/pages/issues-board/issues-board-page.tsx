@@ -1,8 +1,8 @@
-import {AddColumnButton} from "@/components/custom/kanban/add-column-button.tsx";
+import {AddColumnButton} from "@/components/custom/kanban/columns/add-column-button.tsx";
 import {BoardHeader} from "@/components/custom/kanban/board-header.tsx";
-import {KanbanColumn} from "@/components/custom/kanban/kanban-column.tsx";
-import {TaskCard} from "@/components/custom/kanban/task-card.tsx";
-import {TaskModal} from "@/components/custom/kanban/task-modal.tsx";
+import {KanbanColumn} from "@/components/custom/kanban/columns/kanban-column.tsx";
+import {TaskCard} from "@/components/custom/kanban/tasks/task-card.tsx";
+import {TaskModal} from "@/components/custom/kanban/tasks/task-modal.tsx";
 import {useApiFetch} from "@/hooks/useFetch.ts";
 import {useTaskModal} from "@/hooks/useTaskModal.ts";
 import {useAppStore} from "@/lib/store.ts";
@@ -13,7 +13,7 @@ import {memo, useEffect, useState} from "react";
 import {toast} from "sonner";
 import {apiFetch} from "@/lib/fetch.ts";
 import {useColumnModal} from "@/hooks/useColumnModal.ts";
-import {ColumnModal} from "@/components/custom/kanban/column-modal.tsx";
+import {ColumnModal} from "@/components/custom/kanban/columns/column-modal.tsx";
 
 export const IssuesBoardPage = memo(function () {
   const {
@@ -318,7 +318,10 @@ export const IssuesBoardPage = memo(function () {
                 />
               );
             })}
-          <AddColumnButton/>
+          <AddColumnButton onClick={() => {
+            setColumnScore(Math.max(0, ...columns.map(c => c.score)));
+            openCreateColumnModal();
+          }}/>
         </div>
       </div>
 

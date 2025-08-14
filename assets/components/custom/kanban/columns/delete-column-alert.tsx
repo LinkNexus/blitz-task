@@ -10,30 +10,31 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog.tsx";
 import {useAppStore} from "@/lib/store.ts";
-import {apiFetch} from "@/lib/fetch.ts";
 import {toast} from "sonner";
+import {useApiFetch} from "@/hooks/useFetch.ts";
 
 export function DeleteColumnAlert({
   column,
   isOpen,
   onClose
 }: { column: TaskColumn, isOpen: boolean, onClose: () => void }) {
-  const {deleteColumn} = useAppStore(state => state);
+  const deleteColumn = useAppStore(state => state.deleteColumn);
+
+  const {pending, callback: deleteColumnRequest} = useApiFetch(`/api/columns/${column.id}`, {
+    method: "DELETE",
+    onSuccess() {
+      toast.success(`The column "${column.name}" was deleted successfully`);
+      onClose();
+    },
+    onError(err) {
+      console.log("An error occurred when deleting column: ", err);
+      toast.error(`An error occurred when deleting column "${column.name}"`);
+    }
+  });
 
   async function handleDelete() {
     deleteColumn(column.id);
-    onClose();
-
-    await apiFetch(`/api/columns/${column.id}`, {
-      method: "DELETE",
-    })
-      .then(() => {
-        toast.success(`The column "${column.name}" was deleted successfully`);
-      })
-      .catch(err => {
-        console.log("An error occurred when deleting column: ", err);
-        toast.error(`An error occurred when deleting column "${column.name}"`);
-      });
+    await deleteColumnRequest();
   }
 
   return (
@@ -46,8 +47,8 @@ export function DeleteColumnAlert({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={() => handleDelete()}>Continue</AlertDialogAction>
+          <AlertDialogCancel disabled={pending} onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogAction disabled={pending} onClick={() => handleDelete()}>Continue</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

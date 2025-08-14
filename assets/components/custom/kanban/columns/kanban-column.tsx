@@ -10,8 +10,8 @@ import type {Project, Task, TaskColumn} from "@/types.ts";
 import {useDroppable} from "@dnd-kit/core";
 import {SortableContext, verticalListSortingStrategy,} from "@dnd-kit/sortable";
 import {Edit, MoreHorizontal, Plus, Trash} from "lucide-react";
-import {TaskCard} from "./task-card.tsx";
-import {DeleteColumnAlert} from "@/components/custom/kanban/delete-column-alert.tsx";
+import {TaskCard} from "../tasks/task-card.tsx";
+import {DeleteColumnAlert} from "@/components/custom/kanban/columns/delete-column-alert.tsx";
 import {useState} from "react";
 
 interface KanbanColumnProps {

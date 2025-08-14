@@ -15,7 +15,7 @@ import {useAppStore} from "@/lib/store.ts";
 import {toast} from "sonner";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form.tsx";
 import {Input} from "@/components/ui/input.tsx";
-import {Button} from "@/components/ui/button";
+import {Button} from "@/components/ui/button.tsx";
 import {Loader2} from "lucide-react";
 import {useEffect} from "react";
 

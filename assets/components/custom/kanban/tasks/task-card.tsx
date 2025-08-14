@@ -26,6 +26,8 @@ import {
 import {useAppStore} from "@/lib/store.ts";
 import {apiFetch} from "@/lib/fetch.ts";
 import {toast} from "sonner";
+import {DeleteTaskAlert} from "@/components/custom/kanban/tasks/delete-task-alert.tsx";
+import {useState} from "react";
 
 interface TaskCardProps {
   task: Task;
@@ -60,8 +62,9 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
 
   const {
     moveTaskBetweenColumns,
-    deleteTask
   } = useAppStore(state => state);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   function handleMove(toColumn: TaskColumn) {
     const newScore = toColumn.tasks.length > 0 ? Math.max(...toColumn.tasks.map(t => t.score)) + 100 : 100;
@@ -86,16 +89,6 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
       .catch(err => {
         console.log("An error occured when moving task: ", err);
         toast.error(`An error occurred when moving task "${task.name}" to "${toColumn.name}"`);
-      })
-  }
-
-  function handleDelete() {
-    deleteTask(task.id);
-    apiFetch(`/api/tasks/${task.id}`, {
-      method: "DELETE",
-    })
-      .then(() => {
-        toast.success(`The task "${task.name}" was deleted successfully`);
       })
   }
 
@@ -190,7 +183,7 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
                 </DropdownMenu>
                 <DropdownMenuItem
                   className="text-red-600"
-                  onClick={handleDelete}
+                  onClick={() => setIsDeleteModalOpen(true)}
                 >
                   Delete
                 </DropdownMenuItem>
@@ -281,6 +274,8 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
           </div>
         </div>
       </CardContent>
+
+      <DeleteTaskAlert task={task} isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}/>
     </Card>
   );
 }
