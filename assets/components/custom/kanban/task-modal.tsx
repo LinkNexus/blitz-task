@@ -138,7 +138,6 @@ export function TaskModal({
   }, [isOpen, task, defaultColumnId, columns, reset]);
 
   async function onSubmit(data: TaskFormData) {
-    console.log(data.dueAt);
     try {
       const createdOrUpdatedTask = await apiFetch<Task>(
         isEditing ? `/api/tasks/${task.id}` : "/api/tasks",

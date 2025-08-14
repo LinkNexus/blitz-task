@@ -12,6 +12,8 @@ import {DndContext, DragOverlay} from "@dnd-kit/core";
 import {memo, useEffect, useState} from "react";
 import {toast} from "sonner";
 import {apiFetch} from "@/lib/fetch.ts";
+import {useColumnModal} from "@/hooks/useColumnModal.ts";
+import {ColumnModal} from "@/components/custom/kanban/column-modal.tsx";
 
 export const IssuesBoardPage = memo(function () {
   const {
@@ -65,6 +67,15 @@ export const IssuesBoardPage = memo(function () {
     openEditTaskModal,
     closeTaskModal,
   } = useTaskModal();
+
+  const [columnScore, setColumnScore] = useState(0);
+  const {
+    isColumnModalOpen,
+    currentColumn,
+    openCreateColumnModal,
+    openEditColumnModal,
+    closeColumnModal
+  } = useColumnModal();
 
   // Custom function to get tasks for a column since they're now embedded
   const getTasksForColumn = (column: TaskColumn) => {
@@ -256,20 +267,6 @@ export const IssuesBoardPage = memo(function () {
     console.log("Filter clicked");
   };
 
-  const handleAddColumnBetween = (afterColumnId: number) => {
-    // TODO: Implement add column between functionality
-    console.log("Add column after:", afterColumnId);
-  };
-
-  // TODO: Implement these handlers when needed
-  // const handleTaskEdit = (taskId: number) => {
-  //   console.log("Edit task:", taskId);
-  // };
-
-  // const handleTaskDelete = (taskId: number) => {
-  //   deleteTask(taskId);
-  // };
-
   if (!team || !project || !columns) {
     return <KanbanBoardLoader/>;
   }
@@ -291,7 +288,7 @@ export const IssuesBoardPage = memo(function () {
         <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px] overflow-x-auto pb-4">
           {[...columns]
             .sort((a, b) => a.score - b.score)
-            .map((column) => {
+            .map((column, index) => {
               const tasks = getTasksForColumn(column);
               return (
                 <KanbanColumn
@@ -299,9 +296,25 @@ export const IssuesBoardPage = memo(function () {
                   project={project}
                   column={column}
                   tasks={tasks}
-                  onAddColumnBetween={handleAddColumnBetween}
+                  onAddColumnBetween={(position) => {
+                    if (position === "before") {
+                      if (index > 0) {
+                        setColumnScore((columns[index].score + columns[index - 1].score) / 2);
+                      } else {
+                        setColumnScore(columns[index].score - 500);
+                      }
+                    } else {
+                      if (index < columns.length - 1) {
+                        setColumnScore((columns[index].score + columns[index + 1].score) / 2);
+                      } else {
+                        setColumnScore(columns[index].score + 500);
+                      }
+                    }
+                    openCreateColumnModal();
+                  }}
                   onTaskEdit={openEditTaskModal}
                   onAddTask={openCreateTaskModal}
+                  onColumnEdit={openEditColumnModal}
                 />
               );
             })}
@@ -329,6 +342,14 @@ export const IssuesBoardPage = memo(function () {
         columns={columns || []}
         defaultColumnId={defaultColumnId}
         teamMembers={team.members}
+      />
+
+      <ColumnModal
+        isOpen={isColumnModalOpen}
+        onClose={closeColumnModal}
+        column={currentColumn}
+        score={columnScore}
+        project={project}
       />
     </DndContext>
   );

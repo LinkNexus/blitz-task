@@ -148,7 +148,7 @@ final class TasksController extends AbstractController
      * This method processes an array of MoveTaskDTO objects, updates task attributes such
      * as the related column and score, and persists the changes to the database.
      *
-     * @param MoveTaskDTO[] $dtos Array of Data Transfer Objects containing task movement information.
+     * @param MoveTaskDTO $dto Array of Data Transfer Objects containing task movement information.
      *
      * @return JsonResponse Returns an empty response with HTTP 204 No Content status upon success.
      */

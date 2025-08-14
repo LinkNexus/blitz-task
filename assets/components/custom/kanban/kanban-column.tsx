@@ -11,15 +11,20 @@ import {useDroppable} from "@dnd-kit/core";
 import {SortableContext, verticalListSortingStrategy,} from "@dnd-kit/sortable";
 import {Edit, MoreHorizontal, Plus, Trash} from "lucide-react";
 import {TaskCard} from "./task-card.tsx";
+import {DeleteColumnAlert} from "@/components/custom/kanban/delete-column-alert.tsx";
+import {useState} from "react";
 
 interface KanbanColumnProps {
   project: Project;
   column: TaskColumn;
   tasks: Task[];
-  onAddColumnBetween?: (afterColumnId: number) => void;
+  onAddColumnBetween?: (position: ColumnPosition) => void;
   onTaskEdit?: (task: Task) => void;
-  onAddTask?: (columnId: number) => void; // Add task to specific column
+  onAddTask?: (columnId: number) => void; // Add task to specific column,
+  onColumnEdit: (column: TaskColumn) => void;
 }
+
+type ColumnPosition = "before" | "after";
 
 export function KanbanColumn({
   project,
@@ -28,7 +33,9 @@ export function KanbanColumn({
   onAddColumnBetween,
   onTaskEdit,
   onAddTask,
+  onColumnEdit,
 }: KanbanColumnProps) {
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const {setNodeRef, isOver} = useDroppable({
     id: `column-${column.id}`,
     data: {
@@ -40,6 +47,7 @@ export function KanbanColumn({
   // Sort tasks by their order within the column
   const sortedTasks = [...tasks].sort((a, b) => b.score - a.score);
   const taskIds = sortedTasks.map((task) => `task-${task.id}`);
+
   return (
     <div className="flex flex-col min-w-[280px] sm:min-w-[300px] flex-shrink-0">
       {/* Column Header */}
@@ -74,23 +82,24 @@ export function KanbanColumn({
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  // onClick={() => onAddColumnBetween?.(column.id)}
-                >
-                  Before
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onAddColumnBetween?.(column.id)}
-                >
-                  After
-                </DropdownMenuItem>
+                {["Before", "After"].map(p => (
+                  <DropdownMenuItem
+                    key={p}
+                    onClick={() => onAddColumnBetween?.(p.toLowerCase() as ColumnPosition)}
+                  >
+                    {p}
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onColumnEdit(column)}>
               <Edit className="w-4 h-4 mr-2"/>
               Edit
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={() => setIsDeleteAlertOpen(true)}
+            >
               <Trash className="w-4 h-4 mr-2 text-red-600"/>
               Delete
             </DropdownMenuItem>
@@ -128,6 +137,12 @@ export function KanbanColumn({
           Add task
         </Button>
       </div>
+
+      <DeleteColumnAlert
+        column={column}
+        isOpen={isDeleteAlertOpen}
+        onClose={() => setIsDeleteAlertOpen(false)}
+      />
     </div>
   );
 }

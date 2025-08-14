@@ -2,7 +2,7 @@ import type {TaskColumn} from "@/types.ts";
 import {useState} from "react";
 
 export function useColumnModal() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isColumnModalOpen, setIsOpen] = useState(false);
   const [currentColumn, setCurrentColumn] = useState<TaskColumn | null>(null);
 
   const openCreateColumnModal = () => {
@@ -15,16 +15,16 @@ export function useColumnModal() {
     setIsOpen(true);
   };
 
-  const closeModal = () => {
+  const closeColumnModal = () => {
     setIsOpen(false);
     setCurrentColumn(null);
   };
 
   return {
-    isOpen,
+    isColumnModalOpen,
     currentColumn,
-    openCreateModal: openCreateColumnModal,
+    openCreateColumnModal,
     openEditColumnModal,
-    closeModal
+    closeColumnModal
   }
 }

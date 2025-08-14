@@ -87,6 +87,43 @@ export const useAppStore = create(
             };
           });
         },
+        updateColumn(column: TaskColumn) {
+          set(state => ({
+            teams: state.teams.map(t => ({
+              ...t,
+              projects: t.projects?.map(p => {
+                if (p.columns?.some(c => c.id === column.id)) {
+                  return {
+                    ...p,
+                    columns: p.columns?.map(c => {
+                      if (c.id === column.id) {
+                        return column;
+                      }
+                      return c;
+                    })
+                  }
+                }
+                return p;
+              })
+            }))
+          }))
+        },
+        deleteColumn(colId: number) {
+          set(state => ({
+            teams: state.teams.map(t => ({
+              ...t,
+              projects: t.projects?.map(p => {
+                if (p.columns?.some(c => c.id === colId)) {
+                  return {
+                    ...p,
+                    columns: p.columns?.filter(c => c.id !== colId)
+                  }
+                }
+                return p;
+              })
+            }))
+          }))
+        },
         addTask(columnId: number, task: Task) {
           set((state) => {
             return {
