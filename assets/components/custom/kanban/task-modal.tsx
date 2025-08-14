@@ -21,7 +21,7 @@ import {useThrottle} from "@/hooks/useThrottle.ts";
 import {ApiError, apiFetch} from "@/lib/fetch.ts";
 import {useAppStore} from "@/lib/store.ts";
 import {cn, getLabelColor, getPriorityIcon} from "@/lib/utils.tsx";
-import type {FormErrors, Label, Task, TaskColumn, Team, User} from "@/types.ts";
+import type {FormErrors, Label, Task, TaskColumn, Team} from "@/types.ts";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {format} from "date-fns";
 import {Calendar as CalendarIcon, Loader2, Plus, Tag, X,} from "lucide-react";
@@ -75,7 +75,6 @@ export function TaskModal({
   const [labelSearchValue, setLabelSearchValue] = useState("");
   const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
 
-  const users = [] as User[];
   const {addTask, updateTask} = useAppStore(state => state);
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),

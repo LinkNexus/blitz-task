@@ -1,46 +1,37 @@
-import type { Task } from "@/types.ts";
-import { useState } from "react";
+import type {Task} from "@/types.ts";
+import {useState} from "react";
 
-interface UseTaskModalReturn {
-  isOpen: boolean;
-  currentTask: Task | null;
-  defaultColumnId: number | undefined;
-  openCreateModal: (columnId?: number) => void;
-  openEditModal: (task: Task) => void;
-  closeModal: () => void;
-}
-
-export function useTaskModal(): UseTaskModalReturn {
-  const [isOpen, setIsOpen] = useState(false);
+export function useTaskModal() {
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [defaultColumnId, setDefaultColumnId] = useState<number | undefined>(
     undefined
   );
 
-  const openCreateModal = (columnId?: number) => {
+  const openCreateTaskModal = (columnId?: number) => {
     setCurrentTask(null);
     setDefaultColumnId(columnId);
-    setIsOpen(true);
+    setIsTaskModalOpen(true);
   };
 
-  const openEditModal = (task: Task) => {
+  const openEditTaskModal = (task: Task) => {
     setCurrentTask(task);
     setDefaultColumnId(undefined);
-    setIsOpen(true);
+    setIsTaskModalOpen(true);
   };
 
-  const closeModal = () => {
-    setIsOpen(false);
+  const closeTaskModal = () => {
+    setIsTaskModalOpen(false);
     setCurrentTask(null);
     setDefaultColumnId(undefined);
   };
 
   return {
-    isOpen,
+    isTaskModalOpen,
     currentTask,
     defaultColumnId,
-    openCreateModal,
-    openEditModal,
-    closeModal,
+    openCreateTaskModal,
+    openEditTaskModal,
+    closeTaskModal,
   };
 }

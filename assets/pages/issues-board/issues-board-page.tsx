@@ -58,12 +58,12 @@ export const IssuesBoardPage = memo(function () {
   }, [project?.id]);
 
   const {
-    isOpen: isTaskModalOpen,
+    isTaskModalOpen,
     currentTask,
     defaultColumnId,
-    openCreateModal,
-    openEditModal,
-    closeModal,
+    openCreateTaskModal,
+    openEditTaskModal,
+    closeTaskModal,
   } = useTaskModal();
 
   // Custom function to get tasks for a column since they're now embedded
@@ -281,7 +281,7 @@ export const IssuesBoardPage = memo(function () {
           onAddTask={() => {
             const firstColumn = columns?.[0];
             if (firstColumn) {
-              openCreateModal(firstColumn.id);
+              openCreateTaskModal(firstColumn.id);
             }
           }}
           onFilter={handleFilter}
@@ -300,8 +300,8 @@ export const IssuesBoardPage = memo(function () {
                   column={column}
                   tasks={tasks}
                   onAddColumnBetween={handleAddColumnBetween}
-                  onTaskEdit={openEditModal}
-                  onAddTask={openCreateModal}
+                  onTaskEdit={openEditTaskModal}
+                  onAddTask={openCreateTaskModal}
                 />
               );
             })}
@@ -324,7 +324,7 @@ export const IssuesBoardPage = memo(function () {
       {/* Task Modal */}
       <TaskModal
         isOpen={isTaskModalOpen}
-        onClose={closeModal}
+        onClose={closeTaskModal}
         task={currentTask}
         columns={columns || []}
         defaultColumnId={defaultColumnId}
