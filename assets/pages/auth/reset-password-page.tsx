@@ -3,7 +3,7 @@ import z from "zod";
 import {useForm} from "react-hook-form";
 import type {FormErrors} from "@/types.ts";
 import {toast} from "sonner";
-import {useApiFetch} from "@/hooks/use-fetch.ts";
+import {useApiFetch} from "@/hooks/useFetch.ts";
 import {navigate} from "wouter/use-browser-location";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";

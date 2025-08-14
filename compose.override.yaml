@@ -12,6 +12,7 @@ services:
       #  from the bind-mount for better performance by enabling the next line:
       #- /app/vendor
     environment:
+      SITE_NAME: blitz-task.orb.local
       MAILER_DSN: smtp://mailer:1025
       FRANKENPHP_WORKER_CONFIG: watch
       MERCURE_EXTRA_DIRECTIVES: demo
@@ -22,10 +23,10 @@ services:
       # Ensure that host.docker.internal is correctly defined on Linux
       - host.docker.internal:host-gateway
     tty: true
+    labels:
+      - dev.orbstack.domains=blitz-task.orb.local
     ports:
       - "8400:80"
-      - "5173:5173"
-  
   ###> symfony/mercure-bundle ###
   ###< symfony/mercure-bundle ###
   
@@ -44,6 +45,8 @@ services:
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    networks:
+      - default
   ###< symfony/mailer ###
 
   pgadmin:
@@ -54,6 +57,8 @@ services:
       PGADMIN_CONFIG_SERVER_MODE: "False"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - default
 
 volumes:
   pgadmin_data:

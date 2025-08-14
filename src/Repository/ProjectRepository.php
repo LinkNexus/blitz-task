@@ -1,0 +1,73 @@
+<?php
+
+namespace App\Repository;
+
+use App\Entity\Project;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Persistence\ManagerRegistry;
+
+/**
+ * @extends ServiceEntityRepository<Project>
+ */
+class ProjectRepository extends ServiceEntityRepository
+{
+    public function __construct(ManagerRegistry $registry)
+    {
+        parent::__construct($registry, Project::class);
+    }
+
+    /**
+     * Finds all projects in a team
+     * @param int $teamId The team id
+     * @return Project[] An array of projects
+     */
+    public function findByTeam(int $teamId): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.team = :team')
+            ->setParameter('team', $teamId)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Find a project with its associated team
+     * @param int $projectId The project id
+     * @return ?Project The project with its team
+     */
+    public function findWithTeam(int $projectId): ?Project
+    {
+        return $this->createQueryBuilder("p")
+            ->leftJoin("p.team", "t")
+            ->addSelect("t")
+            ->andWhere("p.id = :projectId")
+            ->setParameter("projectId", $projectId)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    //    /**
+    //     * @return Project[] Returns an array of Project objects
+    //     */
+    //    public function findByExampleField($value): array
+    //    {
+    //        return $this->createQueryBuilder('p')
+    //            ->andWhere('p.exampleField = :val')
+    //            ->setParameter('val', $value)
+    //            ->orderBy('p.id', 'ASC')
+    //            ->setMaxResults(10)
+    //            ->getQuery()
+    //            ->getResult()
+    //        ;
+    //    }
+
+    //    public function findOneBySomeField($value): ?Project
+    //    {
+    //        return $this->createQueryBuilder('p')
+    //            ->andWhere('p.exampleField = :val')
+    //            ->setParameter('val', $value)
+    //            ->getQuery()
+    //            ->getOneOrNullResult()
+    //        ;
+    //    }
+}

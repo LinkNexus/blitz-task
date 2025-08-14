@@ -1,12 +1,17 @@
-import {defineConfig} from "vite";
-import symfonyPlugin from "vite-plugin-symfony";
-import path from "node:path";
-import react from '@vitejs/plugin-react';
 import tailwindcss from "@tailwindcss/vite";
+import react from '@vitejs/plugin-react';
+import path from "node:path";
+import process from "node:process";
+import { defineConfig } from "vite";
+import symfonyPlugin from "vite-plugin-symfony";
+
+const sitename = process.env.SITE_NAME || "localhost";
 
 export default defineConfig({
   plugins: [
-    symfonyPlugin(),
+    symfonyPlugin({
+      viteDevServerHostname: sitename
+    }),
     react(),
     tailwindcss()
   ],
@@ -18,10 +23,12 @@ export default defineConfig({
     }
   },
   server: {
-    host: "0.0.0.0",
+    strictPort: true,
+    port: 5173,
     cors: {
       origin: "*",
     },
+    allowedHosts: [sitename],
     watch: {
       ignored: [
         "**/node_modules/**",
@@ -29,7 +36,6 @@ export default defineConfig({
         "**/.git/**",
         "**/src/**",          // Ignore Symfony source code completely (including controllers)
         "**/docker/**",       // Ignore docker files
-        "**/templates/**",    // Ignore Symfony templates
         "**/config/**",       // Ignore config files (and services)
         "**/var/**"
       ]

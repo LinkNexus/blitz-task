@@ -8,18 +8,16 @@ import {SocialLinks} from "@/pages/auth/social-links.tsx";
 import {Divider} from "@/components/custom/divider.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Loader2, UserPlus} from "lucide-react";
-import {useApiFetch} from "@/hooks/use-fetch.ts";
+import {useApiFetch} from "@/hooks/useFetch.ts";
 import {Separator} from "@/components/ui/separator.tsx";
 import {Link} from "wouter";
 import {useAppStore} from "@/lib/store.ts";
 import type {ApiError} from "@/lib/fetch.ts";
 import type {FormErrors, User} from "@/types.ts";
 import {toast} from "sonner";
-import {useAccount} from "@/hooks/use-account.ts";
 
 export function RegisterPage() {
   const setUser = useAppStore.getState().setUser;
-  const {verifyUser} = useAccount();
 
   const {
     pending: isSendingMail,
@@ -27,7 +25,6 @@ export function RegisterPage() {
   } = useApiFetch("/api/auth/resend-verification-mail", {
     onSuccess(isVerified: boolean) {
       if (isVerified) {
-        verifyUser();
         toast.info("You are already verified, no need to send a verification mail.");
       } else {
         toast.success("The verification mail was successfully sent.");

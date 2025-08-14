@@ -25,7 +25,7 @@ import {
   Sun,
   UserCircleIcon
 } from "lucide-react";
-import {useAccount} from "@/hooks/use-account.ts";
+import {useAccount} from "@/hooks/useAccount.ts";
 import {useTheme} from "@/components/custom/theme-provider.tsx";
 import {useAuth} from "@/hooks/useAuth.ts";
 

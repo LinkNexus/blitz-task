@@ -1,7 +1,5 @@
-import {useAppStore} from "@/lib/store.ts";
-
 export interface ApiFetchOptions extends Omit<RequestInit, "body"> {
-  data?: Record<string, any> | FormData | null;
+  data?: Record<string, any> | Record<string, any>[] | FormData | null;
   contentType?: "json" | "form-data";
   accept?: "json" | "text";
 }
@@ -21,6 +19,8 @@ export async function apiFetch<T>(
     headers["Content-Type"] = "application/json";
   if (accept === "json") headers["Accept"] = "application/json";
 
+  // await new Promise((resolve) => setTimeout(resolve, 5000)); // Simulate network delay
+
   const response = await fetch(url, {
     ...options,
     body: data
@@ -32,13 +32,8 @@ export async function apiFetch<T>(
       ...headers,
       ...options.headers,
     },
-    method: options.method ?? options.data ? "POST" : "GET",
+    method: options.method ? options.method : options.data ? "POST" : "GET",
   });
-
-  if (response.status === 401) {
-    useAppStore.getState().setUser(null);
-    return null as unknown as T; // Unauthorized, return null
-  }
 
   if (!response.ok) {
     throw new ApiError(await response.json(), response.status);
@@ -57,10 +52,7 @@ export class ApiError<T> extends Error {
   public data: T;
   public statusCode: number;
 
-  constructor(
-    data: T,
-    statusCode: number
-  ) {
+  constructor(data: T, statusCode: number) {
     super();
     this.name = "ApiError";
     this.data = data;

@@ -9,12 +9,12 @@ import {
 } from "@/components/ui/sidebar.tsx"
 import {Favorites} from "@/components/custom/sidebar/favorites.tsx";
 import {NavUser} from "@/components/custom/sidebar/nav-user.tsx";
-import {type ComponentProps} from "react";
+import {type ComponentProps, memo} from "react";
 import {NavSecondary} from "@/components/custom/sidebar/nav-secondary.tsx";
 import {TeamSwitcher} from "@/components/custom/sidebar/team-switcher.tsx";
 import {NavMain} from "@/components/custom/sidebar/nav-main.tsx";
 
-export function AppSidebar({...props}: ComponentProps<typeof Sidebar>) {
+export const AppSidebar = memo(function ({...props}: ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -51,4 +51,4 @@ export function AppSidebar({...props}: ComponentProps<typeof Sidebar>) {
       <SidebarRail/>
     </Sidebar>
   )
-}
+});

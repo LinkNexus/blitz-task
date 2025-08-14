@@ -1,3 +1,5 @@
+import {Badge} from "@/components/ui/badge.tsx";
+import {Collapsible, CollapsibleContent, CollapsibleTrigger,} from "@/components/ui/collapsible.tsx";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -6,14 +8,21 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
-  SidebarMenuSubItem
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar.tsx";
-import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "@/components/ui/collapsible.tsx";
-import {Badge} from "@/components/ui/badge.tsx";
-import {Bot, ChevronRight, Folder, Home, Inbox, Kanban, Users} from "lucide-react";
-import {Link, useLocation} from "wouter";
+import {Bot, ChevronRight, Folder, Home, Inbox, Kanban, Loader2} from "lucide-react";
+import {Link, useLocation, useSearchParams} from "wouter";
+import {useAppStore} from "@/lib/store.ts";
 
-const items = [
+interface NavigationItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType<any>;
+  isActive?: boolean;
+  badge?: string;
+}
+
+const items: NavigationItem[] = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -40,47 +49,17 @@ const items = [
     title: "Projects",
     url: "/projects",
     icon: Folder,
-    items: [
-      {
-        title: "Website Redesign",
-        url: "/projects/website-redesign",
-      },
-      {
-        title: "Mobile App",
-        url: "/projects/mobile-app",
-      },
-      {
-        title: "Marketing Campaign",
-        url: "/projects/marketing",
-      },
-    ],
   },
-  {
-    title: "Teams",
-    url: "/teams",
-    icon: Users,
-    items: [
-      {
-        title: "Design Team",
-        url: "/teams/design",
-        badge: "6",
-      },
-      {
-        title: "Development",
-        url: "/teams/dev",
-        badge: "12",
-      },
-      {
-        title: "Marketing",
-        url: "/teams/marketing",
-        badge: "4",
-      },
-    ],
-  },
-]
+];
 
 export function NavMain() {
   const [location] = useLocation();
+  const [params] = useSearchParams();
+  const activeTeamId = params.get("teamId") ? Number(params.get("teamId")) : null;
+  const activeProjectId = params.get("projectId") ? Number(params.get("projectId")) : null;
+  const {teams} = useAppStore(state => state);
+  const projects = teams.find(t => t.id === activeTeamId)?.projects;
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -93,33 +72,30 @@ export function NavMain() {
             className="group/collapsible"
           >
             <SidebarMenuItem>
-              {item.items ? (
+              {item.title === "Projects" ? (
                 <>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title} isActive={location === item.url}>
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      isActive={location === item.url}
+                    >
                       {item.icon && <item.icon/>}
                       <span>{item.title}</span>
-                      {'badge' in item && item.badge && (
-                        <Badge variant="secondary" className="ml-auto">
-                          {item.badge}
-                        </Badge>
-                      )}
                       <ChevronRight
                         className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"/>
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub className="w-full">
-                      {item.items.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild isActive={location === subItem.url}>
-                            <Link href={subItem.url}>
-                              <span>{subItem.title}</span>
-                              {subItem.badge && (
-                                <Badge variant="outline" className="ml-auto">
-                                  {subItem.badge}
-                                </Badge>
-                              )}
+                      {!projects ? (
+                        <Loader2 className="animate-spin size-3"/>
+                      ) : projects.map((p) => (
+                        <SidebarMenuSubItem key={p.id}>
+                          <SidebarMenuSubButton
+                            asChild
+                          >
+                            <Link href={"/projects"}>
+                              <span>{p.isDefault ? "Personal Profile" : p.name}</span>
                             </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
@@ -127,12 +103,16 @@ export function NavMain() {
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </>
-              ) : (
-                <SidebarMenuButton asChild tooltip={item.title} isActive={location === item.url}>
+              ) : (item.title === "Badge" && !activeProjectId) ? null : (
+                <SidebarMenuButton
+                  asChild
+                  tooltip={item.title}
+                  isActive={location === item.url}
+                >
                   <Link href={item.url}>
                     {item.icon && <item.icon/>}
                     <span>{item.title}</span>
-                    {'badge' in item && item.badge && (
+                    {"badge" in item && item.badge && (
                       <Badge variant="secondary" className="ml-auto">
                         {item.badge}
                       </Badge>

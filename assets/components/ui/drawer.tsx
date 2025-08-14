@@ -1,7 +1,7 @@
 import * as React from "react"
-import { Drawer as DrawerPrimitive } from "vaul"
+import {Drawer as DrawerPrimitive} from "vaul"
 
-import { cn } from "@/lib/utils"
+import {cn} from "@/lib/utils.tsx"
 
 function Drawer({
   ...props
@@ -50,7 +50,7 @@ function DrawerContent({
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
   return (
     <DrawerPortal data-slot="drawer-portal">
-      <DrawerOverlay />
+      <DrawerOverlay/>
       <DrawerPrimitive.Content
         data-slot="drawer-content"
         className={cn(
@@ -63,14 +63,15 @@ function DrawerContent({
         )}
         {...props}
       >
-        <div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
+        <div
+          className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block"/>
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>
   )
 }
 
-function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
+function DrawerHeader({className, ...props}: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="drawer-header"
@@ -83,7 +84,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function DrawerFooter({ className, ...props }: React.ComponentProps<"div">) {
+function DrawerFooter({className, ...props}: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="drawer-footer"

@@ -3,8 +3,7 @@ import {apiFetch} from "@/lib/fetch.ts";
 import type {User} from "@/types.ts";
 
 export function useAuth() {
-  const user = useAppStore(state => state.user);
-  const setUser = useAppStore.getState().setUser;
+  const {lastRequestedUrl, user, setLastRequestedUrl, setUser} = useAppStore(state => state);
 
   let status: "authenticated" | "not-authenticated" | "unknown";
 
@@ -20,14 +19,18 @@ export function useAuth() {
   }
 
   return {
+    user,
     status,
     authenticate() {
       apiFetch<User>("/api/auth/me")
         .then(setUser)
+        .catch(() => setUser(null));
     },
     logout() {
       apiFetch("/api/auth/logout")
         .then(() => setUser(null));
-    }
+    },
+    lastRequestedUrl,
+    setLastRequestedUrl
   }
 }

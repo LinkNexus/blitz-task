@@ -33,7 +33,7 @@ final class SecurityController extends AbstractController
         private readonly EntityManagerInterface   $entityManager,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly EmailVerifier            $emailVerifier,
-        private ClientRegistry                    $clientRegistry
+        private readonly ClientRegistry           $clientRegistry
     )
     {
     }

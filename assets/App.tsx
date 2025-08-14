@@ -1,19 +1,5 @@
-import {Link, Redirect, Route, Switch, useLocation} from "wouter";
-import {LoginPage} from "@/pages/auth/login-page.tsx";
-import {RegisterPage} from "@/pages/auth/register-page.tsx";
-import {ForgotPasswordPage} from "@/pages/auth/forgot-password-page.tsx";
-import {Toaster} from "@/components/ui/sonner.tsx";
-import {ResetPasswordPage} from "@/pages/auth/reset-password-page.tsx";
-import {DashboardPage} from "@/pages/dashboard-page.tsx";
-import {ProjectsPage} from "@/pages/projects-page.tsx";
-import {AIAssistantPage} from "@/pages/ai-assistant-page.tsx";
-import {InboxPage} from "@/pages/inbox-page.tsx";
-import {IssuesBoardPage} from "@/pages/issues-board-page.tsx";
-import {useAuth} from "@/hooks/useAuth.ts";
-import {useEffect} from "react";
 import {AppSidebar} from "@/components/custom/sidebar/app-sidebar.tsx";
-import {SidebarInset, SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar.tsx";
-import {Separator} from "@/components/ui/separator.tsx";
+import {ThemeProvider} from "@/components/custom/theme-provider.tsx";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,11 +8,40 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb.tsx";
-import {ThemeProvider} from "@/components/custom/theme-provider.tsx";
+import {Separator} from "@/components/ui/separator.tsx";
+import {SidebarInset, SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar.tsx";
+import {Toaster} from "@/components/ui/sonner.tsx";
+import {useAuth} from "@/hooks/useAuth.ts";
+import {useAppStore} from "@/lib/store.ts";
+import {AIAssistantPage} from "@/pages/ai-assistant-page.tsx";
+import {ForgotPasswordPage} from "@/pages/auth/forgot-password-page.tsx";
+import {LoginPage} from "@/pages/auth/login-page.tsx";
+import {RegisterPage} from "@/pages/auth/register-page.tsx";
+import {ResetPasswordPage} from "@/pages/auth/reset-password-page.tsx";
+import {DashboardPage} from "@/pages/dashboard-page.tsx";
+import {InboxPage} from "@/pages/inbox-page.tsx";
+import {IssuesBoardPage} from "@/pages/issues-board/issues-board-page.tsx";
+import {ProjectsPage} from "@/pages/projects-page.tsx";
+import {useEffect} from "react";
+import {Link, Redirect, Route, Switch, useLocation} from "wouter";
+import {useParamsNavigation} from "@/hooks/useParamsNavigation.ts";
+import {LoadingPage} from "@/components/custom/loading-page.tsx";
+import {apiFetch} from "@/lib/fetch.ts";
+import type {Project, Team} from "@/types.ts";
+import {toast} from "sonner";
 
 export function App() {
-  const {status, authenticate} = useAuth();
+  const {user, status, authenticate, lastRequestedUrl, setLastRequestedUrl} = useAuth();
   const [location] = useLocation();
+
+  const {
+    sidebarState,
+    toggleSidebar,
+    setTeams,
+    teams,
+    setProjects,
+    activeTeamId
+  } = useAppStore(state => state);
 
   // Function to get page title from current location
   const getPageTitle = () => {
@@ -47,72 +62,48 @@ export function App() {
   };
 
   useEffect(() => {
-    if (status === "unknown") {
-      authenticate();
-    }
+    authenticate();
   }, []);
+
+  useParamsNavigation();
+  const activeTeam = teams.find(team => team.id === activeTeamId);
+
+  useEffect(() => {
+    if (teams.length === 0 && user?.id) {
+      apiFetch<Team[]>("/api/teams")
+        .then((data: Team[]) => {
+          setTeams(data);
+        })
+        .catch((error) => {
+          toast.error("An error occurred while fetching teams.");
+          console.error("Error fetching teams:", error);
+        });
+    }
+  }, [teams.length, user?.id]);
+
+  useEffect(() => {
+    if (activeTeam && !activeTeam.projects) {
+      apiFetch<Project[]>(`/api/projects?teamId=${activeTeam.id}`)
+        .then(projects => {
+          setProjects(activeTeam.id, projects);
+        })
+        .catch(error => {
+          toast.error("An error occurred while fetching projects.");
+          console.error("Error fetching projects:", error);
+        });
+    }
+  }, [activeTeam?.id, activeTeam?.projects]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {status === "unknown" && (
-        <div
-          className="flex items-center justify-center h-screen bg-gradient-to-br from-background via-background to-muted/20">
-          <div className="flex flex-col items-center space-y-6">
-            {/* Animated Logo */}
-            <div className="relative">
-              <div
-                className="absolute inset-0 bg-primary rounded-full blur-xl opacity-20 animate-pulse"></div>
-              <div
-                className="relative bg-primary p-4 rounded-2xl shadow-lg">
-                <img
-                  src="/logo.svg"
-                  alt="BlitzTask Logo"
-                  className="w-12 h-12 text-white animate-bounce"
-                />
-              </div>
-            </div>
+      {(status === "unknown" || (status === "authenticated" && !activeTeam)) && <LoadingPage/>}
 
-            {/* Brand Name */}
-            <div className="text-center space-y-2">
-              <h1
-                className="text-2xl font-bold text-primary">
-                Blitz-Task
-              </h1>
-              <p className="text-sm text-muted-foreground animate-pulse">
-                Loading your workspace...
-              </p>
-            </div>
-
-            {/* Enhanced Loading Spinner */}
-            <div className="relative">
-              {/* Outer ring */}
-              <div
-                className="w-12 h-12 border-4 border-muted rounded-full animate-spin border-t-transparent"></div>
-              {/* Inner ring */}
-              <div
-                className="absolute inset-2 w-8 h-8 border-3 border-primary/30 rounded-full animate-spin border-b-transparent [animation-direction:reverse] [animation-duration:1.5s]"></div>
-              {/* Center dot */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div
-                  className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-              </div>
-            </div>
-
-            {/* Progress Dots */}
-            <div className="flex space-x-1">
-              <div
-                className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-              <div
-                className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {status === "authenticated" && (
+      {status === "authenticated" && activeTeam && (
         <ThemeProvider>
-          <SidebarProvider>
+          <SidebarProvider
+            open={sidebarState === "open"}
+            onOpenChange={toggleSidebar}
+          >
             <AppSidebar/>
             <SidebarInset>
               <header
@@ -144,7 +135,7 @@ export function App() {
                   <Route path="/issues-board" component={IssuesBoardPage}/>
                   <Route path="/projects" component={ProjectsPage}/>
                   <Route path="/ai-chat" component={AIAssistantPage}/>
-                  <Route component={() => <Redirect to="/dashboard"/>}/>
+                  <Route component={() => <Redirect to={lastRequestedUrl || "/dashboard"}/>}/>
                 </Switch>
               </div>
             </SidebarInset>
@@ -167,7 +158,11 @@ export function App() {
               <Route path="/register" component={RegisterPage}/>
               <Route path="/forgot-password" component={ForgotPasswordPage}/>
               <Route path="/reset-password" component={ResetPasswordPage}/>
-              <Route component={() => <Redirect to="/login"/>}/>
+              <Route component={() => {
+                setLastRequestedUrl(location);
+                return <Redirect to="/login"/>
+              }}
+              />
             </Switch>
           </div>
         </div>
