@@ -13,4 +13,7 @@ class MoveTaskDTO
 
     #[NotBlank(message: "The score field cannot be empty.")]
     public ?float $score = null;
+
+    #[NotBlank(message: "The project field cannot be empty.")]
+    public ?int $projectId = null;
 }

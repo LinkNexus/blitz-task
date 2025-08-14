@@ -16,7 +16,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -155,10 +154,9 @@ final class TasksController extends AbstractController
     #[Route("/move", name: "move", methods: ["POST"])]
     public function move(
         #[MapRequestPayload] MoveTaskDTO $dto,
-        #[MapQueryParameter] int         $projectId
     ): JsonResponse
     {
-        $project = $this->projectRepository->findWithTeam($projectId);
+        $project = $this->projectRepository->findWithTeam($dto->projectId);
 
         if (!$project) {
             return $this->json([

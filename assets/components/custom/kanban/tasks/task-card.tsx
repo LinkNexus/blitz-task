@@ -251,20 +251,23 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
 
           {/* Assignees */}
           <div className="flex -space-x-1">
-            {task.assignees.slice(0, 2).map((assignee) => (
-              <Avatar
-                key={assignee.id}
-                className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-background"
-              >
-                <AvatarImage src="" alt={assignee.name}/>
-                <AvatarFallback className="text-xs">
-                  {assignee.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
-            ))}
+            <div
+              className="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:grayscale">
+              {task.assignees.slice(0, 2).map((assignee) => (
+                <Avatar
+                  key={assignee.id}
+                  className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-background"
+                >
+                  <AvatarImage src="" alt={assignee.name}/>
+                  <AvatarFallback className="text-xs">
+                    {assignee.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
             {task.assignees.length > 2 && (
               <div
                 className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs">
