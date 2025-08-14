@@ -20,7 +20,10 @@ class CreateUserDTO
 //    #[Assert\Sequentially([
 //        new Assert\PasswordStrength,
 //        new Assert\NotCompromisedPassword
-//    ])]
+    #[Assert\Sequentially([
+        new Assert\PasswordStrength,
+        new Assert\NotCompromisedPassword
+    ])]
     public ?string $password = null;
 
     #[Assert\EqualTo(propertyPath: "password", message: "The passwords do not match.")]
