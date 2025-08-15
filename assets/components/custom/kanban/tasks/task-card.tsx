@@ -1,16 +1,19 @@
-import {Avatar, AvatarFallback, AvatarImage,} from "@/components/ui/avatar.tsx";
-import {Badge} from "@/components/ui/badge.tsx";
-import {Button} from "@/components/ui/button.tsx";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card.tsx";
+import { DeleteTaskAlert } from "@/components/custom/kanban/tasks/delete-task-alert.tsx";
+import { Avatar, AvatarFallback, AvatarImage, } from "@/components/ui/avatar.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/components/ui/card.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
-import type {Project, Task, TaskColumn} from "@/types.ts";
-import {useSortable} from "@dnd-kit/sortable";
-import {CSS} from "@dnd-kit/utilities";
+import { apiFetch } from "@/lib/fetch.ts";
+import { useAppStore } from "@/lib/store.ts";
+import type { Project, Task, TaskColumn } from "@/types.ts";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   AlertCircle,
   Calendar,
@@ -23,19 +26,17 @@ import {
   MoreHorizontal,
   Paperclip,
 } from "lucide-react";
-import {useAppStore} from "@/lib/store.ts";
-import {apiFetch} from "@/lib/fetch.ts";
-import {toast} from "sonner";
-import {DeleteTaskAlert} from "@/components/custom/kanban/tasks/delete-task-alert.tsx";
-import {useState} from "react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface TaskCardProps {
   task: Task;
   project: Project;
   onEdit?: (task: Task) => void; // Add optional edit handler
+  onView?: (taskId: number) => void; // Add optional view handler
 }
 
-export function TaskCard({task, project, onEdit}: TaskCardProps) {
+export function TaskCard({task, project, onEdit, onView}: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -152,6 +153,7 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
                   variant="ghost"
                   size="sm"
                   className="h-5 w-5 sm:h-6 sm:w-6 p-0"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4"/>
                 </Button>
@@ -192,6 +194,7 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
             {/* Drag Handle */}
             <div
               className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted/50 rounded transition-colors"
+              onClick={(e) => e.stopPropagation()}
               {...listeners}
               {...attributes}
             >
@@ -199,7 +202,10 @@ export function TaskCard({task, project, onEdit}: TaskCardProps) {
             </div>
           </div>
         </div>
-        <CardTitle className="text-xs sm:text-sm font-medium leading-tight">
+        <CardTitle 
+          className="text-xs sm:text-sm font-medium leading-tight cursor-pointer hover:text-primary transition-colors"
+          onClick={() => onView?.(task.id)}
+        >
           {task.name}
         </CardTitle>
         <CardDescription className="text-xs text-muted-foreground line-clamp-2">

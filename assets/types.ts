@@ -27,6 +27,24 @@ export interface Project {
   columns?: TaskColumn[];
 }
 
+export interface Attachment {
+  id: number;
+  name: string;
+  link: string;
+  taskId?: number;
+  commentId?: number;
+}
+
+export interface Comment {
+  id: number;
+  content: string;
+  author: Pick<User, "id" | "name">;
+  createdAt: string;
+  updatedAt: string;
+  attachments: Attachment[];
+  taskId: number;
+}
+
 export interface Task {
   id: number;
   name: string;
@@ -37,6 +55,8 @@ export interface Task {
   labels: Label[];
   createdAt: string;
   score: number;
+  comments?: Comment[];
+  attachments?: Attachment[];
 }
 
 export interface Label {

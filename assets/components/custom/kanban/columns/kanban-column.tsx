@@ -1,18 +1,18 @@
-import {Badge} from "@/components/ui/badge.tsx";
-import {Button} from "@/components/ui/button.tsx";
+import { DeleteColumnAlert } from "@/components/custom/kanban/columns/delete-column-alert.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
+import { Button } from "@/components/ui/button.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
-import type {Project, Task, TaskColumn} from "@/types.ts";
-import {useDroppable} from "@dnd-kit/core";
-import {SortableContext, verticalListSortingStrategy,} from "@dnd-kit/sortable";
-import {Edit, MoreHorizontal, Plus, Trash} from "lucide-react";
-import {TaskCard} from "../tasks/task-card.tsx";
-import {DeleteColumnAlert} from "@/components/custom/kanban/columns/delete-column-alert.tsx";
-import {useState} from "react";
+import type { Project, Task, TaskColumn } from "@/types.ts";
+import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, } from "@dnd-kit/sortable";
+import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react";
+import { useState } from "react";
+import { TaskCard } from "../tasks/task-card.tsx";
 
 interface KanbanColumnProps {
   project: Project;
@@ -20,6 +20,7 @@ interface KanbanColumnProps {
   tasks: Task[];
   onAddColumnBetween?: (position: ColumnPosition) => void;
   onTaskEdit?: (task: Task) => void;
+  onTaskView?: (taskId: number) => void;
   onAddTask?: (columnId: number) => void; // Add task to specific column,
   onColumnEdit: (column: TaskColumn) => void;
 }
@@ -32,6 +33,7 @@ export function KanbanColumn({
   tasks,
   onAddColumnBetween,
   onTaskEdit,
+  onTaskView,
   onAddTask,
   onColumnEdit,
 }: KanbanColumnProps) {
@@ -123,6 +125,7 @@ export function KanbanColumn({
               task={task}
               project={project}
               onEdit={onTaskEdit}
+              onView={onTaskView}
             />
           ))}
         </SortableContext>

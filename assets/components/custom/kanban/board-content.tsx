@@ -2,7 +2,8 @@ import type {BoardFilters} from "@/components/custom/kanban/board-header.tsx";
 import {BoardHeader} from "@/components/custom/kanban/board-header.tsx";
 import {DragAndDropProvider} from "@/components/custom/kanban/drag-and-drop-provider.tsx";
 import {KanbanBoard} from "@/components/custom/kanban/kanban-board.tsx";
-import {TaskModal} from "@/components/custom/kanban/tasks/task-modal.tsx";
+import {TaskModal} from "@/components/custom/kanban/tasks/modal/task-modal.tsx";
+import {useTaskView} from "@/components/custom/kanban/tasks/view/task-view-modal.tsx";
 import {useTaskFilters} from "@/hooks/useTaskFilters.ts";
 import {useTaskModal} from "@/hooks/useTaskModal.ts";
 import type {Project, TaskColumn, Team} from "@/types.ts";
@@ -24,6 +25,11 @@ export function BoardContent({team, project, columns, filters, setFilters}: Boar
     openEditTaskModal,
     closeTaskModal,
   } = useTaskModal();
+
+  const {
+    openTaskView,
+    TaskViewModal: TaskViewComponent
+  } = useTaskView();
 
   const {
     availableUsers,
@@ -60,6 +66,7 @@ export function BoardContent({team, project, columns, filters, setFilters}: Boar
           getFilteredTasksForColumn={getFilteredTasksForColumn}
           onAddTask={openCreateTaskModal}
           onEditTask={openEditTaskModal}
+          onViewTask={openTaskView}
         />
       </div>
 
@@ -72,6 +79,9 @@ export function BoardContent({team, project, columns, filters, setFilters}: Boar
         defaultColumnId={defaultColumnId}
         teamMembers={team.members}
       />
+
+      {/* Task View Modal */}
+      <TaskViewComponent/>
     </DragAndDropProvider>
   );
 }

@@ -34,6 +34,12 @@ final class TasksController extends AbstractController
     {
     }
 
+    #[Route("/{id}", name: "get", methods: ["GET"])]
+    public function get()
+    {
+
+    }
+
     #[Route("", name: "create", methods: ["POST"])]
     public function create(
         #[MapRequestPayload] TaskDTO $dto,
