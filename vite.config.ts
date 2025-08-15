@@ -1,17 +1,12 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from '@vitejs/plugin-react';
 import path from "node:path";
-import process from "node:process";
-import { defineConfig } from "vite";
+import {defineConfig} from "vite";
 import symfonyPlugin from "vite-plugin-symfony";
-
-const sitename = process.env.SITE_NAME || "localhost";
 
 export default defineConfig({
   plugins: [
-    symfonyPlugin({
-      viteDevServerHostname: sitename
-    }),
+    symfonyPlugin(),
     react(),
     tailwindcss()
   ],
@@ -23,12 +18,9 @@ export default defineConfig({
     }
   },
   server: {
-    strictPort: true,
-    port: 5173,
     cors: {
       origin: "*",
     },
-    allowedHosts: [sitename],
     watch: {
       ignored: [
         "**/node_modules/**",
