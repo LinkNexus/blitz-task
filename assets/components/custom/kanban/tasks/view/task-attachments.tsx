@@ -1,35 +1,30 @@
-import { Button } from "@/components/ui/button.tsx";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import {Button} from "@/components/ui/button.tsx";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.tsx";
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,} from "@/components/ui/dialog.tsx";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog.tsx";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
-import { Input } from "@/components/ui/input.tsx";
-import { apiFetch } from "@/lib/fetch.ts";
-import type { Attachment, Task } from "@/types.ts";
+import {Input} from "@/components/ui/input.tsx";
+import {apiFetch} from "@/lib/fetch.ts";
+import type {Attachment, Task} from "@/types.ts";
 import {
-    Archive,
-    Download,
-    ExternalLink,
-    File,
-    FileText,
-    Image,
-    MoreHorizontal,
-    Paperclip,
-    Trash2,
-    Upload
+  Archive,
+  Download,
+  ExternalLink,
+  File,
+  FileText,
+  Image,
+  MoreHorizontal,
+  Paperclip,
+  Trash2,
+  Upload
 } from "lucide-react";
-import { useRef, useState } from "react";
-import { toast } from "sonner";
+import {useRef, useState} from "react";
+import {toast} from "sonner";
+import {useApiFetch} from "@/hooks/useApiFetch.ts";
 
 interface TaskAttachmentsProps {
   task: Task;
@@ -39,19 +34,19 @@ interface TaskAttachmentsProps {
 
 function getFileIcon(fileName: string) {
   const extension = fileName.split('.').pop()?.toLowerCase() || '';
-  
+
   if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
-    return <Image className="w-4 h-4" />;
+    return <Image className="w-4 h-4"/>;
   } else if (['pdf', 'doc', 'docx', 'txt'].includes(extension)) {
-    return <FileText className="w-4 h-4" />;
+    return <FileText className="w-4 h-4"/>;
   } else if (['zip', 'rar', 'tar', 'gz'].includes(extension)) {
-    return <Archive className="w-4 h-4" />;
+    return <Archive className="w-4 h-4"/>;
   } else {
-    return <File className="w-4 h-4" />;
+    return <File className="w-4 h-4"/>;
   }
 }
 
-export function TaskAttachments({ task, onAttachmentAdd, onAttachmentDelete }: TaskAttachmentsProps) {
+export function TaskAttachments({task, onAttachmentAdd, onAttachmentDelete}: TaskAttachmentsProps) {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [linkName, setLinkName] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
@@ -60,22 +55,31 @@ export function TaskAttachments({ task, onAttachmentAdd, onAttachmentDelete }: T
 
   const attachments = task.attachments || [];
 
+  const {} = useApiFetch(`/api/attachments/upload?taskId=${task.id}`, {
+    onSuccess(data: Attachment[]) {
+      data.forEach(attachment => onAttachmentAdd(attachment))
+    },
+    onError(error) {
+      console.error("Failed to fetch attachments:", error);
+    }
+  })
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
+    const formData = new FormData();
+
     try {
       setUploading(true);
-      
+
       for (const file of files) {
-        const formData = new FormData();
-        formData.append('file', file);
+        formData.append('files[]', file);
         formData.append('taskId', task.id.toString());
 
         const attachment = await apiFetch<Attachment>("/api/attachments/upload", {
           method: "POST",
           data: formData,
-          contentType: "form-data",
         });
 
         onAttachmentAdd(attachment);
@@ -101,7 +105,7 @@ export function TaskAttachments({ task, onAttachmentAdd, onAttachmentDelete }: T
 
     try {
       setUploading(true);
-      
+
       const attachment = await apiFetch<Attachment>("/api/attachments", {
         method: "POST",
         data: {
@@ -147,10 +151,10 @@ export function TaskAttachments({ task, onAttachmentAdd, onAttachmentDelete }: T
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Paperclip className="w-5 h-5" />
+            <Paperclip className="w-5 h-5"/>
             Attachments ({attachments.length})
           </CardTitle>
-          
+
           <div className="flex items-center gap-2">
             <Button
               onClick={() => fileInputRef.current?.click()}
@@ -158,14 +162,14 @@ export function TaskAttachments({ task, onAttachmentAdd, onAttachmentDelete }: T
               size="sm"
               disabled={uploading}
             >
-              <Upload className="w-4 h-4 mr-2" />
+              <Upload className="w-4 h-4 mr-2"/>
               Upload
             </Button>
-            
+
             <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <ExternalLink className="w-4 h-4 mr-2" />
+                  <ExternalLink className="w-4 h-4 mr-2"/>
                   Add Link
                 </Button>
               </DialogTrigger>
@@ -251,25 +255,25 @@ export function TaskAttachments({ task, onAttachmentAdd, onAttachmentDelete }: T
                     variant="ghost"
                     size="sm"
                   >
-                    <Download className="w-4 h-4" />
+                    <Download className="w-4 h-4"/>
                   </Button>
-                  
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
+                        <MoreHorizontal className="w-4 h-4"/>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => handleDownload(attachment)}>
-                        <ExternalLink className="w-4 h-4 mr-2" />
+                        <ExternalLink className="w-4 h-4 mr-2"/>
                         Open
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleDelete(attachment.id)}
                         className="text-destructive"
                       >
-                        <Trash2 className="w-4 h-4 mr-2" />
+                        <Trash2 className="w-4 h-4 mr-2"/>
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -280,7 +284,7 @@ export function TaskAttachments({ task, onAttachmentAdd, onAttachmentDelete }: T
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
-            <Paperclip className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <Paperclip className="w-12 h-12 mx-auto mb-4 opacity-50"/>
             <p>No attachments yet.</p>
             <p className="text-sm">Upload files or add links to get started.</p>
           </div>

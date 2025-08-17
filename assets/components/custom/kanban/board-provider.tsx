@@ -1,10 +1,10 @@
 import type {BoardFilters} from "@/components/custom/kanban/board-header.tsx";
-import {useApiFetch} from "@/hooks/useFetch.ts";
+import {useApiFetch} from "@/hooks/useApiFetch.ts";
 import {useAppStore} from "@/lib/store.ts";
 import type {Project, TaskColumn, Team} from "@/types.ts";
 import {useEffect, useState} from "react";
 import {toast} from "sonner";
-import {KanbanBoardLoader} from "@/pages/issues-board/kanban-board-loader.tsx";
+import {KanbanBoardLoader} from "@/components/custom/kanban/kanban-board-loader.tsx";
 
 interface BoardProviderProps {
   children: (props: {

@@ -2,6 +2,7 @@ import {ApiError, apiFetch, type ApiFetchOptions} from "@/lib/fetch";
 import {useCallback, useState} from "react";
 
 interface UseApiFetchOptions<T, S> extends ApiFetchOptions {
+  searchParams?: Record<string, (string | number) | (string | number)[]>;
   onError?: (error: ApiError<S>) => void;
   onSuccess?: (data: T) => void | Promise<void>;
   finally?: () => void;
@@ -18,18 +19,20 @@ export function useApiFetch<T, S>(
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<ApiError<S> | null>(null);
   const [pending, setPending] = useState<boolean>(false);
-  const { onError, onSuccess, ...restOptions } = options;
+  const {onError, onSuccess, ...restOptions} = options;
 
   const fetchData = useCallback(
-    async (params: {
-      data?: ApiFetchOptions["data"];
-      searchParams?: Record<string, (string|number)|(string | number)[]>;
-    } = {
-      data: options.data,
-      searchParams: {}
-    }) => {
+    async (
+      params: {
+        data?: typeof options.data;
+        searchParams?: typeof options.searchParams;
+      } = {
+        data: options.data,
+        searchParams: options.searchParams,
+      }
+    ) => {
       if (pending) return Promise.resolve(); // Prevent multiple concurrent requests
-      const { data, searchParams } = params;
+      const {data, searchParams} = params;
 
       setPending(true);
       setError(null);
@@ -43,7 +46,9 @@ export function useApiFetch<T, S>(
         const urlSearchParams = new URLSearchParams();
         for (const [key, values] of Object.entries(searchParams)) {
           if (Array.isArray(values)) {
-            values.forEach(value => urlSearchParams.append(key, String(value)));
+            values.forEach((value) =>
+              urlSearchParams.append(key, String(value))
+            );
           } else {
             urlSearchParams.set(key, String(values));
           }
@@ -57,6 +62,7 @@ export function useApiFetch<T, S>(
           data,
         });
         setData(res);
+        setError(null);
         await onSuccess?.(res);
       } catch (err) {
         if (err instanceof ApiError) {
@@ -75,8 +81,9 @@ export function useApiFetch<T, S>(
   );
 
   return {
-    data, error,
+    data,
+    error,
     pending,
-    callback: fetchData
+    callback: fetchData,
   };
 }

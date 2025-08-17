@@ -1,4 +1,4 @@
-import {Button} from "@/components/ui/button";
+import {Button} from "@/components/ui/button.tsx";
 import {Divider} from "@/components/custom/divider.tsx";
 
 export function SocialLinks() {

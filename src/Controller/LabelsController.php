@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Label;
+use App\Entity\Task;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -64,5 +65,43 @@ final class LabelsController extends AbstractController
         $this->entityManager->flush();
 
         return $this->json($label);
+    }
+
+    #[Route("/add/{id}", name: "add", methods: ["POST"])]
+    public function add(
+        Label                    $label,
+        #[MapQueryParameter] int $taskId
+    ): JsonResponse
+    {
+        $task = $this->entityManager->getRepository(Task::class)->find($taskId);
+
+        if (!$task) {
+            return $this->json([
+                "message" => "The task with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $task->addLabel($label);
+        $this->entityManager->flush();
+        return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route("/remove/{id}", name: "remove", methods: ["POST"])]
+    public function remove(
+        Label                    $label,
+        #[MapQueryParameter] int $taskId
+    ): JsonResponse
+    {
+        $task = $this->entityManager->getRepository(Task::class)->find($taskId);
+
+        if (!$task) {
+            return $this->json([
+                "message" => "The task with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $task->removeLabel($label);
+        $this->entityManager->flush();
+        return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 }

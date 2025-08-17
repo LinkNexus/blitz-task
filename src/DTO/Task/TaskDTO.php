@@ -7,24 +7,29 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class TaskDTO
 {
-    #[Assert\NotBlank(message: "The name field cannot be empty.", normalizer: "trim")]
-    public string $name;
+    #[Assert\NotBlank(
+        message: "The name field cannot be empty.",
+        allowNull: true,
+        normalizer: "trim",
+        groups: ["partial_update"]
+    )]
+    #[Assert\NotNull]
+    public ?string $name = null;
 
     public ?string $description = null;
 
-    public TaskPriority $priority = TaskPriority::MEDIUM;
+    public ?TaskPriority $priority = null;
 
-    #[Assert\DateTime(format: "Y-m-d\TH:i:s.v\Z", message: "The dueAt property must be in a valid date-time format.")]
+    #[Assert\DateTime(
+        format: "Y-m-d\TH:i:s.v\Z",
+        message: "The dueAt property must be in a valid date-time format.",
+        groups: ["partial_update"]
+    )]
     public ?string $dueAt = null;
 
-    /** @var string[] */
+    /** @var int[] */
     public array $labelIds = [];
 
-    /** @var string[] */
+    /** @var int[] */
     public array $assigneeIds = [];
-
-    #[Assert\NotBlank(message: "The column field cannot be empty.")]
-    public int $columnId;
-
-    public ?float $score = null;
 }

@@ -157,16 +157,6 @@ export function TaskPage({taskId, onGoBack}: TaskPageProps) {
     <div className="container mx-auto px-4 py-6 max-w-7xl">
       {/* Header with back button */}
       <div className="mb-6">
-        <Button
-          onClick={handleGoBack}
-          variant="ghost"
-          size="sm"
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2"/>
-          Back to Board
-        </Button>
-
         <TaskHeader
           task={task}
           onTaskUpdate={handleTaskUpdate}

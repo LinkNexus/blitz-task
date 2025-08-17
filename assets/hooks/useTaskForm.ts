@@ -1,11 +1,11 @@
-import { apiFetch } from "@/lib/fetch.ts";
-import { useAppStore } from "@/lib/store.ts";
-import type { Label, Task, TaskColumn } from "@/types.ts";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
+import {apiFetch} from "@/lib/fetch.ts";
+import {useAppStore} from "@/lib/store.ts";
+import type {Label, Task, TaskColumn} from "@/types.ts";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {useEffect, useState} from "react";
+import {useForm} from "react-hook-form";
+import {toast} from "sonner";
+import {z} from "zod";
 
 const taskSchema = z.object({
   name: z
@@ -34,12 +34,12 @@ interface UseTaskFormProps {
   onClose: () => void;
 }
 
-export function useTaskForm({ isOpen, task, columns, defaultColumnId, onClose }: UseTaskFormProps) {
+export function useTaskForm({isOpen, task, columns, defaultColumnId, onClose}: UseTaskFormProps) {
   const isEditing = !!task;
   const [labels, setLabels] = useState<Label[]>([]);
 
-  const { addTask, updateTask } = useAppStore(state => state);
-  
+  const {addTask, updateTask} = useAppStore(state => state);
+
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
@@ -48,7 +48,7 @@ export function useTaskForm({ isOpen, task, columns, defaultColumnId, onClose }:
       priority: task?.priority || "medium",
       columnId: task
         ? columns.find((col) => col.tasks?.some((t) => t.id === task.id))?.id ||
-          columns[0]?.id
+        columns[0]?.id
         : defaultColumnId || columns[0]?.id,
       assigneeIds: task?.assignees?.map((a) => a.id) || [],
       labelIds: task?.labels?.map((l) => l.id) || [],
@@ -56,7 +56,7 @@ export function useTaskForm({ isOpen, task, columns, defaultColumnId, onClose }:
     },
   });
 
-  const { handleSubmit, reset, setValue } = form;
+  const {handleSubmit, reset, setValue} = form;
 
   // Update the form when defaultColumnId changes (for new tasks)
   useEffect(() => {
@@ -70,7 +70,7 @@ export function useTaskForm({ isOpen, task, columns, defaultColumnId, onClose }:
     if (isOpen) {
       const newColumnId = task
         ? columns.find((col) => col.tasks?.some((t) => t.id === task.id))?.id ||
-          columns[0]?.id
+        columns[0]?.id
         : defaultColumnId || columns[0]?.id;
 
       setLabels(task?.labels || []);
@@ -90,7 +90,7 @@ export function useTaskForm({ isOpen, task, columns, defaultColumnId, onClose }:
   async function onSubmit(data: TaskFormData) {
     try {
       const createdOrUpdatedTask = await apiFetch<Task>(
-        isEditing ? `/api/tasks/${task.id}` : "/api/tasks",
+        isEditing ? `/api/tasks/${task.id}` : `/api/tasks?columnId=${data.columnId}`,
         {
           method: isEditing ? "PUT" : "POST",
           data: {

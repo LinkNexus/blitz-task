@@ -20,7 +20,7 @@ import {RegisterPage} from "@/pages/auth/register-page.tsx";
 import {ResetPasswordPage} from "@/pages/auth/reset-password-page.tsx";
 import {DashboardPage} from "@/pages/dashboard-page.tsx";
 import {InboxPage} from "@/pages/inbox-page.tsx";
-import {IssuesBoardPage} from "@/pages/issues-board/issues-board-page.tsx";
+import {IssuesBoardPage} from "@/pages/issues-board-page.tsx";
 import {ProjectsPage} from "@/pages/projects-page.tsx";
 import {useEffect} from "react";
 import {Link, Redirect, Route, Switch, useLocation} from "wouter";

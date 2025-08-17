@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/alert-dialog.tsx";
 import {useAppStore} from "@/lib/store.ts";
 import {toast} from "sonner";
-import {useApiFetch} from "@/hooks/useFetch.ts";
+import {useApiFetch} from "@/hooks/useApiFetch.ts";
 
 export function DeleteColumnAlert({
   column,

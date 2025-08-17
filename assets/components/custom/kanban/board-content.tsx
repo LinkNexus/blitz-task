@@ -3,10 +3,11 @@ import {BoardHeader} from "@/components/custom/kanban/board-header.tsx";
 import {DragAndDropProvider} from "@/components/custom/kanban/drag-and-drop-provider.tsx";
 import {KanbanBoard} from "@/components/custom/kanban/kanban-board.tsx";
 import {TaskModal} from "@/components/custom/kanban/tasks/modal/task-modal.tsx";
-import {useTaskView} from "@/components/custom/kanban/tasks/view/task-view-modal.tsx";
 import {useTaskFilters} from "@/hooks/useTaskFilters.ts";
 import {useTaskModal} from "@/hooks/useTaskModal.ts";
 import type {Project, TaskColumn, Team} from "@/types.ts";
+import {TaskViewModal} from "@/components/custom/kanban/tasks/view/task-view-modal.tsx";
+import {useSearchParams} from "wouter";
 
 interface BoardContentProps {
   team: Team;
@@ -27,17 +28,14 @@ export function BoardContent({team, project, columns, filters, setFilters}: Boar
   } = useTaskModal();
 
   const {
-    openTaskView,
-    TaskViewModal: TaskViewComponent
-  } = useTaskView();
-
-  const {
     availableUsers,
     availableLabels,
     allTasks,
     filteredTasks,
     getFilteredTasksForColumn,
   } = useTaskFilters(columns, filters);
+
+  const [params, setParams] = useSearchParams();
 
   return (
     <DragAndDropProvider
@@ -66,7 +64,12 @@ export function BoardContent({team, project, columns, filters, setFilters}: Boar
           getFilteredTasksForColumn={getFilteredTasksForColumn}
           onAddTask={openCreateTaskModal}
           onEditTask={openEditTaskModal}
-          onViewTask={openTaskView}
+          onViewTask={(taskId) => {
+            setParams(prev => {
+              prev.set("taskId", taskId.toString());
+              return prev;
+            })
+          }}
         />
       </div>
 
@@ -81,7 +84,9 @@ export function BoardContent({team, project, columns, filters, setFilters}: Boar
       />
 
       {/* Task View Modal */}
-      <TaskViewComponent/>
+      {params.get("taskId") && (
+        <TaskViewModal taskId={Number(params.get("taskId"))}/>
+      )}
     </DragAndDropProvider>
   );
 }

@@ -28,6 +28,24 @@ class TaskRepository extends ServiceEntityRepository
         return $result !== null ? (int)$result : 0;
     }
 
+    /**
+     * Find a task with its project and team
+     * @param int $id The task id
+     * @return Task|null The task with its project and team
+     */
+    public function findWithTeam(int $id): ?Task
+    {
+        return $this->createQueryBuilder("task")
+            ->leftJoin("task.project", "project")
+            ->addSelect("project")
+            ->leftJoin("project.team", "team")
+            ->addSelect("team")
+            ->andWhere("task.id = :taskId")
+            ->setParameter("taskId", $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     //    /**
     //     * @return Task[] Returns an array of Task objects
     //     */
