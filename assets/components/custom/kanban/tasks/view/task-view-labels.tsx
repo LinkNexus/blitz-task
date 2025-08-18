@@ -2,30 +2,35 @@ import {Badge} from "@/components/ui/badge.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Card, CardContent, CardHeader, CardTitle,} from "@/components/ui/card.tsx";
 import {ApiError, apiFetch} from "@/lib/fetch.ts";
-import type {Label, Task} from "@/types.ts";
+import type {Label} from "@/types.ts";
 import {Plus, Tag, Tag as TagIcon, X} from "lucide-react";
-import {useState} from "react";
+import {memo, useCallback, useState} from "react";
 import {toast} from "sonner";
 import {LabelsPopup} from "@/components/custom/kanban/tasks/labels-popup.tsx";
 
 interface TaskLabelsProps {
-  task: Task;
-  onTaskUpdate: (task: Task) => void;
+  id: number;
+  labels: Label[];
+  onLabelAdd: (label: Label) => void;
+  onLabelRemove: (labelId: number) => void;
 }
 
-export function TaskViewLabels({task, onTaskUpdate}: TaskLabelsProps) {
+export const TaskViewLabels = memo(function ({
+  id,
+  labels,
+  onLabelRemove,
+  onLabelAdd
+}: TaskLabelsProps) {
   const [isAddingLabel, setIsAddingLabel] = useState(false);
 
-  async function addLabel(label: Label) {
-    if (!task.labels.some(l => l.id === label.id)) {
-      await apiFetch(`/api/labels/add/${label.id}?taskId=${task.id}`, {
+  const addLabel = useCallback(async function (label: Label) {
+    if (labels.some(l => l.id === label.id)) {
+      await apiFetch(`/api/tasks/${id}/add-label?labelId=${label.id}`, {
         method: "POST"
       })
         .then(() => {
-          onTaskUpdate({
-            ...task,
-            labels: [...task.labels, label]
-          })
+          onLabelAdd(label);
+          toast.success(`Label "${label.name}" was added successfully to your task`);
         })
         .catch(err => {
           if (err instanceof ApiError && err.data.message) {
@@ -36,17 +41,14 @@ export function TaskViewLabels({task, onTaskUpdate}: TaskLabelsProps) {
           console.log("Failed to add label:", err);
         });
     }
-  }
+  }, [id, onLabelAdd]);
 
-  async function removeLabel(labelId: number) {
-    await apiFetch(`/api/labels/remove/${labelId}?taskId=${task.id}`, {
+  const removeLabel = useCallback(async function (labelId: number) {
+    await apiFetch(`/api/tasks/${id}/remove-label?labelId=${labelId}`, {
       method: "POST"
     })
       .then(() => {
-        onTaskUpdate({
-          ...task,
-          labels: task.labels.filter(l => l.id !== labelId)
-        })
+        onLabelRemove(labelId);
       })
       .catch(err => {
         if (err instanceof ApiError && err.data.message) {
@@ -56,7 +58,7 @@ export function TaskViewLabels({task, onTaskUpdate}: TaskLabelsProps) {
         }
         console.log("Failed to remove label:", err);
       })
-  }
+  }, [id, onLabelRemove]);
 
   return (
     <Card>
@@ -70,7 +72,7 @@ export function TaskViewLabels({task, onTaskUpdate}: TaskLabelsProps) {
             open={isAddingLabel}
             onOpenChange={setIsAddingLabel}
             onLabelAdd={addLabel}
-            excludedIds={task.labels.map(label => label.id)}
+            excludedIds={labels.map(label => label.id)}
             onClose={() => setIsAddingLabel(false)}
           >
             <Button
@@ -84,9 +86,9 @@ export function TaskViewLabels({task, onTaskUpdate}: TaskLabelsProps) {
         </div>
       </CardHeader>
       <CardContent>
-        {task.labels.length > 0 ? (
+        {labels.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {task.labels.map((label) => (
+            {labels.map((label) => (
               <Badge
                 key={label.id}
                 variant="outline"
@@ -112,4 +114,4 @@ export function TaskViewLabels({task, onTaskUpdate}: TaskLabelsProps) {
       </CardContent>
     </Card>
   );
-}
+});

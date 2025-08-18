@@ -1,5 +1,5 @@
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import {type ReactNode, useEffect, useState} from "react";
+import {memo, type ReactNode, useEffect, useState} from "react";
 import {Button} from "@/components/ui/button.tsx";
 import {Loader2, Plus, Tag} from "lucide-react";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command.tsx";
@@ -14,10 +14,17 @@ interface LabelsPopupProps {
   onOpenChange?: (open: boolean) => void;
   onClose?: () => void;
   onLabelAdd: (label: Label) => void;
-  excludedIds: number[];
+  excludedIds?: number[];
 }
 
-export function LabelsPopup({children, open, onOpenChange, onLabelAdd, excludedIds, onClose}: LabelsPopupProps) {
+export const LabelsPopup = memo(function ({
+  children,
+  open,
+  onOpenChange,
+  onLabelAdd,
+  excludedIds = [],
+  onClose
+}: LabelsPopupProps) {
   const [searchValue, setSearchValue] = useState("");
   const trimmedSearchValue = searchValue.trim();
   const [searchedLabels, setSearchedLabels] = useState<Label[]>([]);
@@ -152,4 +159,4 @@ export function LabelsPopup({children, open, onOpenChange, onLabelAdd, excludedI
       </PopoverContent>
     </Popover>
   )
-}
+});

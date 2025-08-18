@@ -206,6 +206,35 @@ final class TasksController extends AbstractController
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
+    #[Route("/{id}/remove-label", name: "remove", methods: ["POST"])]
+    public function remove(
+        int                      $id,
+        #[MapQueryParameter] int $labelId
+    ): JsonResponse
+    {
+        $task = $this->taskRepository->findWithTeam($labelId);
+
+        if (!$task) {
+            return $this->json([
+                "message" => "The task with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $this->denyAccessUnlessGranted("TEAM_MEMBER", $task->getProject()->getTeam());
+
+        $label = $this->labelRepository->find($labelId);
+
+        if (!$label) {
+            return $this->json([
+                "message" => "The label with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $task->removeLabel($label);
+        $this->entityManager->flush();
+        return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
     #[Route("/{id}", name: "patch", methods: ["PATCH"])]
     public function patch(
         int                                                                $id,
@@ -238,5 +267,34 @@ final class TasksController extends AbstractController
         }
 
         return $this->json($task, Response::HTTP_OK, context: ["groups" => ["tasks:read"]]);
+    }
+
+    #[Route("/{id}/add-label", name: "add_label", methods: ["POST"])]
+    public function add(
+        int                      $id,
+        #[MapQueryParameter] int $labelId
+    ): JsonResponse
+    {
+        $task = $this->taskRepository->findWithTeam($id);
+
+        if (!$task) {
+            return $this->json([
+                "message" => "The task with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $this->denyAccessUnlessGranted("TEAM_MEMBER", $task->getProject()->getTeam());
+
+        $label = $this->labelRepository->find($labelId);
+
+        if (!$label) {
+            return $this->json([
+                "message" => "The label with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $task->addLabel($label);
+        $this->entityManager->flush();
+        return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 }

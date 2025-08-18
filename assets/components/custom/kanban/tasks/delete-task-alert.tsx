@@ -12,6 +12,7 @@ import {
 import {useAppStore} from "@/lib/store.ts";
 import {useApiFetch} from "@/hooks/useApiFetch.ts";
 import {toast} from "sonner";
+import {memo} from "react";
 
 interface DeleteTaskAlertProps {
   task: Task;
@@ -19,7 +20,7 @@ interface DeleteTaskAlertProps {
   onClose: () => void;
 }
 
-export function DeleteTaskAlert({
+export const DeleteTaskAlert = memo(function ({
   task,
   isOpen,
   onClose
@@ -59,4 +60,4 @@ export function DeleteTaskAlert({
       </AlertDialogContent>
     </AlertDialog>
   )
-}
+});

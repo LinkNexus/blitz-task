@@ -1,19 +1,23 @@
 import {Button} from "@/components/ui/button.tsx";
-import {ArrowLeft} from "lucide-react";
+import {ArrowLeft, Settings} from "lucide-react";
 import {TaskHeader} from "@/components/custom/kanban/tasks/view/task-header.tsx";
 import {TaskDetails} from "@/components/custom/kanban/tasks/view/task-details.tsx";
 import {TaskAttachments} from "@/components/custom/kanban/tasks/view/task-attachments.tsx";
 import {TaskComments} from "@/components/custom/kanban/tasks/view/task-comments.tsx";
-import {TaskSidebar} from "@/components/custom/kanban/tasks/view/task-sidebar.tsx";
 import {useSearchParams} from "wouter";
 import {useAppStore} from "@/lib/store.ts";
 import {memo} from "react";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {TaskViewPriorityDueDate} from "@/components/custom/kanban/tasks/view/task-view-priority-due-date.tsx";
+import {TaskViewAssignees} from "@/components/custom/kanban/tasks/view/task-view-assignees.tsx";
+import {TaskViewLabels} from "@/components/custom/kanban/tasks/view/task-view-labels.tsx";
 
 export const TaskViewModal = memo(function ({taskId}: { taskId: number }) {
   const [_, setParams] = useSearchParams();
-  const {teams, updateTask} = useAppStore(state => state);
-  const task = teams.flatMap(t => t.projects)
-    .flatMap(p => p?.columns)
+  const {teams, activeTeamId, updateTask} = useAppStore(state => state);
+  const team = teams.find(t => t.id === activeTeamId);
+  const task = team?.projects
+    ?.flatMap(p => p?.columns)
     .flatMap(c => c?.tasks)
     .find(t => t?.id === taskId);
 
@@ -93,10 +97,66 @@ export const TaskViewModal = memo(function ({taskId}: { taskId: number }) {
 
                 {/* Sidebar */}
                 <div className="lg:col-span-1">
-                  <TaskSidebar
-                    task={task}
-                    onTaskUpdate={updateTask}
-                  />
+                  <div className="space-y-4">
+                    {/* Task Settings */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Settings className="w-5 h-5"/>
+                          Task Settings
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <TaskViewPriorityDueDate
+                          id={task.id}
+                          priority={task.priority}
+                          dueAt={task.dueAt}
+                          onUpdate={function ({priority, dueAt}) {
+                            updateTask({
+                              ...task,
+                              priority,
+                              dueAt
+                            })
+                          }}
+                        />
+                      </CardContent>
+                    </Card>
+
+                    <TaskViewAssignees
+                      id={task.id}
+                      assignees={task.assignees}
+                      onAssigneeAdd={function (user) {
+                        updateTask({
+                          ...task,
+                          assignees: [...task.assignees, user]
+                        })
+                      }}
+                      onAssigneeRemove={function (userId) {
+                        updateTask({
+                          ...task,
+                          assignees: task.assignees.filter(u => u.id === userId)
+                        })
+                      }}
+                      teamMembers={team?.members || []}
+                    />
+
+                    <TaskViewLabels
+                      id={task.id}
+                      labels={task.labels}
+                      onLabelAdd={function (label) {
+                        updateTask({
+                          ...task,
+                          labels: [...task.labels, label]
+                        })
+                      }}
+                      onLabelRemove={function (labelId) {
+                        updateTask({
+                          ...task,
+                          labels: task.labels.filter(l => l.id === labelId)
+                        })
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,19 +1,19 @@
-import { DeleteTaskAlert } from "@/components/custom/kanban/tasks/delete-task-alert.tsx";
-import { Avatar, AvatarFallback, AvatarImage, } from "@/components/ui/avatar.tsx";
-import { Badge } from "@/components/ui/badge.tsx";
-import { Button } from "@/components/ui/button.tsx";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/components/ui/card.tsx";
+import {DeleteTaskAlert} from "@/components/custom/kanban/tasks/delete-task-alert.tsx";
+import {Avatar, AvatarFallback, AvatarImage,} from "@/components/ui/avatar.tsx";
+import {Badge} from "@/components/ui/badge.tsx";
+import {Button} from "@/components/ui/button.tsx";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
-import { apiFetch } from "@/lib/fetch.ts";
-import { useAppStore } from "@/lib/store.ts";
-import type { Project, Task, TaskColumn } from "@/types.ts";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import {apiFetch} from "@/lib/fetch.ts";
+import {useAppStore} from "@/lib/store.ts";
+import type {Project, Task, TaskColumn} from "@/types.ts";
+import {useSortable} from "@dnd-kit/sortable";
+import {CSS} from "@dnd-kit/utilities";
 import {
   AlertCircle,
   Calendar,
@@ -26,8 +26,8 @@ import {
   MoreHorizontal,
   Paperclip,
 } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import {memo, useState} from "react";
+import {toast} from "sonner";
 
 interface TaskCardProps {
   task: Task;
@@ -36,7 +36,7 @@ interface TaskCardProps {
   onView?: (taskId: number) => void; // Add optional view handler
 }
 
-export function TaskCard({task, project, onEdit, onView}: TaskCardProps) {
+export const TaskCard = memo(function ({task, project, onEdit, onView}: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -202,7 +202,7 @@ export function TaskCard({task, project, onEdit, onView}: TaskCardProps) {
             </div>
           </div>
         </div>
-        <CardTitle 
+        <CardTitle
           className="text-xs sm:text-sm font-medium leading-tight cursor-pointer hover:text-primary transition-colors"
           onClick={() => onView?.(task.id)}
         >
@@ -287,4 +287,4 @@ export function TaskCard({task, project, onEdit, onView}: TaskCardProps) {
       <DeleteTaskAlert task={task} isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}/>
     </Card>
   );
-}
+});
