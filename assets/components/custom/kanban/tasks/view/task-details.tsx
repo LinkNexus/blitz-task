@@ -1,15 +1,8 @@
-import { Badge } from "@/components/ui/badge.tsx";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
-import { Separator } from "@/components/ui/separator.tsx";
-import type { Task } from "@/types.ts";
-import {
-    Calendar,
-    Clock,
-    Flag,
-    Hash,
-    Tag,
-    User
-} from "lucide-react";
+import {Badge} from "@/components/ui/badge.tsx";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.tsx";
+import {Separator} from "@/components/ui/separator.tsx";
+import type {Task} from "@/types.ts";
+import {Calendar, Clock, Flag, Hash, Tag, User} from "lucide-react";
 
 interface TaskDetailsProps {
   task: Task;
@@ -18,19 +11,19 @@ interface TaskDetailsProps {
 
 const priorityColors = {
   low: "bg-blue-100 text-blue-800 border-blue-200",
-  medium: "bg-yellow-100 text-yellow-800 border-yellow-200", 
+  medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
   high: "bg-orange-100 text-orange-800 border-orange-200",
   urgent: "bg-red-100 text-red-800 border-red-200",
 };
 
 const priorityLabels = {
   low: "Low",
-  medium: "Medium", 
+  medium: "Medium",
   high: "High",
   urgent: "Urgent",
 };
 
-export function TaskDetails({ task }: TaskDetailsProps) {
+export function TaskDetails({task}: TaskDetailsProps) {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Not set";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -54,7 +47,7 @@ export function TaskDetails({ task }: TaskDetailsProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Hash className="w-5 h-5" />
+          <Hash className="w-5 h-5"/>
           Task Details
         </CardTitle>
       </CardHeader>
@@ -62,7 +55,7 @@ export function TaskDetails({ task }: TaskDetailsProps) {
         {/* Priority */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <Flag className="w-4 h-4" />
+            <Flag className="w-4 h-4"/>
             Priority
           </div>
           <Badge variant="outline" className={priorityColors[task.priority]}>
@@ -70,12 +63,12 @@ export function TaskDetails({ task }: TaskDetailsProps) {
           </Badge>
         </div>
 
-        <Separator />
+        <Separator/>
 
         {/* Due Date */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <Calendar className="w-4 h-4" />
+            <Calendar className="w-4 h-4"/>
             Due Date
           </div>
           <p className="text-sm text-muted-foreground">
@@ -83,12 +76,12 @@ export function TaskDetails({ task }: TaskDetailsProps) {
           </p>
         </div>
 
-        <Separator />
+        <Separator/>
 
         {/* Assignees */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <User className="w-4 h-4" />
+            <User className="w-4 h-4"/>
             Assignees ({task.assignees.length})
           </div>
           {task.assignees.length > 0 ? (
@@ -104,12 +97,12 @@ export function TaskDetails({ task }: TaskDetailsProps) {
           )}
         </div>
 
-        <Separator />
+        <Separator/>
 
         {/* Labels */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <Tag className="w-4 h-4" />
+            <Tag className="w-4 h-4"/>
             Labels ({task.labels.length})
           </div>
           {task.labels.length > 0 ? (
@@ -125,27 +118,17 @@ export function TaskDetails({ task }: TaskDetailsProps) {
           )}
         </div>
 
-        <Separator />
+        <Separator/>
 
         {/* Timestamps */}
         <div className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium">
-              <Clock className="w-4 h-4" />
+              <Clock className="w-4 h-4"/>
               Created
             </div>
             <p className="text-sm text-muted-foreground">
               {formatDateTime(task.createdAt)}
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Hash className="w-4 h-4" />
-              Task ID
-            </div>
-            <p className="text-sm text-muted-foreground font-mono">
-              #{task.id}
             </p>
           </div>
         </div>

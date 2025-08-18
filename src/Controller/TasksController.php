@@ -244,7 +244,7 @@ final class TasksController extends AbstractController
         $task = $this->taskRepository->findWithTeam($id);
         if (!$task) {
             return $this->json([
-                "error" => "The task with the given ID does not exist."
+                "message" => "The task with the given ID does not exist."
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -266,6 +266,7 @@ final class TasksController extends AbstractController
             $task->setDueAt(new DateTimeImmutable($dto->dueAt));
         }
 
+        $this->entityManager->flush();
         return $this->json($task, Response::HTTP_OK, context: ["groups" => ["tasks:read"]]);
     }
 

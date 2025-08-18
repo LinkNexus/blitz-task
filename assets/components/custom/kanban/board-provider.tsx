@@ -31,8 +31,6 @@ export function BoardProvider({children}: BoardProviderProps) {
     priorities: [],
     dueDateFrom: undefined,
     dueDateTo: undefined,
-    sortBy: "createdAt",
-    sortOrder: "desc",
   });
 
   const team = teams.find(t => t.id === activeTeamId);

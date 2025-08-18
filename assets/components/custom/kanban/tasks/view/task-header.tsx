@@ -7,7 +7,7 @@ import {useApiFetch} from "@/hooks/useApiFetch.ts";
 import {useFormErrors} from "@/hooks/useFormErrors";
 import type {FormErrors, Task} from "@/types.ts";
 import {Calendar, Clock, Edit, Flag, Save, Tag, User, X} from "lucide-react";
-import {useState} from "react";
+import {memo, useState} from "react";
 import {toast} from "sonner";
 
 interface TaskHeaderProps {
@@ -29,7 +29,7 @@ const priorityLabels = {
   urgent: "Urgent",
 };
 
-export function TaskHeader({task, onTaskUpdate}: TaskHeaderProps) {
+export const TaskHeader = memo(function ({task, onTaskUpdate}: TaskHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState({
     name: task.name,
@@ -234,4 +234,4 @@ export function TaskHeader({task, onTaskUpdate}: TaskHeaderProps) {
       )}
     </Card>
   );
-}
+});
