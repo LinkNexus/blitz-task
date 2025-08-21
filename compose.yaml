@@ -17,6 +17,7 @@ services:
       STABILITY: ${STABILITY:-stable}
       SITE_NAME: ${SITE_NAME:-http://localhost:8400}
     volumes:
+      - uploads:/app/uploads
       - caddy_data:/data
       - caddy_config:/config
     networks:
@@ -54,8 +55,9 @@ volumes:
   
   ###> doctrine/doctrine-bundle ###
   database_data:
-###< doctrine/doctrine-bundle ###
-###< symfony/mercure-bundle ###
+  ###< doctrine/doctrine-bundle ###
+  ###< symfony/mercure-bundle ###
+  uploads:
 
 networks:
   default:

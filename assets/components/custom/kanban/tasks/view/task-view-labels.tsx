@@ -24,7 +24,7 @@ export const TaskViewLabels = memo(function ({
   const [isAddingLabel, setIsAddingLabel] = useState(false);
 
   const addLabel = useCallback(async function (label: Label) {
-    if (labels.some(l => l.id === label.id)) {
+    if (!labels.some(l => l.id === label.id)) {
       await apiFetch(`/api/tasks/${id}/add-label?labelId=${label.id}`, {
         method: "POST"
       })

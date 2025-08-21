@@ -15,7 +15,7 @@ export const useAppStore = create(
         activeProjectId: null as number | null,
         teams: [] as Team[],
       },
-      (set) => ({
+      (set, get) => ({
         setUser: (user: User | null) => set({user}),
         toggleSidebar: () =>
           set((state) => ({
@@ -27,6 +27,10 @@ export const useAppStore = create(
         setActiveProjectId: (projectId: number) =>
           set({activeProjectId: projectId}),
         setTeams: (teams: Team[]) => set({teams}),
+        getActiveTeam() {
+          return get().teams
+            .find((t) => t.id === get().activeTeamId);
+        },
         setProjects: (teamId: number, projects: Project[]) =>
           set((state) => {
             return {
@@ -123,6 +127,13 @@ export const useAppStore = create(
               })
             }))
           }))
+        },
+        getTask(taskId: number) {
+          return get().teams
+            ?.flatMap(t => t.projects)
+            .flatMap(p => p?.columns)
+            .flatMap(p => p?.tasks)
+            .find(t => t?.id === taskId);
         },
         addTask(columnId: number, task: Task) {
           set((state) => {

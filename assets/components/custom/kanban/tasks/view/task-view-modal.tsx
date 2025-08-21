@@ -14,12 +14,13 @@ import {TaskViewLabels} from "@/components/custom/kanban/tasks/view/task-view-la
 
 export const TaskViewModal = memo(function ({taskId}: { taskId: number }) {
   const [_, setParams] = useSearchParams();
-  const {teams, activeTeamId, updateTask} = useAppStore(state => state);
-  const team = teams.find(t => t.id === activeTeamId);
-  const task = team?.projects
-    ?.flatMap(p => p?.columns)
-    .flatMap(c => c?.tasks)
-    .find(t => t?.id === taskId);
+  const {
+    updateTask,
+    getTask,
+    getActiveTeam,
+  } = useAppStore(state => state);
+  const team = getActiveTeam();
+  const task = getTask(taskId);
 
   function handleGoBack() {
     setParams(prev => {
@@ -76,14 +77,26 @@ export const TaskViewModal = memo(function ({taskId}: { taskId: number }) {
                   {/* Task details */}
                   <TaskDetails
                     task={task}
-                    onTaskUpdate={console.log}
                   />
 
                   {/* Attachments */}
                   <TaskAttachments
-                    task={task}
-                    onAttachmentAdd={console.log}
-                    onAttachmentDelete={console.log}
+                    id={task.id}
+                    attachments={task.attachments}
+                    onAttachmentAdd={function (attachment) {
+                      if (!task.attachments.some(a => a.id === attachment.id)) {
+                        updateTask({
+                          ...task,
+                          attachments: [...task.attachments, attachment]
+                        })
+                      }
+                    }}
+                    onAttachmentDelete={function (attachmentId) {
+                      updateTask({
+                        ...task,
+                        attachments: task.attachments.filter(a => a.id !== attachmentId)
+                      })
+                    }}
                   />
 
                   {/* Comments */}
@@ -144,15 +157,17 @@ export const TaskViewModal = memo(function ({taskId}: { taskId: number }) {
                       id={task.id}
                       labels={task.labels}
                       onLabelAdd={function (label) {
-                        updateTask({
-                          ...task,
-                          labels: [...task.labels, label]
-                        })
+                        if (!task.labels.some(l => l.id === label.id)) {
+                          updateTask({
+                            ...task,
+                            labels: [...task.labels, label]
+                          })
+                        }
                       }}
                       onLabelRemove={function (labelId) {
                         updateTask({
                           ...task,
-                          labels: task.labels.filter(l => l.id === labelId)
+                          labels: task.labels.filter(l => l.id !== labelId)
                         })
                       }}
                     />

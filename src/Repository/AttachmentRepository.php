@@ -16,6 +16,28 @@ class AttachmentRepository extends ServiceEntityRepository
         parent::__construct($registry, Attachment::class);
     }
 
+    /**
+     * Find attachment by a specific parameter
+     * @param string $key The parameter name
+     * @param int|string $value The parameter value
+     * @return Attachment|null
+     */
+    public function findWithTeamByParam(string $key, int|string $value): ?Attachment
+    {
+        return $this->createQueryBuilder("a")
+            ->select("a")
+            ->leftJoin("a.task", "task")
+            ->addSelect('task')
+            ->leftJoin("task.project", "project")
+            ->addSelect('project')
+            ->leftJoin("project.team", "team")
+            ->addSelect('team')
+            ->where("a.$key = :value")
+            ->setParameter("value", $value)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     //    /**
     //     * @return Attachment[] Returns an array of Attachment objects
     //     */

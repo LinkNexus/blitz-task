@@ -31,8 +31,7 @@ export interface Attachment {
   id: number;
   name: string;
   link: string;
-  taskId?: number;
-  commentId?: number;
+  filename: string;
 }
 
 export interface Comment {
@@ -56,7 +55,7 @@ export interface Task {
   createdAt: string;
   score: number;
   comments?: Comment[];
-  attachments?: Attachment[];
+  attachments: Attachment[];
 }
 
 export interface Label {

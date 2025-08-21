@@ -3,10 +3,10 @@ import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.tsx
 import {Separator} from "@/components/ui/separator.tsx";
 import type {Task} from "@/types.ts";
 import {Calendar, Clock, Flag, Hash, Tag, User} from "lucide-react";
+import {memo} from "react";
 
 interface TaskDetailsProps {
   task: Task;
-  onTaskUpdate: (task: Task) => void;
 }
 
 const priorityColors = {
@@ -23,7 +23,7 @@ const priorityLabels = {
   urgent: "Urgent",
 };
 
-export function TaskDetails({task}: TaskDetailsProps) {
+export const TaskDetails = memo(function ({task}: TaskDetailsProps) {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Not set";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -135,4 +135,4 @@ export function TaskDetails({task}: TaskDetailsProps) {
       </CardContent>
     </Card>
   );
-}
+});
