@@ -35,7 +35,7 @@ function getFileIcon(attachment: Attachment) {
   }
 }
 
-export const TaskAttachments = memo(function ({
+export const TaskViewAttachments = memo(function ({
   id,
   attachments,
   onAttachmentAdd,

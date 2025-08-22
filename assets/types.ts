@@ -41,7 +41,6 @@ export interface Comment {
   createdAt: string;
   updatedAt: string;
   attachments: Attachment[];
-  taskId: number;
 }
 
 export interface Task {

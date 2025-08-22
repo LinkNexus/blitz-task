@@ -46,6 +46,21 @@ class TaskRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    public function findWithComments(int $id): ?Task
+    {
+        return $this->createQueryBuilder("task")
+            ->leftJoin("task.project", "project")
+            ->addSelect("project")
+            ->leftJoin("project.team", "team")
+            ->addSelect("team")
+            ->leftJoin("task.comments", "comments")
+            ->addSelect("comments")
+            ->andWhere("task.id = :taskId")
+            ->setParameter("taskId", $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     //    /**
     //     * @return Task[] Returns an array of Task objects
     //     */

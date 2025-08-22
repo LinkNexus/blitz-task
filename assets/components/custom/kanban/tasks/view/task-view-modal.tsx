@@ -2,7 +2,7 @@ import {Button} from "@/components/ui/button.tsx";
 import {ArrowLeft, Settings} from "lucide-react";
 import {TaskHeader} from "@/components/custom/kanban/tasks/view/task-header.tsx";
 import {TaskDetails} from "@/components/custom/kanban/tasks/view/task-details.tsx";
-import {TaskAttachments} from "@/components/custom/kanban/tasks/view/task-attachments.tsx";
+import {TaskViewAttachments} from "@/components/custom/kanban/tasks/view/task-view-attachments.tsx";
 import {TaskComments} from "@/components/custom/kanban/tasks/view/task-comments.tsx";
 import {useSearchParams} from "wouter";
 import {useAppStore} from "@/lib/store.ts";
@@ -80,7 +80,7 @@ export const TaskViewModal = memo(function ({taskId}: { taskId: number }) {
                   />
 
                   {/* Attachments */}
-                  <TaskAttachments
+                  <TaskViewAttachments
                     id={task.id}
                     attachments={task.attachments}
                     onAttachmentAdd={function (attachment) {
@@ -101,10 +101,34 @@ export const TaskViewModal = memo(function ({taskId}: { taskId: number }) {
 
                   {/* Comments */}
                   <TaskComments
-                    task={task}
-                    onCommentAdd={console.log}
-                    onCommentUpdate={console.log}
-                    onCommentDelete={console.log}
+                    id={task.id}
+                    comments={task.comments}
+                    onCommentAdd={function (comment) {
+                      if (!task.comments?.some(c => c.id === comment.id)) {
+                        updateTask({
+                          ...task,
+                          comments: [...(task?.comments || []), comment]
+                        })
+                      }
+                    }}
+                    onCommentUpdate={function (comment) {
+                      updateTask({
+                        ...task,
+                        comments: task.comments?.map(c => c.id === comment.id ? comment : c)
+                      })
+                    }}
+                    onCommentDelete={function (commentId) {
+                      updateTask({
+                        ...task,
+                        comments: task.comments?.filter(c => c.id !== commentId)
+                      })
+                    }}
+                    onCommentsFetch={function (comments) {
+                      updateTask({
+                        ...task,
+                        comments
+                      });
+                    }}
                   />
                 </div>
 

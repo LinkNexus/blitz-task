@@ -1,34 +1,29 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.tsx";
-import { Badge } from "@/components/ui/badge.tsx";
-import { Button } from "@/components/ui/button.tsx";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.tsx";
+import {Badge} from "@/components/ui/badge.tsx";
+import {Button} from "@/components/ui/button.tsx";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
-import { Separator } from "@/components/ui/separator.tsx";
-import { Textarea } from "@/components/ui/textarea.tsx";
-import { apiFetch } from "@/lib/fetch.ts";
-import type { Comment, Task } from "@/types.ts";
-import {
-    Edit,
-    MessageSquare,
-    MoreHorizontal,
-    Paperclip,
-    Save,
-    Send,
-    Trash2,
-    X
-} from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import {Separator} from "@/components/ui/separator.tsx";
+import {Textarea} from "@/components/ui/textarea.tsx";
+import {ApiError} from "@/lib/fetch.ts";
+import type {Comment} from "@/types.ts";
+import {Copy, Edit, Loader, MessageSquare, MoreHorizontal, Paperclip, Save, Send, Trash2, X} from "lucide-react";
+import {memo, useEffect, useRef, useState} from "react";
+import {toast} from "sonner";
+import {useApiFetch} from "@/hooks/useApiFetch.ts";
+import {useAccount} from "@/hooks/useAccount.ts";
 
 interface TaskCommentsProps {
-  task: Task;
+  id: number;
+  comments: Comment[] | undefined | null;
   onCommentAdd: (comment: Comment) => void;
   onCommentUpdate: (comment: Comment) => void;
+  onCommentsFetch: (comments: Comment[]) => void;
   onCommentDelete: (commentId: number) => void;
 }
 
@@ -38,49 +33,49 @@ interface CommentItemProps {
   onDelete: (commentId: number) => void;
 }
 
-function CommentItem({ comment, onUpdate, onDelete }: CommentItemProps) {
+function CommentItem({comment, onUpdate, onDelete}: CommentItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const trimmedContent = editedContent.trim();
+  const {user} = useAccount();
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      
-      const updatedComment = await apiFetch<Comment>(`/api/comments/${comment.id}`, {
-        method: "PATCH",
-        data: { content: editedContent },
-      });
-
-      onUpdate(updatedComment);
-      setIsEditing(false);
+  const {pending: saving, callback: updateComment} = useApiFetch<Comment, {
+    message: string
+  }>(`/api/comments/${comment.id}`, {
+    data: {
+      content: trimmedContent
+    },
+    condition: trimmedContent && trimmedContent !== comment.content && comment.author.id === user.id,
+    method: "PATCH",
+    onSuccess(data) {
+      onUpdate(data)
       toast.success("Comment updated");
-    } catch (error) {
-      console.error("Failed to update comment:", error);
-      toast.error("Failed to update comment");
-    } finally {
-      setSaving(false);
+      setIsEditing(false);
+      setEditedContent(data.content);
+    },
+    onError(err) {
+      toast.error("Failed to update comment: " + err.data.message, {
+        closeButton: true,
+      })
+      console.error("Failed to update comment:", err);
     }
-  };
+  }, [comment.id, trimmedContent, onUpdate, comment.content]);
 
-  const handleDelete = async () => {
-    try {
-      setDeleting(true);
-      
-      await apiFetch(`/api/comments/${comment.id}`, {
-        method: "DELETE",
-      });
-
+  const {pending: deleting, callback: deleteComment} = useApiFetch<null, {
+    message: string
+  }>(`/api/comments/${comment.id}`, {
+    method: "DELETE",
+    onSuccess() {
       onDelete(comment.id);
       toast.success("Comment deleted");
-    } catch (error) {
-      console.error("Failed to delete comment:", error);
-      toast.error("Failed to delete comment");
-    } finally {
-      setDeleting(false);
+    },
+    onError(err) {
+      toast.error("Failed to delete comment: " + err.data.message, {
+        closeButton: true,
+      })
+      console.error("Failed to delete comment:", err);
     }
-  };
+  })
 
   const handleCancel = () => {
     setEditedContent(comment.content);
@@ -110,7 +105,7 @@ function CommentItem({ comment, onUpdate, onDelete }: CommentItemProps) {
     <div className="space-y-3">
       <div className="flex items-start space-x-3">
         <Avatar className="w-8 h-8">
-          <AvatarImage src={`/avatars/${comment.author.id}.jpg`} />
+          <AvatarImage src={`/avatars/${comment.author.id}.jpg`}/>
           <AvatarFallback className="text-xs">
             {comment.author.name.split(" ").map(n => n[0]).join("")}
           </AvatarFallback>
@@ -133,22 +128,30 @@ function CommentItem({ comment, onUpdate, onDelete }: CommentItemProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <MoreHorizontal className="w-4 h-4" />
+                  <MoreHorizontal className="w-4 h-4"/>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
+                <DropdownMenuItem>
+                  <Copy className="size-4 mr-2"/>
+                  Copy
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={handleDelete}
-                  className="text-destructive"
-                  disabled={deleting}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  {deleting ? "Deleting..." : "Delete"}
-                </DropdownMenuItem>
+                {user.id === comment.author.id && (
+                  <>
+                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                      <Edit className="w-4 h-4 mr-2"/>
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={async () => await deleteComment()}
+                      className="text-destructive"
+                      disabled={deleting}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2"/>
+                      {deleting ? "Deleting..." : "Delete"}
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -159,24 +162,29 @@ function CommentItem({ comment, onUpdate, onDelete }: CommentItemProps) {
                 value={editedContent}
                 onChange={(e) => setEditedContent(e.target.value)}
                 rows={3}
-                className="resize-none"
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    await updateComment();
+                  }
+                }}
               />
               <div className="flex items-center gap-2">
-                <Button 
-                  onClick={handleSave} 
-                  size="sm" 
-                  disabled={saving || !editedContent.trim()}
+                <Button
+                  onClick={() => updateComment()}
+                  size="sm"
+                  disabled={saving || !trimmedContent || comment.content === trimmedContent}
                 >
-                  <Save className="w-4 h-4 mr-2" />
+                  <Save className="w-4 h-4 mr-2"/>
                   {saving ? "Saving..." : "Save"}
                 </Button>
-                <Button 
-                  onClick={handleCancel} 
-                  variant="outline" 
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
                   size="sm"
                   disabled={saving}
                 >
-                  <X className="w-4 h-4 mr-2" />
+                  <X className="w-4 h-4 mr-2"/>
                   Cancel
                 </Button>
               </div>
@@ -189,7 +197,7 @@ function CommentItem({ comment, onUpdate, onDelete }: CommentItemProps) {
           {comment.attachments.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Paperclip className="w-3 h-3" />
+                <Paperclip className="w-3 h-3"/>
                 Attachments
               </div>
               <div className="grid gap-2">
@@ -201,7 +209,7 @@ function CommentItem({ comment, onUpdate, onDelete }: CommentItemProps) {
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 p-2 border rounded-md hover:bg-muted text-sm"
                   >
-                    <Paperclip className="w-4 h-4 text-muted-foreground" />
+                    <Paperclip className="w-4 h-4 text-muted-foreground"/>
                     {attachment.name}
                   </a>
                 ))}
@@ -214,89 +222,128 @@ function CommentItem({ comment, onUpdate, onDelete }: CommentItemProps) {
   );
 }
 
-export function TaskComments({ task, onCommentAdd, onCommentUpdate, onCommentDelete }: TaskCommentsProps) {
-  const [newComment, setNewComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+export const TaskComments = memo(function ({
+  id,
+  comments,
+  onCommentAdd,
+  onCommentUpdate,
+  onCommentDelete,
+  onCommentsFetch
+}: TaskCommentsProps) {
+  const [content, setContent] = useState("");
+  const trimmedContent = content.trim();
+  const ref = useRef<HTMLDivElement>(null);
 
-  const handleSubmit = async () => {
-    if (!newComment.trim()) return;
-
-    try {
-      setSubmitting(true);
-      
-      const comment = await apiFetch<Comment>("/api/comments", {
-        method: "POST",
-        data: {
-          content: newComment,
-          taskId: task.id,
-        },
+  const {callback: getComments} = useApiFetch(`/api/comments?taskId=${id}`, {
+    onSuccess: onCommentsFetch,
+    onError(err: ApiError<{ message: string }>) {
+      toast.error(err.data.message, {
+        closeButton: true
       });
-
-      onCommentAdd(comment);
-      setNewComment("");
-      toast.success("Comment added");
-    } catch (error) {
-      console.error("Failed to add comment:", error);
-      toast.error("Failed to add comment");
-    } finally {
-      setSubmitting(false);
     }
-  };
+  }, [id])
 
-  const comments = task.comments || [];
+  useEffect(() => {
+    const observer = new IntersectionObserver(async function () {
+      if (!comments)
+        await getComments();
+    });
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, [comments]);
+
+  const {pending: submitting, callback: submitComment} = useApiFetch(`/api/comments?taskId=${id}`, {
+    data: {
+      content: trimmedContent
+    },
+    onSuccess(data: Comment) {
+      onCommentAdd(data)
+      setContent("");
+      toast.success("Comment added");
+    },
+    onError(err) {
+      console.error("Failed to add comment:", err);
+      toast.error("Failed to add comment");
+    }
+  }, [trimmedContent, id, onCommentAdd]);
 
   return (
-    <Card>
+    <Card ref={ref}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5" />
-          Comments ({comments.length})
+          {comments ? <>
+              <MessageSquare className="w-5 h-5"/>
+              Comments ({comments.length})
+            </>
+            : <>
+              <Loader className="size-6 animate-spin"/>
+              Loading Comments...
+            </>
+          }
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Add new comment */}
         <div className="space-y-3">
           <Textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter" && !e.shiftKey && trimmedContent) {
+                e.preventDefault();
+                await submitComment();
+              }
+            }}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
             placeholder="Add a comment..."
             rows={3}
-            className="resize-none"
+            // className="resize-none"
           />
           <div className="flex justify-end">
-            <Button 
-              onClick={handleSubmit}
-              disabled={submitting || !newComment.trim()}
+            <Button
+              onClick={async () => {
+                if (trimmedContent) {
+                  await submitComment()
+                }
+              }}
+              disabled={submitting || !content.trim()}
               size="sm"
             >
-              <Send className="w-4 h-4 mr-2" />
-              {submitting ? "Adding..." : "Add Comment"}
+              <Send className="w-4 h-4 mr-2"/>
+              {submitting ? "Submitting..." : "Submit"}
             </Button>
           </div>
         </div>
 
-        {/* Comments list */}
-        {comments.length > 0 ? (
-          <div className="space-y-6">
-            <Separator />
-            {comments.map((comment, index) => (
-              <div key={comment.id}>
-                <CommentItem
-                  comment={comment}
-                  onUpdate={onCommentUpdate}
-                  onDelete={onCommentDelete}
-                />
-                {index < comments.length - 1 && <Separator className="mt-4" />}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No comments yet. Be the first to add one!</p>
-          </div>
-        )}
+        {!comments ? (
+            <div className="w-full flex justify-center align-center">
+              <Loader className="size-10 animate-spin"/>
+            </div>
+          )
+          : comments.length > 0 ? (
+            <div className="space-y-6">
+              <Separator/>
+              {comments.map((comment, index) => (
+                <div key={comment.id}>
+                  <CommentItem
+                    comment={comment}
+                    onUpdate={onCommentUpdate}
+                    onDelete={onCommentDelete}
+                  />
+                  {index < comments.length - 1 && <Separator className="mt-4"/>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50"/>
+              <p>No comments yet. Be the first to add one!</p>
+            </div>
+          )}
       </CardContent>
     </Card>
   );
-}
+});
