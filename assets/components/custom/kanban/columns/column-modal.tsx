@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog.tsx";
-import {apiFetch} from "@/lib/fetch.ts";
 import {useAppStore} from "@/lib/store.ts";
 import {toast} from "sonner";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form.tsx";
@@ -18,6 +17,7 @@ import {Input} from "@/components/ui/input.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Loader2} from "lucide-react";
 import {useEffect} from "react";
+import {useApiFetch} from "@/hooks/useApiFetch.ts";
 
 const columnSchema = z.object({
   name: z.string().min(2, {message: "Column name must be at least 2 characters long."}),
@@ -59,7 +59,6 @@ export function ColumnModal({
   } = form;
   const {addColumn, updateColumn} = useAppStore(state => state);
 
-
   useEffect(() => {
     if (isOpen) {
       reset({
@@ -77,40 +76,38 @@ export function ColumnModal({
     onClose();
   }
 
-  async function onSubmit(data: ColumnFormData) {
-    console.log("Submitting form data:", data);
-    try {
-      const createdOrUpdatedColumn = await apiFetch<TaskColumn>(
-        isEditing ? `/api/columns/${column.id}` : "/api/columns",
-        {
-          method: isEditing ? "PUT" : "POST",
-          data: {
-            ...data,
-            score: column?.score || score,
-            projectId: project.id,
-          }
-        }
-      );
-
+  const {callback: createOrUpdateColumn} = useApiFetch(isEditing ? `/api/columns/${column.id}` : "/api/columns", {
+    method: isEditing ? "PUT" : "POST",
+    onSuccess(data: TaskColumn) {
       if (isEditing) {
-        updateColumn(createdOrUpdatedColumn);
+        updateColumn(data);
         toast.success(
-          `Column "${createdOrUpdatedColumn.name}" updated successfully`
+          `Column "${data.name}" updated successfully`
         );
       } else {
-        addColumn(project.id, createdOrUpdatedColumn);
+        addColumn(project.id, data);
         toast.success(
-          `Column "${createdOrUpdatedColumn.name}" created successfully`
+          `Column "${data.name}" created successfully`
         );
       }
-
       onClose();
-    } catch (err) {
+    },
+    onError(err) {
       console.error("Failed to save column:", err);
       toast.error(
         isEditing ? "Failed to update column" : "Failed to create column"
       );
     }
+  })
+
+  async function onSubmit(data: ColumnFormData) {
+    await createOrUpdateColumn({
+      data: {
+        ...data,
+        score: column?.score || score,
+        projectId: project.id,
+      }
+    });
   }
 
   return (

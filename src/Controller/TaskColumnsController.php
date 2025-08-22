@@ -53,7 +53,7 @@ class TaskColumnsController extends AbstractController
 
         if (!$project) {
             return $this->json([
-                "error" => "The project with the given ID does not exist."
+                "message" => "The project with the given ID does not exist."
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -76,7 +76,7 @@ class TaskColumnsController extends AbstractController
 
         if (!$project) {
             return $this->json([
-                "error" => "The project with the given ID does not exist."
+                "message" => "The project with the given ID does not exist."
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -131,7 +131,7 @@ class TaskColumnsController extends AbstractController
 
         if (!$column) {
             return $this->json([
-                "error" => "The column with the given ID does not exist."
+                "message" => "The column with the given ID does not exist."
             ], Response::HTTP_NOT_FOUND);
         }
 
