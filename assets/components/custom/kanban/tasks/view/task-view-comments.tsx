@@ -13,7 +13,7 @@ import {Textarea} from "@/components/ui/textarea.tsx";
 import {ApiError} from "@/lib/fetch.ts";
 import type {Comment} from "@/types.ts";
 import {Copy, Edit, Loader, MessageSquare, MoreHorizontal, Paperclip, Save, Send, Trash2, X} from "lucide-react";
-import {memo, useEffect, useRef, useState} from "react";
+import {memo, useCallback, useEffect, useRef, useState} from "react";
 import {toast} from "sonner";
 import {useApiFetch} from "@/hooks/useApiFetch.ts";
 import {useAccount} from "@/hooks/useAccount.ts";
@@ -82,6 +82,15 @@ function CommentItem({comment, onUpdate, onDelete}: CommentItemProps) {
     setIsEditing(false);
   };
 
+  const handleCopy = useCallback(async function () {
+    await navigator.clipboard.writeText(comment.content).then(() => {
+      toast.success("Comment copied to clipboard");
+    }).catch(err => {
+      console.error("Failed to copy comment to clipboard:", err);
+      toast.error("Failed to copy comment to clipboard");
+    });
+  }, [comment.content]);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -132,7 +141,7 @@ function CommentItem({comment, onUpdate, onDelete}: CommentItemProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopy} className="text-muted-foreground">
                   <Copy className="size-4 mr-2"/>
                   Copy
                 </DropdownMenuItem>
