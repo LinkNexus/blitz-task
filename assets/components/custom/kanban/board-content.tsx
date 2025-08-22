@@ -2,10 +2,12 @@ import type {BoardFilters} from "@/components/custom/kanban/board-header.tsx";
 import {BoardHeader} from "@/components/custom/kanban/board-header.tsx";
 import {DragAndDropProvider} from "@/components/custom/kanban/drag-and-drop-provider.tsx";
 import {KanbanBoard} from "@/components/custom/kanban/kanban-board.tsx";
-import {TaskModal} from "@/components/custom/kanban/tasks/task-modal.tsx";
+import {TaskModal} from "@/components/custom/kanban/tasks/modal/task-modal.tsx";
 import {useTaskFilters} from "@/hooks/useTaskFilters.ts";
 import {useTaskModal} from "@/hooks/useTaskModal.ts";
 import type {Project, TaskColumn, Team} from "@/types.ts";
+import {TaskViewModal} from "@/components/custom/kanban/tasks/view/task-view-modal.tsx";
+import {useSearchParams} from "wouter";
 
 interface BoardContentProps {
   team: Team;
@@ -32,6 +34,8 @@ export function BoardContent({team, project, columns, filters, setFilters}: Boar
     filteredTasks,
     getFilteredTasksForColumn,
   } = useTaskFilters(columns, filters);
+
+  const [params, setParams] = useSearchParams();
 
   return (
     <DragAndDropProvider
@@ -60,6 +64,12 @@ export function BoardContent({team, project, columns, filters, setFilters}: Boar
           getFilteredTasksForColumn={getFilteredTasksForColumn}
           onAddTask={openCreateTaskModal}
           onEditTask={openEditTaskModal}
+          onViewTask={(taskId) => {
+            setParams(prev => {
+              prev.set("taskId", taskId.toString());
+              return prev;
+            })
+          }}
         />
       </div>
 
@@ -72,6 +82,11 @@ export function BoardContent({team, project, columns, filters, setFilters}: Boar
         defaultColumnId={defaultColumnId}
         teamMembers={team.members}
       />
+
+      {/* Task View Modal */}
+      {params.get("taskId") && (
+        <TaskViewModal taskId={Number(params.get("taskId"))}/>
+      )}
     </DragAndDropProvider>
   );
 }

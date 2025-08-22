@@ -4,25 +4,67 @@ namespace App\Controller;
 
 use App\DTO\Task\MoveTaskDTO;
 use App\DTO\Task\TaskDTO;
+use App\Entity\Attachment;
 use App\Entity\Task;
 use App\Entity\User;
+use App\Enum\TaskPriority;
 use App\Repository\LabelRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\TaskColumnRepository;
 use App\Repository\TaskRepository;
 use App\Repository\UserRepository;
+use App\Service\FileManager;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\HttpKernel\Attribute\MapUploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[Route('/api/tasks', name: 'api.tasks.', format: 'json')]
 final class TasksController extends AbstractController
 {
+    private const array allowedMimeTypes = [
+        // 📄 Documents
+        "application/pdf",
+        "application/msword",                     // .doc
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+        "application/vnd.oasis.opendocument.text", // .odt
+        "text/plain",                              // .txt
+        "application/rtf",                         // .rtf
+        "text/markdown",                           // .md
+
+        // 📊 Spreadsheets
+        "application/vnd.ms-excel", // .xls
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+        "application/vnd.oasis.opendocument.spreadsheet", // .ods
+        "text/csv", // .csv
+
+        // 🖼️ Images
+        "image/png",
+        "image/jpeg",
+        "image/gif",
+        "image/svg+xml",
+        "image/webp",
+
+        // 📑 Presentations
+        "application/vnd.ms-powerpoint", // .ppt
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
+        "application/vnd.oasis.opendocument.presentation", // .odp
+
+        // 📦 Archives
+        "application/zip",
+        "application/x-tar",
+        "application/gzip",
+        "application/x-7z-compressed",
+    ];
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly TaskRepository         $taskRepository,
@@ -37,10 +79,11 @@ final class TasksController extends AbstractController
     #[Route("", name: "create", methods: ["POST"])]
     public function create(
         #[MapRequestPayload] TaskDTO $dto,
-        #[CurrentUser] User          $user
+        #[CurrentUser] User          $user,
+        #[MapQueryParameter] int     $columnId
     ): JsonResponse
     {
-        $column = $this->taskColumnRepository->findWithProjectAndTeam($dto->columnId);
+        $column = $this->taskColumnRepository->findWithProjectAndTeam($columnId);
 
         if (null === $column) {
             return $this->json([
@@ -61,7 +104,7 @@ final class TasksController extends AbstractController
             ->setName($dto->name)
             ->setDescription($dto->description)
             ->setRelatedColumn($column)
-            ->setPriority($dto->priority)
+            ->setPriority($dto->priority ?? TaskPriority::MEDIUM)
             ->setDueAt(new DateTimeImmutable($dto->dueAt))
             ->setScore($this->taskRepository->findHighestTaskScore($column->getId()) + 100)
             ->setProject($project);
@@ -90,29 +133,57 @@ final class TasksController extends AbstractController
         return $this->json($task, Response::HTTP_CREATED, context: ["groups" => ["tasks:read"]]);
     }
 
+    #[Route("/{id}/add-label", name: "add_label", methods: ["POST"])]
+    public function addLabel(
+        int                      $id,
+        #[MapQueryParameter] int $labelId
+    ): JsonResponse
+    {
+        $task = $this->taskRepository->findWithTeam($id);
+
+        if (!$task) {
+            return $this->json([
+                "message" => "The task with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $this->denyAccessUnlessGranted("TEAM_MEMBER", $task->getProject()->getTeam());
+
+        $label = $this->labelRepository->find($labelId);
+
+        if (!$label) {
+            return $this->json([
+                "message" => "The label with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $task->addLabel($label);
+        $this->entityManager->flush();
+        return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
     #[Route("/{id}", name: "update", methods: ["PUT"])]
     public function update(
-        Task                         $task,
+        int                          $id,
         #[MapRequestPayload] TaskDTO $dto,
         #[CurrentUser] User          $user
     ): JsonResponse
     {
-        $column = $this->taskColumnRepository->findWithProjectAndTeam($dto->columnId);
+        $task = $this->taskRepository->findWithTeam($id);
 
-        if (null === $column) {
+        if (null === $task) {
             return $this->json([
-                "error" => "Column not found"
+                "error" => "Task not found"
             ], Response::HTTP_NOT_FOUND);
         }
 
-        $team = $column->getProject()->getTeam();
+        $team = $task->getProject()->getTeam();
         $this->denyAccessUnlessGranted("TEAM_MEMBER", $team);
 
         // Update task properties
         $task->setName($dto->name)
             ->setDescription($dto->description)
-            ->setRelatedColumn($column)
-            ->setPriority($dto->priority)
+            ->setPriority($dto->priority ?? TaskPriority::MEDIUM)
             ->setDueAt($dto->dueAt ? new DateTimeImmutable($dto->dueAt) : null);
 
         // Clear existing labels and add new ones
@@ -186,26 +257,120 @@ final class TasksController extends AbstractController
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
-    #[Route("/{id}", name: "delete", methods: ["DELETE"])]
-    public function delete(
-        int                 $id,
-        #[CurrentUser] User $user
+    #[Route("/{id}/remove-label", name: "remove", methods: ["POST"])]
+    public function removeLabel(
+        int                      $id,
+        #[MapQueryParameter] int $labelId
     ): JsonResponse
     {
-        /** @var ?Task $task */
-        $task = $this->entityManager
-            ->createQueryBuilder()
-            ->select("task")
-            ->from(Task::class, "task")
-            ->leftJoin("task.project", "project")
-            ->addSelect("project")
-            ->leftJoin("project.team", "team")
-            ->addSelect("team")
-            ->andWhere("task.id = :taskId")
-            ->setParameter("taskId", $id)
-            ->getQuery()
-            ->getOneOrNullResult();
+        $task = $this->taskRepository->findWithTeam($id);
 
+        if (!$task) {
+            return $this->json([
+                "message" => "The task with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $this->denyAccessUnlessGranted("TEAM_MEMBER", $task->getProject()->getTeam());
+
+        $label = $this->labelRepository->find($labelId);
+
+        if (!$label) {
+            return $this->json([
+                "message" => "The label with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $task->removeLabel($label);
+        $this->entityManager->flush();
+        return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route("/{id}", name: "patch", methods: ["PATCH"])]
+    public function patch(
+        int                                                                $id,
+        #[MapRequestPayload(validationGroups: ["partial_update"])] TaskDTO $dto
+    ): JsonResponse
+    {
+        $task = $this->taskRepository->findWithTeam($id);
+        if (!$task) {
+            return $this->json([
+                "message" => "The task with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $this->denyAccessUnlessGranted("TEAM_MEMBER", $task->getProject()->getTeam());
+
+        if ($dto->name) {
+            $task->setName($dto->name);
+        }
+
+        if ($dto->description) {
+            $task->setDescription($dto->description);
+        }
+
+        if ($dto->priority) {
+            $task->setPriority($dto->priority);
+        }
+
+        if ($dto->dueAt) {
+            $task->setDueAt(new DateTimeImmutable($dto->dueAt));
+        }
+
+        $this->entityManager->flush();
+        return $this->json($task, Response::HTTP_OK, context: ["groups" => ["tasks:read"]]);
+    }
+
+    /**
+     * @param int $id
+     * @param FileManager $fileManager
+     * @param UploadedFile[] $files
+     * @return JsonResponse
+     */
+    #[Route("/{id}/add-attachment", name: "add_attachment", methods: ["POST"])]
+    public function addAttachments(
+        int         $id,
+        FileManager $fileManager,
+        #[MapUploadedFile([
+            new Assert\File(
+                maxSize: "2M",
+                mimeTypes: self::allowedMimeTypes,
+                maxSizeMessage: "The file size must not exceed 2MB.",
+                mimeTypesMessage: "This file type is not allowed. Files such as Images, PDFs, Word documents, and Excel spreadsheets are recommended."
+            )
+        ])] array   $files
+    ): JsonResponse
+    {
+        $task = $this->taskRepository->findWithTeam($id);
+        if (!$task) {
+            return $this->json([
+                "message" => "The task with the given ID does not exist."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $attachments = array_map(function ($file) use ($fileManager, $task) {
+            $res = $fileManager->upload($file);
+            $attachment = new Attachment()
+                ->setName($res["originalName"])
+                ->setLink("/api/attachments/{$res["filename"]}")
+                ->setTask($task)
+                ->setFilename($res["filename"]);
+
+            $this->entityManager->persist($attachment);
+            $this->entityManager->flush();
+
+            return $attachment;
+        }, array_filter($files, fn($file) => $file->isValid()));
+
+        return $this->json($attachments, Response::HTTP_CREATED, context: ["groups" => ["attachments:read"]]);
+    }
+
+    #[Route("/{id}", name: "delete", methods: ["DELETE"])]
+    public function delete(
+        int $id,
+    ): JsonResponse
+    {
+        $task = $this->taskRepository->findWithTeam($id);
         if (!$task) {
             return $this->json([
                 "error" => "The task with the given ID does not exist."

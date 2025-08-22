@@ -34,19 +34,33 @@ class TaskColumnsController extends AbstractController
     {
         $project = $this->entityManager
             ->getRepository(Project::class)
-            ->findWithTeam($projectId);
+            ->createQueryBuilder("p")
+            ->select("p")
+            ->leftJoin("p.team", "t")
+            ->addSelect('t')
+            ->leftJoin("p.columns", "c")
+            ->addSelect('c')
+            ->leftJoin("c.tasks", "tasks")
+            ->addSelect('tasks')
+            ->leftJoin("tasks.assignees", "a")
+            ->addSelect('a')
+            ->leftJoin("tasks.labels", "l")
+            ->addSelect('l')
+            ->where("p.id = :id")
+            ->setParameter("id", $projectId)
+            ->getQuery()
+            ->getOneOrNullResult();
 
         if (!$project) {
             return $this->json([
-                "error" => "The project with the given ID does not exist."
+                "message" => "The project with the given ID does not exist."
             ], Response::HTTP_NOT_FOUND);
         }
 
         $this->denyAccessUnlessGranted("TEAM_MEMBER", $project->getTeam());
 
         return $this->json(
-            $this->entityManager->getRepository(TaskColumn::class)
-                ->findByProject($projectId),
+            $project->getColumns(),
             context: ["groups" => ["columns:read"]]
         );
     }
@@ -62,7 +76,7 @@ class TaskColumnsController extends AbstractController
 
         if (!$project) {
             return $this->json([
-                "error" => "The project with the given ID does not exist."
+                "message" => "The project with the given ID does not exist."
             ], Response::HTTP_NOT_FOUND);
         }
 
@@ -117,7 +131,7 @@ class TaskColumnsController extends AbstractController
 
         if (!$column) {
             return $this->json([
-                "error" => "The column with the given ID does not exist."
+                "message" => "The column with the given ID does not exist."
             ], Response::HTTP_NOT_FOUND);
         }
 

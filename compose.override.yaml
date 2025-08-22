@@ -27,6 +27,7 @@ services:
       - dev.orbstack.domains=blitz-task.orb.local
     ports:
       - "8400:80"
+      - "5173:5173"
   ###> symfony/mercure-bundle ###
   ###< symfony/mercure-bundle ###
   

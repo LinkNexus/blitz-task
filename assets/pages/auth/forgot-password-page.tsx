@@ -7,12 +7,12 @@ import {FormField} from "@/components/ui/form.tsx";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
 import {Loader2, Mail} from "lucide-react";
-import {useApiFetch} from "@/hooks/useFetch.ts";
+import {useApiFetch} from "@/hooks/useApiFetch.ts";
 import {toast} from "sonner";
 import type {ApiError} from "@/lib/fetch.ts";
 import {Separator} from "@/components/ui/separator.tsx";
 import {Link} from "wouter";
-import {SocialLinks} from "@/pages/auth/social-links.tsx";
+import {SocialLinks} from "@/components/custom/social-links.tsx";
 import {Divider} from "@/components/custom/divider.tsx";
 
 export function ForgotPasswordPage() {

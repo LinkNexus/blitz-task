@@ -17,40 +17,41 @@ class Task
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["columns:read", "tasks:read"])]
+    #[Groups(["columns:read", "tasks:read", "task:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["columns:read", "tasks:read"])]
+    #[Groups(["columns:read", "tasks:read", "task:read"])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(["columns:read", "tasks:read"])]
+    #[Groups(["columns:read", "tasks:read", "task:read"])]
     private ?string $description = null;
 
     #[ORM\Column(enumType: TaskPriority::class)]
-    #[Groups(["columns:read", "tasks:read"])]
+    #[Groups(["columns:read", "tasks:read", "task:read"])]
     private ?TaskPriority $priority = TaskPriority::MEDIUM;
 
     /**
      * @var Collection<int, User>
      */
     #[ORM\ManyToMany(targetEntity: User::class)]
-    #[Groups(["columns:read", "tasks:read"])]
+    #[Groups(["columns:read", "tasks:read", "task:read"])]
     private Collection $assignees;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["columns:read", "tasks:read"])]
+    #[Groups(["columns:read", "tasks:read", "task:read"])]
     private ?DateTimeImmutable $dueAt = null;
 
     /**
      * @var Collection<int, Label>
      */
     #[ORM\ManyToMany(targetEntity: Label::class)]
-    #[Groups(["columns:read", "tasks:read"])]
+    #[Groups(["columns:read", "tasks:read", "task:read"])]
     private Collection $labels;
 
     #[ORM\Column]
+    #[Groups(["columns:read", "tasks:read", "task:read"])]
     private ?DateTimeImmutable $createdAt;
 
     #[ORM\ManyToOne(inversedBy: 'tasks')]
@@ -65,11 +66,27 @@ class Task
     #[ORM\JoinColumn(nullable: false)]
     private ?Project $project = null;
 
+    /**
+     * @var Collection<int, Attachment>
+     */
+    #[ORM\OneToMany(targetEntity: Attachment::class, mappedBy: 'task')]
+    #[Groups(["columns:read", "tasks:read"])]
+    private Collection $attachments;
+
+    /**
+     * @var Collection<int, Comment>
+     */
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'task', orphanRemoval: true)]
+    #[Groups(["task:read"])]
+    private Collection $comments;
+
     public function __construct()
     {
         $this->assignees = new ArrayCollection();
         $this->labels = new ArrayCollection();
         $this->createdAt = new DateTimeImmutable();
+        $this->attachments = new ArrayCollection();
+        $this->comments = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -217,6 +234,66 @@ class Task
     public function setProject(?Project $project): static
     {
         $this->project = $project;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Attachment>
+     */
+    public function getAttachments(): Collection
+    {
+        return $this->attachments;
+    }
+
+    public function addAttachment(Attachment $attachment): static
+    {
+        if (!$this->attachments->contains($attachment)) {
+            $this->attachments->add($attachment);
+            $attachment->setTask($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAttachment(Attachment $attachment): static
+    {
+        if ($this->attachments->removeElement($attachment)) {
+            // set the owning side to null (unless already changed)
+            if ($attachment->getTask() === $this) {
+                $attachment->setTask(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Comment>
+     */
+    public function getComments(): Collection
+    {
+        return $this->comments;
+    }
+
+    public function addComment(Comment $comment): static
+    {
+        if (!$this->comments->contains($comment)) {
+            $this->comments->add($comment);
+            $comment->setTask($this);
+        }
+
+        return $this;
+    }
+
+    public function removeComment(Comment $comment): static
+    {
+        if ($this->comments->removeElement($comment)) {
+            // set the owning side to null (unless already changed)
+            if ($comment->getTask() === $this) {
+                $comment->setTask(null);
+            }
+        }
 
         return $this;
     }

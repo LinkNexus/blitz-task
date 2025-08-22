@@ -1,5 +1,5 @@
-import type {Task} from "@/types.ts";
-import {useState} from "react";
+import type { Task } from "@/types.ts";
+import { useState } from "react";
 
 export function useTaskModal() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);

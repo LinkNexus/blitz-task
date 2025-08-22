@@ -1,9 +1,9 @@
-import {AddColumnButton} from "@/components/custom/kanban/columns/add-column-button.tsx";
-import {ColumnModal} from "@/components/custom/kanban/columns/column-modal.tsx";
-import {KanbanColumn} from "@/components/custom/kanban/columns/kanban-column.tsx";
-import {useColumnModal} from "@/hooks/useColumnModal.ts";
-import type {Project, Task, TaskColumn} from "@/types.ts";
-import {useState} from "react";
+import { AddColumnButton } from "@/components/custom/kanban/columns/add-column-button.tsx";
+import { ColumnModal } from "@/components/custom/kanban/columns/column-modal.tsx";
+import { KanbanColumn } from "@/components/custom/kanban/columns/kanban-column.tsx";
+import { useColumnModal } from "@/hooks/useColumnModal.ts";
+import type { Project, Task, TaskColumn } from "@/types.ts";
+import { useState } from "react";
 
 interface KanbanBoardProps {
   columns: TaskColumn[];
@@ -11,6 +11,7 @@ interface KanbanBoardProps {
   getFilteredTasksForColumn: (column: TaskColumn) => Task[];
   onAddTask: (columnId: number) => void;
   onEditTask: (task: Task) => void;
+  onViewTask?: (taskId: number) => void;
 }
 
 export function KanbanBoard({
@@ -19,6 +20,7 @@ export function KanbanBoard({
   getFilteredTasksForColumn,
   onAddTask,
   onEditTask,
+  onViewTask,
 }: KanbanBoardProps) {
   const [columnScore, setColumnScore] = useState(0);
 
@@ -61,6 +63,7 @@ export function KanbanBoard({
                   openCreateColumnModal();
                 }}
                 onTaskEdit={onEditTask}
+                onTaskView={onViewTask}
                 onAddTask={onAddTask}
                 onColumnEdit={openEditColumnModal}
               />

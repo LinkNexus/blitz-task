@@ -1,36 +1,20 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.tsx";
-import { Badge } from "@/components/ui/badge.tsx";
-import { Button } from "@/components/ui/button.tsx";
-import { Calendar } from "@/components/ui/calendar.tsx";
+import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.tsx";
+import {Badge} from "@/components/ui/badge.tsx";
+import {Button} from "@/components/ui/button.tsx";
+import {Calendar} from "@/components/ui/calendar.tsx";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
-import { Input } from "@/components/ui/input.tsx";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover.tsx";
-import type { Label, User } from "@/types.ts";
-import {
-  Calendar as CalendarIcon,
-  Flag,
-  Plus,
-  RotateCcw,
-  Search,
-  SortAsc,
-  SortDesc,
-  Tag,
-  Users,
-  X
-} from "lucide-react";
-import { useState } from "react";
+import {Input} from "@/components/ui/input.tsx";
+import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover.tsx";
+import type {Label, User} from "@/types.ts";
+import {Calendar as CalendarIcon, Flag, Plus, RotateCcw, Search, Tag, Users, X} from "lucide-react";
+import {useState} from "react";
 
 export interface BoardFilters {
   search: string;
@@ -39,8 +23,6 @@ export interface BoardFilters {
   priorities: ("low" | "medium" | "high" | "urgent")[];
   dueDateFrom?: Date;
   dueDateTo?: Date;
-  sortBy: "name" | "priority" | "dueAt" | "createdAt";
-  sortOrder: "asc" | "desc";
 }
 
 interface BoardHeaderProps {
@@ -67,13 +49,6 @@ const priorityLabels = {
   urgent: "Urgent",
 };
 
-const sortLabels = {
-  name: "Name",
-  priority: "Priority",
-  dueAt: "Due Date",
-  createdAt: "Created Date",
-};
-
 export function BoardHeader({
   onAddTask,
   filters,
@@ -87,33 +62,28 @@ export function BoardHeader({
   const [dateToOpen, setDateToOpen] = useState(false);
 
   const handleSearchChange = (value: string) => {
-    onFiltersChange({ ...filters, search: value });
+    onFiltersChange({...filters, search: value});
   };
 
   const handleAssigneeToggle = (userId: number) => {
     const newAssignees = filters.assignees.includes(userId)
       ? filters.assignees.filter(id => id !== userId)
       : [...filters.assignees, userId];
-    onFiltersChange({ ...filters, assignees: newAssignees });
+    onFiltersChange({...filters, assignees: newAssignees});
   };
 
   const handleLabelToggle = (labelId: number) => {
     const newLabels = filters.labels.includes(labelId)
       ? filters.labels.filter(id => id !== labelId)
       : [...filters.labels, labelId];
-    onFiltersChange({ ...filters, labels: newLabels });
+    onFiltersChange({...filters, labels: newLabels});
   };
 
   const handlePriorityToggle = (priority: "low" | "medium" | "high" | "urgent") => {
     const newPriorities = filters.priorities.includes(priority)
       ? filters.priorities.filter(p => p !== priority)
       : [...filters.priorities, priority];
-    onFiltersChange({ ...filters, priorities: newPriorities });
-  };
-
-  const handleSortChange = (sortBy: BoardFilters["sortBy"]) => {
-    const newOrder = filters.sortBy === sortBy && filters.sortOrder === "asc" ? "desc" : "asc";
-    onFiltersChange({ ...filters, sortBy, sortOrder: newOrder });
+    onFiltersChange({...filters, priorities: newPriorities});
   };
 
   const clearAllFilters = () => {
@@ -124,12 +94,10 @@ export function BoardHeader({
       priorities: [],
       dueDateFrom: undefined,
       dueDateTo: undefined,
-      sortBy: "createdAt",
-      sortOrder: "desc",
     });
   };
 
-  const hasActiveFilters = 
+  const hasActiveFilters =
     filters.search ||
     filters.assignees.length > 0 ||
     filters.labels.length > 0 ||
@@ -137,7 +105,7 @@ export function BoardHeader({
     filters.dueDateFrom ||
     filters.dueDateTo;
 
-  const activeFilterCount = 
+  const activeFilterCount =
     (filters.search ? 1 : 0) +
     filters.assignees.length +
     filters.labels.length +
@@ -162,7 +130,7 @@ export function BoardHeader({
         </div>
         <div className="flex gap-2">
           <Button size="sm" className="sm:size-default" onClick={onAddTask}>
-            <Plus className="w-4 h-4 sm:mr-2" />
+            <Plus className="w-4 h-4 sm:mr-2"/>
             <span className="hidden sm:inline">Add Task</span>
           </Button>
         </div>
@@ -172,7 +140,7 @@ export function BoardHeader({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Search Bar */}
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4"/>
           <Input
             placeholder="Search tasks..."
             value={filters.search}
@@ -186,7 +154,7 @@ export function BoardHeader({
               onClick={() => handleSearchChange("")}
               className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3 h-3"/>
             </Button>
           )}
         </div>
@@ -197,7 +165,7 @@ export function BoardHeader({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <Users className="w-4 h-4 mr-2" />
+                <Users className="w-4 h-4 mr-2"/>
                 Assignees
                 {filters.assignees.length > 0 && (
                   <Badge variant="secondary" className="ml-2 text-xs">
@@ -208,7 +176,7 @@ export function BoardHeader({
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
               <DropdownMenuLabel>Filter by Assignee</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator/>
               {availableUsers.map((user) => (
                 <DropdownMenuCheckboxItem
                   key={user.id}
@@ -217,7 +185,7 @@ export function BoardHeader({
                 >
                   <div className="flex items-center gap-2">
                     <Avatar className="w-6 h-6">
-                      <AvatarImage src={`/avatars/${user.id}.jpg`} />
+                      <AvatarImage src={`/avatars/${user.id}.jpg`}/>
                       <AvatarFallback className="text-xs">
                         {user.name.split(" ").map(n => n[0]).join("")}
                       </AvatarFallback>
@@ -233,7 +201,7 @@ export function BoardHeader({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <Tag className="w-4 h-4 mr-2" />
+                <Tag className="w-4 h-4 mr-2"/>
                 Labels
                 {filters.labels.length > 0 && (
                   <Badge variant="secondary" className="ml-2 text-xs">
@@ -244,7 +212,7 @@ export function BoardHeader({
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
               <DropdownMenuLabel>Filter by Label</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator/>
               {availableLabels.map((label) => (
                 <DropdownMenuCheckboxItem
                   key={label.id}
@@ -261,7 +229,7 @@ export function BoardHeader({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <Flag className="w-4 h-4 mr-2" />
+                <Flag className="w-4 h-4 mr-2"/>
                 Priority
                 {filters.priorities.length > 0 && (
                   <Badge variant="secondary" className="ml-2 text-xs">
@@ -272,7 +240,7 @@ export function BoardHeader({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuLabel>Filter by Priority</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator/>
               {(["urgent", "high", "medium", "low"] as const).map((priority) => (
                 <DropdownMenuCheckboxItem
                   key={priority}
@@ -280,7 +248,7 @@ export function BoardHeader({
                   onCheckedChange={() => handlePriorityToggle(priority)}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${priorityColors[priority]}`} />
+                    <div className={`w-2 h-2 rounded-full ${priorityColors[priority]}`}/>
                     {priorityLabels[priority]}
                   </div>
                 </DropdownMenuCheckboxItem>
@@ -292,7 +260,7 @@ export function BoardHeader({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <CalendarIcon className="w-4 h-4 mr-2" />
+                <CalendarIcon className="w-4 h-4 mr-2"/>
                 Due Date
                 {(filters.dueDateFrom || filters.dueDateTo) && (
                   <Badge variant="secondary" className="ml-2 text-xs">
@@ -308,7 +276,7 @@ export function BoardHeader({
                   <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="w-full justify-start">
-                        <CalendarIcon className="w-4 h-4 mr-2" />
+                        <CalendarIcon className="w-4 h-4 mr-2"/>
                         {filters.dueDateFrom?.toLocaleDateString() || "Select date"}
                       </Button>
                     </PopoverTrigger>
@@ -317,7 +285,7 @@ export function BoardHeader({
                         mode="single"
                         selected={filters.dueDateFrom}
                         onSelect={(date) => {
-                          onFiltersChange({ ...filters, dueDateFrom: date });
+                          onFiltersChange({...filters, dueDateFrom: date});
                           setDateFromOpen(false);
                         }}
                         initialFocus
@@ -330,7 +298,7 @@ export function BoardHeader({
                   <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="w-full justify-start">
-                        <CalendarIcon className="w-4 h-4 mr-2" />
+                        <CalendarIcon className="w-4 h-4 mr-2"/>
                         {filters.dueDateTo?.toLocaleDateString() || "Select date"}
                       </Button>
                     </PopoverTrigger>
@@ -339,7 +307,7 @@ export function BoardHeader({
                         mode="single"
                         selected={filters.dueDateTo}
                         onSelect={(date) => {
-                          onFiltersChange({ ...filters, dueDateTo: date });
+                          onFiltersChange({...filters, dueDateTo: date});
                           setDateToOpen(false);
                         }}
                         initialFocus
@@ -351,7 +319,7 @@ export function BoardHeader({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onFiltersChange({ ...filters, dueDateFrom: undefined, dueDateTo: undefined })}
+                    onClick={() => onFiltersChange({...filters, dueDateFrom: undefined, dueDateTo: undefined})}
                     className="w-full"
                   >
                     Clear Dates
@@ -361,44 +329,10 @@ export function BoardHeader({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Sort Options */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                {filters.sortOrder === "asc" ? (
-                  <SortAsc className="w-4 h-4 mr-2" />
-                ) : (
-                  <SortDesc className="w-4 h-4 mr-2" />
-                )}
-                Sort
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {Object.entries(sortLabels).map(([key, label]) => (
-                <DropdownMenuItem
-                  key={key}
-                  onClick={() => handleSortChange(key as BoardFilters["sortBy"])}
-                  className="flex items-center justify-between"
-                >
-                  <span>{label}</span>
-                  {filters.sortBy === key && (
-                    filters.sortOrder === "asc" ? (
-                      <SortAsc className="w-4 h-4" />
-                    ) : (
-                      <SortDesc className="w-4 h-4" />
-                    )
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {/* Clear All Filters */}
           {hasActiveFilters && (
             <Button variant="outline" size="sm" onClick={clearAllFilters}>
-              <RotateCcw className="w-4 h-4 mr-2" />
+              <RotateCcw className="w-4 h-4 mr-2"/>
               Clear All
               <Badge variant="secondary" className="ml-2 text-xs">
                 {activeFilterCount}
@@ -420,7 +354,7 @@ export function BoardHeader({
                 onClick={() => handleSearchChange("")}
                 className="h-auto p-0 ml-1 hover:bg-transparent"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3"/>
               </Button>
             </Badge>
           )}
@@ -440,7 +374,7 @@ export function BoardHeader({
                   onClick={() => handleAssigneeToggle(userId)}
                   className="h-auto p-0 ml-1 hover:bg-transparent"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3 h-3"/>
                 </Button>
               </Badge>
             ) : null;
@@ -456,14 +390,14 @@ export function BoardHeader({
                   onClick={() => handleLabelToggle(labelId)}
                   className="h-auto p-0 ml-1 hover:bg-transparent"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3 h-3"/>
                 </Button>
               </Badge>
             ) : null;
           })}
           {filters.priorities.map((priority) => (
             <Badge key={priority} variant="secondary" className="gap-1">
-              <div className={`w-2 h-2 rounded-full ${priorityColors[priority]}`} />
+              <div className={`w-2 h-2 rounded-full ${priorityColors[priority]}`}/>
               {priorityLabels[priority]}
               <Button
                 variant="ghost"
@@ -471,7 +405,7 @@ export function BoardHeader({
                 onClick={() => handlePriorityToggle(priority)}
                 className="h-auto p-0 ml-1 hover:bg-transparent"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3"/>
               </Button>
             </Badge>
           ))}
@@ -481,10 +415,10 @@ export function BoardHeader({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onFiltersChange({ ...filters, dueDateFrom: undefined })}
+                onClick={() => onFiltersChange({...filters, dueDateFrom: undefined})}
                 className="h-auto p-0 ml-1 hover:bg-transparent"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3"/>
               </Button>
             </Badge>
           )}
@@ -494,10 +428,10 @@ export function BoardHeader({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onFiltersChange({ ...filters, dueDateTo: undefined })}
+                onClick={() => onFiltersChange({...filters, dueDateTo: undefined})}
                 className="h-auto p-0 ml-1 hover:bg-transparent"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3"/>
               </Button>
             </Badge>
           )}
