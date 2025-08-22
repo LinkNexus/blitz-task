@@ -3,7 +3,7 @@ import {ArrowLeft, Settings} from "lucide-react";
 import {TaskHeader} from "@/components/custom/kanban/tasks/view/task-header.tsx";
 import {TaskDetails} from "@/components/custom/kanban/tasks/view/task-details.tsx";
 import {TaskViewAttachments} from "@/components/custom/kanban/tasks/view/task-view-attachments.tsx";
-import {TaskComments} from "@/components/custom/kanban/tasks/view/task-comments.tsx";
+import {TaskViewComments} from "@/components/custom/kanban/tasks/view/task-view-comments.tsx";
 import {useSearchParams} from "wouter";
 import {useAppStore} from "@/lib/store.ts";
 import {memo} from "react";
@@ -100,7 +100,7 @@ export const TaskViewModal = memo(function ({taskId}: { taskId: number }) {
                   />
 
                   {/* Comments */}
-                  <TaskComments
+                  <TaskViewComments
                     id={task.id}
                     comments={task.comments}
                     onCommentAdd={function (comment) {

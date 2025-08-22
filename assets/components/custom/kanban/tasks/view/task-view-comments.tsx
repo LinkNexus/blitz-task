@@ -222,7 +222,7 @@ function CommentItem({comment, onUpdate, onDelete}: CommentItemProps) {
   );
 }
 
-export const TaskComments = memo(function ({
+export const TaskViewComments = memo(function ({
   id,
   comments,
   onCommentAdd,
