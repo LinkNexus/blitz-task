@@ -1,7 +1,7 @@
 ---
 # Development environment override
 services:
-  php:
+  app:
     build:
       context: .
       target: frankenphp_dev
@@ -22,5 +22,38 @@ services:
       # Ensure that host.docker.internal is correctly defined on Linux
       - host.docker.internal:host-gateway
     tty: true
-###> symfony/mercure-bundle ###
-###< symfony/mercure-bundle ###
+    ports:
+      - 8500:80
+      - 5173:5173
+  ###> symfony/mercure-bundle ###
+  ###< symfony/mercure-bundle ###
+
+  ###> doctrine/doctrine-bundle ###
+  database:
+    ports:
+      - "5432"
+  ###< doctrine/doctrine-bundle ###
+
+  ###> symfony/mailer ###
+  mailer:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+  ###< symfony/mailer ###
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - 8010:80
+
+volumes:
+  pgadmin_data:

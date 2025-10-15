@@ -1,7 +1,7 @@
 ---
 # Production environment override
 services:
-  php:
+  app:
     build:
       context: .
       target: frankenphp_prod

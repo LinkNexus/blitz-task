@@ -57,6 +57,20 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		fi
 	fi
 
+	if [ -f package.json ]; then
+		if [ "$NODE_ENV" = "production" ]; then
+			npm install --omit=dev
+			echo "Building assets for production..."
+			npm run build
+		else
+			npm install
+			echo "Starting development server..."
+			npm run dev -- --host &
+		fi
+	fi
+
+	/usr/bin/supervisord -c /etc/supervisor/conf.d/messenger-worker.conf &
+
 	echo 'PHP app ready!'
 fi
 

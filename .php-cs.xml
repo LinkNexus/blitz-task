@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<ruleset name="Custom PHPCS Rules">
+    <description>Custom ruleset that ignores minor style issues</description>
+
+    <!-- Include PSR12 but disable annoying rules -->
+    <rule ref="PSR12">
+        <!-- Ignore indentation issues -->
+        <exclude name="PSR2.Classes.ClassDeclaration"/>
+        <exclude name="PSR2.Methods.MethodDeclaration"/>
+        <exclude name="Generic.WhiteSpace.ScopeIndent"/>
+        <exclude name="Squiz.WhiteSpace.ScopeClosingBrace"/>
+
+        <!-- Ignore docblock issues -->
+        <exclude name="Squiz.Commenting.FunctionComment"/>
+        <exclude name="Squiz.Commenting.ClassComment"/>
+        <exclude name="Squiz.Commenting.VariableComment"/>
+        <exclude name="PEAR.Commenting.FunctionComment"/>
+
+        <!-- Ignore parenthesis and bracket alignment -->
+        <exclude name="Squiz.Functions.FunctionDeclaration"/>
+        <exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing"/>
+        <exclude name="PSR2.ControlStructures.ControlStructureSpacing"/>
+
+        <!-- Ignore line length -->
+        <exclude name="Generic.Files.LineLength"/>
+    </rule>
+
+    <!-- Only check for important errors -->
+    <rule ref="Generic.PHP.Syntax"/>
+    <rule ref="Generic.CodeAnalysis.EmptyStatement"/>
+    <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+    <rule ref="Generic.CodeAnalysis.UselessOverridingMethod"/>
+
+    <!-- Ignore these completely -->
+    <exclude name="PSR1.Files.SideEffects"/>
+    <exclude name="PSR1.Classes.ClassDeclaration"/>
+    <exclude name="Squiz.WhiteSpace.SuperfluousWhitespace"/>
+    <exclude name="Generic.WhiteSpace.DisallowTabIndent"/>
+
+    <!-- Set high severity threshold (only show important issues) -->
+    <severity>5</severity>
+</ruleset>
