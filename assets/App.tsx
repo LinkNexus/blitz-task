@@ -5,6 +5,8 @@ import { Login } from "./pages/auth/login";
 import ThemeProvider from "./components/custom/theme-provider";
 import { Toaster } from "./components/ui/sonner";
 import { Register } from "./pages/auth/register";
+import { ForgotPassword } from "./pages/auth/forgot-password";
+import { ResetPassword } from "./pages/auth/reset-password";
 
 export function App() {
   const { status, user, authenticate } = useAuth();
@@ -28,6 +30,8 @@ export function App() {
               <Switch>
                 <Route path="/login" component={Login} />
                 <Route path="/register" component={Register} />
+                <Route path="/forgot-password" component={ForgotPassword} />
+                <Route path="/reset-password" component={ResetPassword} />
                 <Route component={() => <Redirect to="/login" />} />
               </Switch>
             </div>

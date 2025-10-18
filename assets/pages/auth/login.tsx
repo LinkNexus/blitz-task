@@ -25,11 +25,12 @@ import { toast } from "sonner";
 import type { ApiError } from "@/lib/api-fetch";
 import { useApiFetch } from "@/hooks/use-api-fetch";
 import { AuthPageStructure } from "@/components/custom/auth/structure";
+import { Separator } from "@/components/ui/separator";
 
 export function Login() {
   const setUser = useAppStore((state) => state.setUser);
   const loginSchema = z.object({
-    email: z.string(),
+    email: z.string().email("This email is not a valid email address"),
     password: z.string(),
     remember_me: z.boolean().optional(),
   });
@@ -41,6 +42,7 @@ export function Login() {
       password: "",
       remember_me: true,
     },
+    mode: "onBlur",
   });
 
   const { pending, callback: login } = useApiFetch("/api/login", {
@@ -120,6 +122,20 @@ export function Login() {
           </Button>
         </form>
       </Form>
+
+      <div className="space-y-3">
+        <Separator />
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/register">
+              <Button variant="link" className="p-0 h-auto font-medium">
+                Sign up
+              </Button>
+            </Link>
+          </p>
+        </div>
+      </div>
     </AuthPageStructure>
   );
 }

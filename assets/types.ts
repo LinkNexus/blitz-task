@@ -5,4 +5,11 @@ interface User {
   isVerified: boolean;
 }
 
+export interface FormErrors {
+  violations: {
+    propertyPath: string;
+    title: string;
+  }[];
+}
+
 export type { User };
