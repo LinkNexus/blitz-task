@@ -25,6 +25,7 @@ import {
   Monitor,
   Moon,
   Palette,
+  Settings,
   Sparkles,
   Sun,
   UserCircleIcon,
@@ -97,23 +98,8 @@ export function NavUser() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <Sparkles />
-            Upgrade to Pro
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <UserCircleIcon />
-            Account
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <CreditCard />
-            Billing
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Bell />
-            Notifications
+            <Settings />
+            Settings
           </DropdownMenuItem>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
