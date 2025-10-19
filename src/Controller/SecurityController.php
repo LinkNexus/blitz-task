@@ -10,6 +10,7 @@ use App\Event\UserCreatedEvent;
 use App\Security\Auth\JsonLoginAuthenticator;
 use App\Security\EmailVerifier;
 use Doctrine\ORM\EntityManagerInterface;
+use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -33,6 +34,7 @@ final class SecurityController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly EmailVerifier $emailVerifier,
+        private readonly ClientRegistry $clientRegistry,
     ) {}
 
     #[Route('/csrf-token', name: 'csrf_token', methods: ['GET'])]
@@ -117,5 +119,32 @@ final class SecurityController extends AbstractController
         $this->addFlash('success', 'Your email address has been verified.');
 
         return $this->redirect('/');
+    }
+
+    #[Route('/connect/{service}')]
+    public function connect(
+        string $service
+    ): RedirectResponse {
+        $scopes = [];
+
+        // if ($service === 'github') {
+        //     $scopes = ['user:email', 'read:user'];
+        // }
+
+        if ($service === 'google') {
+            $scopes = ['openid'];
+        }
+
+        $client = $this->clientRegistry->getClient($service);
+
+        return $client->redirect($scopes);
+    }
+
+    #[Route('/check/{service}', name: 'oauth_check')]
+    public function oauthCheck(): void
+    {
+        throw new \LogicException(
+            'This method should never be called, as the authenticator will handle the oauth process.',
+        );
     }
 }

@@ -67,7 +67,6 @@ final class JsonLoginAuthenticator extends AbstractAuthenticator implements Auth
             $this->serializer->serialize($user, 'json', ['groups' => 'user:read']),
             Response::HTTP_OK,
             json: true
-
         );
     }
 

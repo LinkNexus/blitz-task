@@ -18,6 +18,7 @@ security:
       provider: app_user_provider
       custom_authenticators:
         - App\Security\Auth\JsonLoginAuthenticator
+        - App\Security\Auth\OauthLoginAuthenticator
       remember_me:
         secret: "%kernel.secret%"
         lifetime: 604800 # 1 week in seconds
