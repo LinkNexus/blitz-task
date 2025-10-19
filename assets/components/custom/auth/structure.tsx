@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Divider } from "../divider";
 import {
   Card,
   CardHeader,
@@ -7,7 +6,6 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { SocialLinks } from "./social-links";
 
 type Props = {
   title: string;
@@ -19,14 +17,14 @@ export function AuthPageStructure({ title, description, children }: Props) {
   return (
     <>
       <Card>
-        <CardHeader className="text-center">
+        <CardHeader className="text-center px-4 md:px-6">
           <CardTitle className="text-2xl">{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          <SocialLinks />
-          <Divider>or</Divider>
+        <CardContent className="space-y-6 px-4 md:px-6">
+          {/* <SocialLinks /> */}
+          {/* <Divider>or</Divider> */}
           {children}
         </CardContent>
       </Card>

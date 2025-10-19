@@ -1,4 +1,3 @@
-import { useAppStore } from "@/hooks/use-app-store";
 import {
   createContext,
   useContext,
@@ -7,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 
-export type Theme = "dark" | "light" | "system";
+type Theme = "dark" | "light" | "system";
 
 type ThemeProviderState = {
   theme: Theme;
@@ -20,25 +19,25 @@ type ThemeProviderProps = {
   storageKey?: string;
 };
 
-const initialState: ThemeProviderState = {
-  theme: "system",
-  setTheme: () => {},
-};
+const ThemeContext = createContext<ThemeProviderState | null>(null);
 
-const ThemeContext = createContext<ThemeProviderState>(initialState);
-
-export default function ThemeProvider({
+function ThemeProvider({
   children,
   defaultTheme = "system",
   storageKey = "theme",
 }: ThemeProviderProps) {
-  const theme = useAppStore((state) => state.theme);
-  const setTheme = useAppStore((state) => state.setTheme);
+  const [theme, setTheme] = useState<Theme>(
+    (function () {
+      const theme = localStorage.getItem(storageKey) as Theme | null;
+      return theme ?? defaultTheme;
+    })(),
+  );
 
   useEffect(
     function () {
       const root = window.document.documentElement;
       root.classList.remove("light", "dark");
+      localStorage.setItem(storageKey, theme);
 
       if (theme === "system") {
         const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
@@ -62,10 +61,12 @@ export default function ThemeProvider({
   );
 }
 
-export function useTheme() {
+function useTheme() {
   const context = useContext(ThemeContext);
-  if (context === undefined)
+  if (context === null)
     throw new Error("useTheme must be used within a ThemeProvider");
 
   return context;
 }
+
+export { ThemeProvider, useTheme, type Theme };

@@ -24,8 +24,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useApiFetch } from "@/hooks/use-api-fetch";
-import { useAppStore } from "@/hooks/use-app-store";
 import type { ApiError } from "@/lib/api-fetch";
+import { useAuth } from "@/providers/auth-provider";
 import type { FormErrors, User } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, UserPlus } from "lucide-react";
@@ -53,7 +53,7 @@ const registrationSchema = z
   });
 
 export function Register() {
-  const setUser = useAppStore((state) => state.setUser);
+  const { setUser } = useAuth();
 
   const form = useForm<z.infer<typeof registrationSchema>>({
     resolver: zodResolver(registrationSchema),

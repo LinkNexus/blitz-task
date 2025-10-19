@@ -20,15 +20,16 @@ import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { useAppStore } from "@/hooks/use-app-store";
 import { toast } from "sonner";
 import type { ApiError } from "@/lib/api-fetch";
 import { useApiFetch } from "@/hooks/use-api-fetch";
 import { AuthPageStructure } from "@/components/custom/auth/structure";
 import { Separator } from "@/components/ui/separator";
+import { memo } from "react";
+import { useAuth } from "@/providers/auth-provider";
 
-export function Login() {
-  const setUser = useAppStore((state) => state.setUser);
+export const Login = memo(function () {
+  const { setUser } = useAuth();
   const loginSchema = z.object({
     email: z.string().email("This email is not a valid email address"),
     password: z.string(),
@@ -138,4 +139,4 @@ export function Login() {
       </div>
     </AuthPageStructure>
   );
-}
+});

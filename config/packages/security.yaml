@@ -22,6 +22,8 @@ security:
       remember_me:
         secret: "%kernel.secret%"
         lifetime: 604800 # 1 week in seconds
+      logout:
+        path: /api/logout
 
       # activate different ways to authenticate
       # https://symfony.com/doc/current/security.html#the-firewall
