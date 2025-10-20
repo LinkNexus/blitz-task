@@ -51,27 +51,38 @@ export function App() {
           </SidebarProvider>
         )}
         {status === "unauthenticated" && (
-          <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-md">
-              {/* Header */}
-              <div className="flex items-center justify-center mb-8">
-                <div className="flex items-center space-x-2">
-                  <img src="/logo.svg" alt="logo" className="w-16 h-16" />
-                  <span className="text-2xl font-bold">Blitz-Task</span>
+          <div className="grid min-h-svh lg:grid-cols-2">
+            <div className="flex flex-col gap-4 p-6 md:p-10">
+              <div className="flex justify-center gap-2 md:justify-start">
+                <a href="#" className="flex items-center gap-2 font-medium">
+                  <img src="/logo.svg" alt="logo" className="w-10 h-10" />
+                  Blitz-Task
+                </a>
+              </div>
+
+              <div className="flex flex-1 items-center justify-center">
+                <div className="w-full max-w-xs">
+                  <Switch>
+                    <Route path="/login" component={Login} />
+                    <Route path="/register" component={Register} />
+                    <Route path="/forgot-password" component={ForgotPassword} />
+                    <Route path="/reset-password" component={ResetPassword} />
+                    <Route
+                      component={() => {
+                        setLastRequestedPath(currentLocation);
+                        return <Redirect to="/login" />;
+                      }}
+                    />
+                  </Switch>
                 </div>
               </div>
-              <Switch>
-                <Route path="/login" component={Login} />
-                <Route path="/register" component={Register} />
-                <Route path="/forgot-password" component={ForgotPassword} />
-                <Route path="/reset-password" component={ResetPassword} />
-                <Route
-                  component={() => {
-                    setLastRequestedPath(currentLocation);
-                    return <Redirect to="/login" />;
-                  }}
-                />
-              </Switch>
+            </div>
+            <div className="bg-muted relative hidden lg:block">
+              <img
+                src="/auth-wallpaper.jpg"
+                alt="Image"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
             </div>
           </div>
         )}
