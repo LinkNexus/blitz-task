@@ -15,7 +15,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
-import { Folder, Home, Inbox, Kanban, Search } from "lucide-react";
+import { Bot, Folder, Home, Inbox, Kanban, Search } from "lucide-react";
 import { useCallback, useMemo, type ComponentType } from "react";
 import { Link, useLocation, useSearchParams } from "wouter";
 
@@ -57,22 +57,16 @@ export function NavMain() {
         isActive: currentLocation === "/",
       },
       {
-        title: "Notifications",
-        url: "/notifications",
+        title: "Inbox",
+        url: "/inbox",
         icon: Inbox,
-        isActive: currentLocation === "/notifications",
+        isActive: currentLocation === "/inbox",
       },
       {
-        title: "Tasks",
-        url: "/tasks",
-        icon: Kanban,
-        isActive: currentLocation.includes("/tasks"),
-      },
-      {
-        title: "Projects",
-        url: "/projects",
-        icon: Folder,
-        isActive: currentLocation === "/projects",
+        title: "Ask AI",
+        url: "/ask-ai",
+        icon: Bot,
+        isActive: currentLocation === "/ask-ai",
       },
     ],
     [currentLocation],

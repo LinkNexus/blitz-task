@@ -98,12 +98,12 @@ export function NavUser() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <Settings />
-            Settings
+            <UserCircleIcon />
+            Profile
           </DropdownMenuItem>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <Palette className="mr-2 h-4 w-4" />
+              <Palette className="h-4 w-4" />
               <span>Theme</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>

@@ -5,7 +5,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Calendar } from "lucide-react";
+import { Calendar, Trash2 } from "lucide-react";
 import { useMemo } from "react";
 import { Link, useLocation } from "wouter";
 
@@ -19,6 +19,12 @@ export function NavSecondary() {
         url: "/calendar",
         icon: Calendar,
         isActive: currentLocation.includes("/calendar"),
+      },
+      {
+        title: "Trash",
+        url: "/trash",
+        icon: Trash2,
+        isActive: currentLocation.includes("/trash"),
       },
     ],
     [currentLocation],

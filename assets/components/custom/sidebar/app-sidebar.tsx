@@ -15,6 +15,7 @@ import { memo, type ComponentProps } from "react";
 import { NavMain } from "./nav-main";
 import { NavSecondary } from "./nav-secondary";
 import { NavUser } from "./nav-user";
+import { SidebarProjects } from "./projects";
 
 const AppSidebar = memo(function ({
   ...props
@@ -36,6 +37,7 @@ const AppSidebar = memo(function ({
 
       <SidebarContent>
         <NavMain />
+        <SidebarProjects />
         <NavSecondary />
       </SidebarContent>
 

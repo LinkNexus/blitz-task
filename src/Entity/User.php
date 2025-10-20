@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -45,6 +47,17 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $googleId = null;
+
+    /**
+     * @var Collection<int, Project>
+     */
+    #[ORM\OneToMany(targetEntity: Project::class, mappedBy: 'createdBy')]
+    private Collection $createdProjects;
+
+    public function __construct()
+    {
+        $this->createdProjects = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -159,6 +172,36 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     public function setGoogleId(?string $googleId): static
     {
         $this->googleId = $googleId;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Project>
+     */
+    public function getCreatedProjects(): Collection
+    {
+        return $this->createdProjects;
+    }
+
+    public function addCreatedProject(Project $createdProject): static
+    {
+        if (!$this->createdProjects->contains($createdProject)) {
+            $this->createdProjects->add($createdProject);
+            $createdProject->setCreatedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCreatedProject(Project $createdProject): static
+    {
+        if ($this->createdProjects->removeElement($createdProject)) {
+            // set the owning side to null (unless already changed)
+            if ($createdProject->getCreatedBy() === $this) {
+                $createdProject->setCreatedBy(null);
+            }
+        }
 
         return $this;
     }
