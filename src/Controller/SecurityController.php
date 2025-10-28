@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\Attribute\ValidateCsrfHeader;
-use App\DTO\CreateUserDTO;
+use App\DTO\UserDTO;
 use App\Entity\User;
 use App\Event\SendVerificationMailEvent;
 use App\Event\UserCreatedEvent;
@@ -73,7 +73,9 @@ final class SecurityController extends AbstractController
     #[Route('/register', name: 'register', methods: ['POST'])]
     #[ValidateCsrfHeader]
     public function register(
-        #[MapRequestPayload] CreateUserDTO $userDTO,
+        #[MapRequestPayload(
+            validationGroups: ['create']
+        )] UserDTO $userDTO,
         Security $security,
         UserPasswordHasherInterface $passwordHasher,
         ObjectMapperInterface $objectMapper,

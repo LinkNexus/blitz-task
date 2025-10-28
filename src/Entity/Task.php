@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\TaskPriority;
 use App\Repository\TaskRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -41,6 +42,9 @@ class Task
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?Project $project = null;
+
+    #[ORM\Column(enumType: TaskPriority::class)]
+    private ?TaskPriority $priority = null;
 
     public function __construct()
     {
@@ -144,6 +148,18 @@ class Task
     public function setProject(?Project $project): static
     {
         $this->project = $project;
+
+        return $this;
+    }
+
+    public function getPriority(): ?TaskPriority
+    {
+        return $this->priority;
+    }
+
+    public function setPriority(TaskPriority $priority): static
+    {
+        $this->priority = $priority;
 
         return $this;
     }

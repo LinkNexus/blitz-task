@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
 class Project
@@ -14,16 +15,20 @@ class Project
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['projects:read', 'project:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['projects:read', 'project:read'])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['project:read'])]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'createdProjects')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['project:read'])]
     private ?User $createdBy = null;
 
     /**
@@ -32,9 +37,29 @@ class Project
     #[ORM\OneToMany(targetEntity: TaskColumn::class, mappedBy: 'project', orphanRemoval: true)]
     private Collection $columns;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['projects:read', 'project:read'])]
+    private ?string $image = null;
+
+    /**
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'projects')]
+    private Collection $participants;
+
+    #[ORM\Column]
+    #[Groups(['projects:read', 'project:read'])]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['projects:read', 'project:read'])]
+    private ?string $icon = null;
+
     public function __construct()
     {
-        $this->columns = new ArrayCollection();
+        $this->columns = new ArrayCollection;
+        $this->participants = new ArrayCollection;
+        $this->createdAt = new \DateTimeImmutable;
     }
 
     public function getId(): ?int
@@ -88,7 +113,7 @@ class Project
 
     public function addColumn(TaskColumn $column): static
     {
-        if (!$this->columns->contains($column)) {
+        if (! $this->columns->contains($column)) {
             $this->columns->add($column);
             $column->setProject($this);
         }
@@ -104,6 +129,66 @@ class Project
                 $column->setProject(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): static
+    {
+        $this->image = $image;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getParticipants(): Collection
+    {
+        return $this->participants;
+    }
+
+    public function addParticipant(User $participant): static
+    {
+        if (! $this->participants->contains($participant)) {
+            $this->participants->add($participant);
+        }
+
+        return $this;
+    }
+
+    public function removeParticipant(User $participant): static
+    {
+        $this->participants->removeElement($participant);
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getIcon(): ?string
+    {
+        return $this->icon;
+    }
+
+    public function setIcon(?string $icon): static
+    {
+        $this->icon = $icon;
 
         return $this;
     }
