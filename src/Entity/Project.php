@@ -45,6 +45,7 @@ class Project
      * @var Collection<int, User>
      */
     #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'projects')]
+    #[Groups(['project:read'])]
     private Collection $participants;
 
     #[ORM\Column]
