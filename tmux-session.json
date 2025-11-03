@@ -1,0 +1,33 @@
+{
+	"windows": [
+		{
+			"name": "editor",
+			"panes": [
+				{
+					"command": "nvim .",
+					"width": "75%"
+				},
+				{
+					"command": "copilot",
+					"horizontal": false
+				}
+			]
+		},
+		{
+			"name": "lazygit",
+			"panes": [
+				{
+					"command": ["lazygit"]
+				}
+			]
+		},
+		{
+			"name": "lazydocker",
+			"panes": [
+				{
+					"command": ["lazydocker"]
+				}
+			]
+		}
+	]
+}

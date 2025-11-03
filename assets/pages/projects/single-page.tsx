@@ -1,51 +1,40 @@
-import {
-	Loader,
-	Users,
-	Calendar,
-	Settings,
-	MoreHorizontal,
-	Plus,
-	Filter,
-	Search,
-} from "lucide-react";
-import { useEffect } from "react";
+import { Filter, Loader, Plus, Search } from "lucide-react";
+import { memo, useCallback, useEffect } from "react";
 import { useParams } from "wouter";
-import { useProject } from "@/hooks/use-project";
-import { IconsPopover } from "@/components/custom/icons-popover";
-import { EditableContent } from "@/components/custom/editable-content";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { ProjectHeader } from "@/components/custom/projects/project-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { getInitials } from "@/lib/utils";
-import type { Project } from "@/types";
-import { AvatarGroup } from "@/components/custom/avatar-group";
+import { useProject } from "@/hooks/use-project";
+import { toFormData } from "@/lib/utils";
+import type { ProjectForm } from "@/schemas";
 
-export function ProjectPage() {
+export const ProjectPage = memo(() => {
 	const { id } = useParams<{ id: string }>();
 	const { gettingProject, getProject, project, updateProject } = useProject(
 		Number(id),
+	);
+	const update = useCallback(
+		async (data: Partial<ProjectForm>) => {
+			if (project) {
+				const dataToBeSent = {
+					name: project.name,
+					description: project.description,
+					icon: project.icon,
+					...data,
+				};
+				await updateProject({
+					data: data.image ? toFormData(dataToBeSent) : dataToBeSent,
+				});
+			}
+		},
+		[project, updateProject],
 	);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		getProject();
-	}, []);
+	}, [id]);
 
 	if (gettingProject || !project) {
 		return (
@@ -58,122 +47,7 @@ export function ProjectPage() {
 	return (
 		<div className="flex flex-col h-full max-h-screen overflow-hidden">
 			{/* Project Header */}
-			<div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-				<div className="flex flex-col gap-4 p-4 lg:p-6">
-					{/* Main Project Info */}
-					<div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-						<div className="flex items-center gap-4">
-							<Avatar className="size-16 sm:size-20 ring-2 ring-border">
-								<AvatarImage src={`/api/projects/image/${project.id}`} />
-								<AvatarFallback className="font-bold text-primary text-2xl sm:text-4xl bg-primary/10">
-									{getInitials(project.name)}
-								</AvatarFallback>
-							</Avatar>
-
-							<div className="flex flex-col gap-2">
-								<div className="flex items-center gap-2 sm:gap-3">
-									<IconsPopover
-										onEmojiSelect={(icon) => {
-											updateProject({ data: { ...project, icon } });
-										}}
-									>
-										<span className="text-2xl sm:text-4xl cursor-pointer hover:scale-110 transition-transform">
-											{project.icon || "📋"}
-										</span>
-									</IconsPopover>
-									<EditableContent
-										value={project.name}
-										onSave={(name) => {
-											updateProject({ data: { ...project, name } });
-										}}
-									>
-										<h1 className="font-black text-2xl sm:text-4xl text-foreground hover:text-primary transition-colors cursor-pointer">
-											{project.name}
-										</h1>
-									</EditableContent>
-								</div>
-								{project.description && (
-									<p className="text-muted-foreground text-sm sm:text-base max-w-md">
-										{project.description}
-									</p>
-								)}
-							</div>
-						</div>
-
-						{/* Project Actions */}
-						<div className="flex items-center gap-2 ml-auto">
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button variant="outline" size="sm">
-										<MoreHorizontal className="size-4" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuItem>
-										<Settings className="size-4" />
-										Project Settings
-									</DropdownMenuItem>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem className="text-destructive">
-										Archive Project
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</div>
-					</div>
-
-					<div>
-						<div className="flex items-center gap-2">
-							<div className="flex -space-x-2">
-								{project.participants.slice(0, 5).map((participant) => (
-									<TooltipProvider key={participant.id}>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<Avatar className="size-8 ring-2 ring-background border hover:scale-110 transition-transform cursor-pointer">
-													<AvatarFallback className="text-xs bg-primary/10 text-primary">
-														{getInitials(participant.name)}
-													</AvatarFallback>
-												</Avatar>
-											</TooltipTrigger>
-											<TooltipContent>{participant.name}</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
-								))}
-								{project.participants.length > 5 && (
-									<div className="size-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-										<span className="text-xs text-muted-foreground font-medium">
-											+{project.participants.length - 5}
-										</span>
-									</div>
-								)}
-							</div>
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="sm"
-											className="size-8 rounded-full"
-										>
-											<Users className="size-4" />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>View all participants</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						</div>
-					</div>
-
-					{/* Project Meta & Team */}
-					<div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-						<div className="flex flex-wrap items-center gap-3">
-							<Badge variant="secondary" className="text-xs">
-								Created by {project.createdBy.name}
-							</Badge>
-						</div>
-					</div>
-				</div>
-			</div>
+			<ProjectHeader project={project} update={update} />
 
 			{/* Toolbar */}
 			<div className="border-b bg-muted/30">
@@ -242,4 +116,4 @@ export function ProjectPage() {
 			</div>
 		</div>
 	);
-}
+});

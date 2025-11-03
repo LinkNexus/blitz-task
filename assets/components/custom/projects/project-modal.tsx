@@ -198,10 +198,10 @@ export const ProjectModal = memo(() => {
 												field.onChange(files[0]);
 											}}
 											multiple={false}
-											src={field.value ? [field.value] : []}
+											src={field.value ? [field.value] : undefined}
 											maxSize={1.5 * 1024 * 1024}
 											onError={(e) =>
-												toast.error("Something went wrong: " + e.message)
+												toast.error(`Something went wrong: ${e.message}`)
 											}
 										>
 											<DropzoneEmptyState />

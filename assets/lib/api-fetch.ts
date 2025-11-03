@@ -18,6 +18,7 @@ export async function apiFetch<T, S = null>(
 	options.contentType ??=
 		options.data instanceof FormData ? "form-data" : "json";
 	options.accept ??= "json";
+
 	const headers: Record<string, any> = options.headers
 		? { ...options.headers }
 		: {};
@@ -57,9 +58,8 @@ export async function apiFetch<T, S = null>(
 
 	if (res.status === 419 && retryAttempt < 1) {
 		deleteCookie("XSRF-TOKEN");
-		await fetch("/api/csrf-token").then(() => {
-			return apiFetch<T, S>(url, options, retryAttempt + 1);
-		});
+		await fetch("/api/csrf-token");
+		return apiFetch<T, S>(url, options, retryAttempt + 1);
 	}
 
 	if (!res.ok)

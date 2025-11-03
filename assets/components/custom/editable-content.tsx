@@ -34,13 +34,21 @@ export const EditableContent = memo(({ value, onSave, children }: Props) => {
 		}
 	}, [draft]);
 
-	const handleInput: FormEventHandler<HTMLElement> = useCallback((e) => {
-		setDraft((e.target as HTMLElement).innerText);
-	}, []);
+	const handleInput: FormEventHandler<HTMLElement> = useCallback(
+		(e) => {
+			setDraft((e.target as HTMLElement).innerText);
+			children.props.onInput?.(e);
+		},
+		[children.props.onInput],
+	);
 
-	const handleBlur: FormEventHandler<HTMLElement> = useCallback(() => {
-		if (draft !== value) onSave(draft);
-	}, [draft, value, onSave]);
+	const handleBlur: FormEventHandler<HTMLElement> = useCallback(
+		(e) => {
+			if (draft !== value) onSave(draft);
+			children.props.onBlur?.(e);
+		},
+		[draft, value, onSave, children.props.onBlur],
+	);
 
 	const enhancedChild = cloneElement(children, {
 		// @ts-ignore

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { navigate } from "wouter/use-browser-location";
+import type { ProjectForm } from "@/schemas";
 import type { FormErrors, Project } from "@/types";
 import { useApiFetch } from "./use-api-fetch";
-import type { ProjectForm } from "@/schemas";
 
 export function useProject(id: number) {
 	const [project, setProject] = useState<Project | null>(null);
@@ -26,11 +26,10 @@ export function useProject(id: number) {
 	const { pending: updatingProject, action: updateProject } = useApiFetch<
 		Project,
 		FormErrors,
-		ProjectForm
+		ProjectForm | FormData
 	>({
 		url: `/api/projects/${id}`,
 		options: {
-			method: "PUT",
 			onSuccess(response) {
 				setProject(response.data);
 				document.dispatchEvent(

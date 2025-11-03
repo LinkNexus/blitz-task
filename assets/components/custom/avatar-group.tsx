@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import type { ComponentProps } from "react";
+import { cn } from "@/lib/utils";
 
 type Props = ComponentProps<"div"> & { grayscale?: boolean };
 
@@ -9,6 +9,7 @@ export function AvatarGroup({ children, grayscale, ...props }: Props) {
 			className={cn(
 				"*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2",
 				grayscale && "*:data-[slot=avatar]:grayscale",
+				props.className,
 			)}
 		>
 			{children}

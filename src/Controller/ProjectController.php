@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Attribute\NotValidateCsrfHeader;
 use App\Attribute\ValidateCsrfHeader;
 use App\DTO\ProjectDTO;
 use App\Entity\Project;
@@ -10,6 +11,9 @@ use App\Repository\ProjectRepository;
 use App\Service\FileUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
@@ -43,7 +47,8 @@ final class ProjectController extends AbstractController
     }
 
     #[Route('/{id}', name: 'get', methods: ['GET'])]
-    public function getProject(Project $project, #[CurrentUser] User $user): JsonResponse
+    #[IsGranted('PROJECT_PARTICIPANT', subject: 'project')]
+    public function getProject(Project $project): JsonResponse
     {
         return $this->json(
             $project,
@@ -85,18 +90,29 @@ final class ProjectController extends AbstractController
         );
     }
 
-    #[Route('/{id}', name: 'update', methods: ['PUT'])]
+    #[Route('/{id}', name: 'update', methods: ['POST'])]
+    #[IsGranted('PROJECT_PARTICIPANT', subject: 'project')]
     public function update(
         Project $project,
         #[MapRequestPayload] ProjectDTO $projectDTO,
+        #[MapUploadedFile(
+            constraints: [
+                new Image(
+                    maxSize: '2M'
+                ),
+            ]
+        )] ?UploadedFile $image,
     ) {
-
-        $this->denyAccessUnlessGranted('PROJECT_PARTICIPANT', $project);
-
         $this->objectMapper->map(
             source: $projectDTO,
-            target: $project,
+            target: $project
         );
+
+        if ($image !== null) {
+            $this->fileUploader->remove($project->getImage(), 'projects');
+            $res = $this->fileUploader->upload($image, 'projects');
+            $project->setImage($res['filename']);
+        }
 
         $this->entityManager->flush();
 
@@ -105,5 +121,16 @@ final class ProjectController extends AbstractController
             context: ['groups' => 'project:read'],
         );
 
+    }
+
+    #[Route('/image/{filename}', name: 'image', methods: ['GET'])]
+    #[NotValidateCsrfHeader]
+    public function showImage(
+        #[Autowire('%kernel.project_dir%/uploads/projects')] string $projectsUploadDir,
+        string $filename
+    ): BinaryFileResponse {
+        return $this->file(
+            Path::join($projectsUploadDir, $filename)
+        );
     }
 }

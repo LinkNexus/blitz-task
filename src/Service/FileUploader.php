@@ -14,10 +14,13 @@ final readonly class FileUploader
         private SluggerInterface $slugger,
     ) {}
 
+    /**
+     * @return array{filename: string, originalFilename: string}
+     */
     public function upload(
         UploadedFile $file,
         string $targetDir = '',
-    ) {
+    ): array {
 
         $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $safeFilename = $this->slugger->slug($originalFilename);
@@ -31,5 +34,13 @@ final readonly class FileUploader
             'filename' => $filename,
             'originalFilename' => $originalFilename . '.' . $extension,
         ];
+    }
+
+    public function remove(string $filename, string $targetDir = ''): void
+    {
+        $filePath = Path::join($this->uploadDir, $targetDir, $filename);
+        if (file_exists($filePath)) {
+            unlink($filePath);
+        }
     }
 }
