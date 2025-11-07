@@ -25,6 +25,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ProjectDescription } from "./project-description";
+import { ParticipantsModal } from "./participants-modal";
 
 type Props = {
 	project: Project;
@@ -109,13 +110,13 @@ export const ProjectHeader = memo(({ project, update }: Props) => {
 				<div>
 					<div className="flex items-center gap-2">
 						<div className="flex -space-x-2">
-							<AvatarGroup grayscale>
+							<div className="flex -space-x-2">
 								{project.participants.slice(0, 5).map((participant) => (
 									<TooltipProvider key={participant.id}>
 										<Tooltip>
 											<TooltipTrigger asChild>
-												<Avatar className="size-8 ring-2 ring-background border hover:scale-110 transition-transform cursor-pointer">
-													<AvatarFallback className="text-xs bg-primary/10 text-primary">
+												<Avatar className="size-8 ring-background ring-2 hover:scale-110 transition-transform cursor-pointer">
+													<AvatarFallback className="text-muted-foreground text-xs">
 														{getInitials(participant.name)}
 													</AvatarFallback>
 												</Avatar>
@@ -124,7 +125,7 @@ export const ProjectHeader = memo(({ project, update }: Props) => {
 										</Tooltip>
 									</TooltipProvider>
 								))}
-							</AvatarGroup>
+							</div>
 							{project.participants.length > 5 && (
 								<div className="size-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
 									<span className="text-xs text-muted-foreground font-medium">
@@ -139,6 +140,11 @@ export const ProjectHeader = memo(({ project, update }: Props) => {
 									variant="ghost"
 									size="sm"
 									className="size-8 rounded-full"
+									onClick={() => {
+										document.dispatchEvent(
+											new CustomEvent("project.participants-modal-open"),
+										);
+									}}
 								>
 									<Users className="size-4" />
 								</Button>
@@ -161,6 +167,7 @@ export const ProjectHeader = memo(({ project, update }: Props) => {
 			</div>
 
 			<ChangeImageModal update={update} />
+			<ParticipantsModal project={project} />
 		</div>
 	);
 });
