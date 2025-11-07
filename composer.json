@@ -13,6 +13,7 @@
         "doctrine/doctrine-bundle": "^2.18",
         "doctrine/doctrine-migrations-bundle": "^3.5",
         "doctrine/orm": "^3.5.2",
+        "fakerphp/faker": "^1.24",
         "knpuniversity/oauth2-client-bundle": "^2.19",
         "league/oauth2-google": "^4.0",
         "pentatrion/vite-bundle": "^8.2.2",
@@ -95,6 +96,7 @@
         }
     },
     "require-dev": {
+        "doctrine/doctrine-fixtures-bundle": "^4.3",
         "symfony/debug-bundle": "7.3.*",
         "symfony/maker-bundle": "^1.64",
         "symfony/stopwatch": "7.3.*",
