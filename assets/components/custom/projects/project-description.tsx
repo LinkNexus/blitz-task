@@ -20,7 +20,8 @@ export const ProjectDescription = memo(({ description, update }: Props) => {
 				autoFocus
 				onBlur={async (e) => {
 					setEditing(false);
-					await update({ description: e.target.value });
+					if (description !== e.target.value)
+						await update({ description: e.target.value });
 				}}
 			/>
 		);

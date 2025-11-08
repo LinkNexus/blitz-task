@@ -25,7 +25,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ProjectDescription } from "./project-description";
-import { ParticipantsModal } from "./participants-modal";
+import { ProjectMembersModal } from "./project-members-modal/project-members-modal";
 
 type Props = {
 	project: Project;
@@ -167,7 +167,7 @@ export const ProjectHeader = memo(({ project, update }: Props) => {
 			</div>
 
 			<ChangeImageModal update={update} />
-			<ParticipantsModal project={project} />
+			<ProjectMembersModal {...project} update={update} />
 		</div>
 	);
 });
