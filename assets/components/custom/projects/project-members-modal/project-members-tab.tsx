@@ -19,10 +19,37 @@ import {
 import { useAccount } from "@/hooks/use-account";
 import { getInitials } from "@/lib/utils";
 import type { ProjectMembersModalProps } from "./project-members-modal";
+import { useApiFetch } from "@/hooks/use-api-fetch";
+import { confirmAction } from "../../confirm-action-modal";
+import { toast } from "sonner";
 
 export const ProjectMembersTab = memo(
-	({ participants, createdBy, update }: ProjectMembersModalProps) => {
+	({ project, setProject }: ProjectMembersModalProps) => {
 		const { user } = useAccount();
+		const { participants, createdBy } = project;
+
+		const { pending: removing, action: removeMember } = useApiFetch<{
+			memberId: number;
+		}>({
+			url: `/api/projects/${project.id}/remove-member`,
+			options: {
+				method: "POST",
+				onSuccess(res) {
+					setProject((prev) => {
+						if (!prev) return prev;
+						return {
+							...prev,
+							participants: prev.participants.filter(
+								(participant) => participant.id !== res.data.memberId,
+							),
+						};
+					});
+
+					toast.success("Participant removed successfully.");
+				},
+			},
+			deps: [project.id, setProject],
+		});
 
 		return (
 			<ScrollArea className="max-h-72 overflow-y-auto">
@@ -43,7 +70,7 @@ export const ProjectMembersTab = memo(
 										<p className="font-medium text-sm truncate">
 											{participant.name}
 										</p>
-										{user.id === createdBy.id && (
+										{participant.id === createdBy.id && (
 											<TooltipProvider>
 												<Tooltip>
 													<TooltipTrigger asChild>
@@ -70,7 +97,20 @@ export const ProjectMembersTab = memo(
 										</Button>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end">
-										<DropdownMenuItem className="text-destructive focus:text-destructive">
+										<DropdownMenuItem
+											onClick={() => {
+												confirmAction({
+													async action() {
+														await removeMember({
+															searchParams: { memberId: participant.id },
+														});
+													},
+													title: "Remove Participant",
+													description: `Are you sure you want to remove ${participant.name} from this project? This action cannot be undone.`,
+												});
+											}}
+											className="text-destructive focus:text-destructive"
+										>
 											<UserMinus className="size-4 text-destructive" />
 											Remove
 										</DropdownMenuItem>

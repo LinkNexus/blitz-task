@@ -16,6 +16,7 @@ use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\MapUploadedFile;
 use Symfony\Component\ObjectMapper\ObjectMapperInterface;
@@ -132,5 +133,25 @@ final class ProjectController extends AbstractController
         return $this->file(
             Path::join($projectsUploadDir, $filename)
         );
+    }
+
+    #[Route('/{id}/remove-member', name: 'remove_member', methods: ['POST'])]
+    #[IsGranted('PROJECT_OWNER', subject: 'project')]
+    public function removeMember(
+        Project $project,
+        #[MapQueryParameter] int $memberId,
+    ) {
+        $member = $this->entityManager->getRepository(User::class)->find($memberId);
+
+        if (! $member) {
+            return $this->json(['error' => 'Member not found'], 404);
+        }
+
+        $project->removeParticipant($member);
+        $this->entityManager->flush();
+
+        return $this->json([
+            'memberId' => $memberId,
+        ]);
     }
 }

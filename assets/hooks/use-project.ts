@@ -3,9 +3,18 @@ import { toast } from "sonner";
 import { navigate } from "wouter/use-browser-location";
 import type { ProjectForm } from "@/schemas";
 import type { FormErrors, Project } from "@/types";
-import { useApiFetch } from "./use-api-fetch";
+import { useApiFetch, type UseApiFetchAction } from "./use-api-fetch";
 
-export function useProject(id: number) {
+export type UseProjectReturn = {
+	project: Project | null;
+	setProject: React.Dispatch<React.SetStateAction<Project | null>>;
+	gettingProject: boolean;
+	getProject: UseApiFetchAction<never>;
+	updatingProject: boolean;
+	updateProject: UseApiFetchAction<FormData | ProjectForm>;
+};
+
+export function useProject(id: number): UseProjectReturn {
 	const [project, setProject] = useState<Project | null>(null);
 
 	const { pending: gettingProject, action: getProject } = useApiFetch<Project>({

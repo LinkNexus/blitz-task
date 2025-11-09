@@ -15,6 +15,7 @@ import { Login as LoginPage } from "./pages/auth/login-page";
 import { RegistrationPage } from "./pages/auth/register-page";
 import { ResetPasswordPage } from "./pages/auth/reset-password-page";
 import { ProjectPage } from "./pages/projects/single-project-page";
+import { ConfirmModal } from "./components/custom/confirm-action-modal";
 
 export const App = memo(() => {
 	const { status, authenticate } = useAuth();
@@ -91,6 +92,7 @@ export const App = memo(() => {
 			</div>
 
 			<Toaster />
+			<ConfirmModal />
 		</>
 	);
 });

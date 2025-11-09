@@ -1,5 +1,5 @@
 import { ArchiveIcon, MoreHorizontal, Settings, Users } from "lucide-react";
-import { memo } from "react";
+import { memo, type Dispatch, type SetStateAction } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,10 +29,11 @@ import { ProjectMembersModal } from "./project-members-modal/project-members-mod
 
 type Props = {
 	project: Project;
+	setProject: Dispatch<SetStateAction<Project | null>>;
 	update: (data: Partial<ProjectForm>) => Promise<void>;
 };
 
-export const ProjectHeader = memo(({ project, update }: Props) => {
+export const ProjectHeader = memo(({ project, setProject, update }: Props) => {
 	const { user } = useAccount();
 
 	return (
@@ -167,7 +168,7 @@ export const ProjectHeader = memo(({ project, update }: Props) => {
 			</div>
 
 			<ChangeImageModal update={update} />
-			<ProjectMembersModal {...project} update={update} />
+			<ProjectMembersModal project={project} setProject={setProject} />
 		</div>
 	);
 });

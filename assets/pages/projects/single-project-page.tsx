@@ -11,9 +11,8 @@ import type { ProjectForm } from "@/schemas";
 
 export const ProjectPage = memo(() => {
 	const { id } = useParams<{ id: string }>();
-	const { gettingProject, getProject, project, updateProject } = useProject(
-		Number(id),
-	);
+	const { setProject, gettingProject, getProject, project, updateProject } =
+		useProject(Number(id));
 	const update = useCallback(
 		async (data: Partial<ProjectForm>) => {
 			if (project) {
@@ -47,7 +46,11 @@ export const ProjectPage = memo(() => {
 	return (
 		<div className="flex flex-col h-full max-h-screen overflow-hidden">
 			{/* Project Header */}
-			<ProjectHeader project={project} update={update} />
+			<ProjectHeader
+				project={project}
+				setProject={setProject}
+				update={update}
+			/>
 
 			{/* Toolbar */}
 			<div className="border-b bg-muted/30">

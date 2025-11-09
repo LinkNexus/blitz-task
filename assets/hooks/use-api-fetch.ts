@@ -12,6 +12,15 @@ interface UseApiFetchOptions<T, S, U> extends ApiFetchOptions<U> {
 	onEnd?: () => void;
 }
 
+export type UseApiFetchActionParams<U> = {
+	data?: ApiFetchOptions<U>["data"];
+	searchParams?: Record<string, (string | number) | (string | number)[]>;
+};
+
+export type UseApiFetchAction<U> = (
+	params?: UseApiFetchActionParams<U>,
+) => Promise<void>;
+
 export function useApiFetch<T, S = null, U = never>({
 	url,
 	options,
@@ -27,12 +36,9 @@ export function useApiFetch<T, S = null, U = never>({
 
 	options = options || {};
 
-	const action = useCallback(
+	const action: UseApiFetchAction<U> = useCallback(
 		async (
-			params: {
-				data?: ApiFetchOptions<U>["data"];
-				searchParams?: Record<string, (string | number) | (string | number)[]>;
-			} = {
+			params = {
 				data: options.data,
 				searchParams: {},
 			},

@@ -5,14 +5,14 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-export function toFormData<
-	T extends Record<string, number | string | File | Blob | null>,
->(data: T) {
+export function toFormData<T extends Record<string, any>>(data: T) {
 	const formData = new FormData();
 
 	Object.entries(data).forEach(([k, v]) => {
 		if (v instanceof File || v instanceof Blob) {
 			formData.append(k, v);
+		} else if (v !== null && typeof v === "object") {
+			formData.append(k, JSON.stringify(v));
 		} else {
 			formData.append(k, String(v));
 		}

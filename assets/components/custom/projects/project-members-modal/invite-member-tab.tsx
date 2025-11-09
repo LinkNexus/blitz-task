@@ -2,29 +2,59 @@ import { Check, Mail, UserPlus } from "lucide-react";
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import z from "zod";
+import {
+	Form,
+	FormControl,
+	FormDescription,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const schema = z.object({
+	email: z.string().email("This email is not a valid email address"),
+});
 
 export const InviteMemberTab = memo(() => {
+	const form = useForm({
+		resolver: zodResolver(schema),
+		defaultValues: {
+			email: "",
+		},
+	});
+
 	return (
 		<div className="space-y-4">
-			<div className="space-y-2">
-				<label htmlFor="invite-email" className="text-sm font-medium">
-					Email address
-				</label>
-				<div className="flex gap-2">
-					<div className="relative flex-1">
-						<Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
-						<Input
-							type="email"
-							placeholder="colleague@example.com"
-							className="pl-10"
-						/>
-					</div>
-					<Button className="px-6">
+			<Form {...form}>
+				<form className="space-y-4">
+					<FormField
+						control={form.control}
+						name="email"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Email Address</FormLabel>
+								<FormControl>
+									<Input {...field} />
+								</FormControl>
+								<FormDescription>
+									The email address of the person you want to invite to the
+									project.
+								</FormDescription>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<Button className="w-full">
 						<UserPlus className="size-4" />
 						Invite
 					</Button>
-				</div>
-			</div>
+				</form>
+			</Form>
 
 			<div className="p-4 bg-muted/50 rounded-lg space-y-2">
 				<div className="flex items-start gap-2">
