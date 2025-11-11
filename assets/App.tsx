@@ -16,12 +16,14 @@ import { RegistrationPage } from "./pages/auth/register-page";
 import { ResetPasswordPage } from "./pages/auth/reset-password-page";
 import { ProjectPage } from "./pages/projects/single-project-page";
 import { ConfirmModal } from "./components/custom/confirm-action-modal";
+import { useFlashMessages } from "./hooks/use-flash-messages";
 
 export const App = memo(() => {
 	const { status, authenticate } = useAuth();
 
 	useEffect(authenticate, []);
 	useTheme();
+	useFlashMessages();
 
 	return (
 		<>

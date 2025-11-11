@@ -1,18 +1,18 @@
-interface User {
+export interface User {
 	id: number;
 	name: string;
 	email: string;
 	isVerified: boolean;
 }
 
-interface FormErrors {
+export interface FormErrors {
 	violations: {
 		propertyPath: string;
 		title: string;
 	}[];
 }
 
-interface Project {
+export interface Project {
 	id: number;
 	icon: string | null;
 	name: string;
@@ -24,7 +24,7 @@ interface Project {
 	image: string | null;
 }
 
-interface TaskColumn {
+export interface TaskColumn {
 	id: number;
 	name: string;
 	color: string;
@@ -32,7 +32,7 @@ interface TaskColumn {
 	tasks: Task[];
 }
 
-interface Task {
+export interface Task {
 	name: string;
 	description: string;
 	priority: "low" | "medium" | "high" | "urgent";
@@ -42,4 +42,7 @@ interface Task {
 	score: number;
 }
 
-export type { User, FormErrors, Project, TaskColumn, Task };
+export interface ProjectInvitation {
+	identifier: string;
+	guestEmail: string;
+}

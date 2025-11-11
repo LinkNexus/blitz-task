@@ -4,12 +4,15 @@ namespace App\Controller;
 
 use App\Attribute\NotValidateCsrfHeader;
 use App\Attribute\ValidateCsrfHeader;
+use App\DTO\InviteMemberDTO;
 use App\DTO\ProjectDTO;
 use App\Entity\Project;
+use App\Entity\ProjectInvitation;
 use App\Entity\User;
 use App\Repository\ProjectRepository;
 use App\Service\FileUploader;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Path;
@@ -19,14 +22,17 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\MapUploadedFile;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Address;
 use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Constraints\Image;
 
 #[Route('/api/projects', name: 'api.projects.')]
-#[IsGranted('ROLE_USER')]
 #[ValidateCsrfHeader]
 final class ProjectController extends AbstractController
 {
@@ -39,6 +45,7 @@ final class ProjectController extends AbstractController
 
     #[Route('', name: 'list', methods: ['GET'])]
     #[ValidateCsrfHeader]
+    #[IsGranted('ROLE_USER')]
     public function getProjects(#[CurrentUser] User $user): JsonResponse
     {
         return $this->json(
@@ -48,6 +55,7 @@ final class ProjectController extends AbstractController
     }
 
     #[Route('/{id}', name: 'get', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     #[IsGranted('PROJECT_PARTICIPANT', subject: 'project')]
     public function getProject(Project $project): JsonResponse
     {
@@ -58,6 +66,7 @@ final class ProjectController extends AbstractController
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
     public function create(
         #[MapRequestPayload] ProjectDTO $projectDTO,
         #[MapUploadedFile(
@@ -92,6 +101,7 @@ final class ProjectController extends AbstractController
     }
 
     #[Route('/{id}', name: 'update', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
     #[IsGranted('PROJECT_PARTICIPANT', subject: 'project')]
     public function update(
         Project $project,
@@ -126,6 +136,7 @@ final class ProjectController extends AbstractController
 
     #[Route('/image/{filename}', name: 'image', methods: ['GET'])]
     #[NotValidateCsrfHeader]
+    #[IsGranted('ROLE_USER')]
     public function showImage(
         #[Autowire('%kernel.project_dir%/uploads/projects')] string $projectsUploadDir,
         string $filename
@@ -136,6 +147,7 @@ final class ProjectController extends AbstractController
     }
 
     #[Route('/{id}/remove-member', name: 'remove_member', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
     #[IsGranted('PROJECT_OWNER', subject: 'project')]
     public function removeMember(
         Project $project,
@@ -144,7 +156,7 @@ final class ProjectController extends AbstractController
         $member = $this->entityManager->getRepository(User::class)->find($memberId);
 
         if (! $member) {
-            return $this->json(['error' => 'Member not found'], 404);
+            return $this->json(['message' => 'Member not found'], 404);
         }
 
         $project->removeParticipant($member);
@@ -154,4 +166,118 @@ final class ProjectController extends AbstractController
             'memberId' => $memberId,
         ]);
     }
+
+    #[Route('/{id}/invite', name: 'invite', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    #[IsGranted('PROJECT_OWNER', subject: 'project')]
+    public function invite(
+        Project $project,
+        #[MapRequestPayload] InviteMemberDTO $dto,
+        MailerInterface $mailer,
+        #[Autowire('%env(APP_NAME)%')] string $appName,
+        #[Autowire('%env(NO_REPLY_EMAIL)%')] string $noReplyEmail,
+    ) {
+        $invitedUser = $this->entityManager->getRepository(User::class)
+            ->findOneBy(['email' => $dto->email]);
+
+        if ($invitedUser && $project->getParticipants()->contains($invitedUser)) {
+            return $this->json(['message' => 'The user is already a participant of the project'], 400);
+        }
+
+        $existingInvitation = $this->entityManager->getRepository(ProjectInvitation::class)
+            ->findOneBy([
+                'project' => $project,
+                'guestEmail' => $dto->email,
+            ]);
+
+        if ($existingInvitation) {
+            return $this->json(['message' => 'An invitation has already been sent to this email for the specified project'], 400);
+        }
+
+        $invitation = new ProjectInvitation()
+            ->setProject($project)
+            ->setGuestEmail($dto->email);
+
+        try {
+            $mailer->send(new TemplatedEmail()
+                ->from(new Address($noReplyEmail, $appName . ' No-Reply'))
+                ->to(new Address($dto->email))
+                ->subject('Invitation to join project "' . $project->getName() . '" on ' . $appName)
+                ->htmlTemplate('emails/project_invitation.html.twig')
+                ->context([
+                    'project' => $project,
+                    'invitation' => $invitation,
+                ])
+            );
+        } catch (TransportExceptionInterface $exception) {
+            return $this->json(['message' => 'Failed to send invitation email. Retry later or contact the site maintainer'], 500);
+        }
+
+        $this->entityManager->persist($invitation);
+        $this->entityManager->flush();
+
+        return $this->json(null, 201);
+    }
+
+    #[Route('/invitations/accept/{identifier:invitation}', name: 'accept_invitation')]
+    #[NotValidateCsrfHeader]
+    public function acceptInvitation(
+        ?ProjectInvitation $invitation,
+        SerializerInterface $serializer
+    ) {
+        if (! $invitation) {
+            return $this->redirectToRoute('index', [
+                'url' => '',
+                'messages' => json_encode([
+                    'error' => [
+                        'Invalid invitation link.',
+                    ],
+                ]),
+            ]);
+        }
+
+        $expirationDate = (clone $invitation->getCreatedAt())->modify('+7 days');
+
+        if (new \DateTime > $expirationDate) {
+            return $this->redirectToRoute('index', [
+                'url' => '',
+                'messages' => json_encode([
+                    'error' => [
+                        'This invitation has expired.',
+                    ],
+                ]),
+            ]);
+        }
+
+        $user = $this->entityManager->getRepository(User::class)
+            ->findOneBy(['email' => $invitation->getGuestEmail()]);
+
+        if ($user) {
+            $project = $invitation->getProject();
+            $project->addParticipant($user);
+            $this->entityManager->remove($invitation);
+            $this->entityManager->flush();
+
+            return $this->redirectToRoute('index', [
+                'url' => "projects/{$project->getId()}",
+                'messages' => json_encode([
+                    'success' => [
+                        "You have successfully joined the project '{$project->getName()}'.",
+                    ],
+                ]),
+            ]);
+        } else {
+            return $this->redirectToRoute('index', [
+                'url' => 'register',
+                'projectInvitation' => $serializer->serialize($invitation, format: 'json', context: ['groups' => 'project_invitation:read']),
+                'messages' => json_encode([
+                    'success' => [
+                        'Please register an account to join the project.',
+                    ],
+                ]),
+            ]);
+        }
+    }
+
+    public function listInvitations() {}
 }

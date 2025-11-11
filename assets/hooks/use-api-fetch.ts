@@ -14,7 +14,10 @@ interface UseApiFetchOptions<T, S, U> extends ApiFetchOptions<U> {
 
 export type UseApiFetchActionParams<U> = {
 	data?: ApiFetchOptions<U>["data"];
-	searchParams?: Record<string, (string | number) | (string | number)[]>;
+	searchParams?: Record<
+		string,
+		(string | number | object | null | undefined) | (string | number | object)[]
+	>;
 };
 
 export type UseApiFetchAction<U> = (
@@ -54,11 +57,18 @@ export function useApiFetch<T, S = null, U = never>({
 				const urlSearchParams = new URLSearchParams();
 
 				for (const [key, values] of Object.entries(searchParams)) {
+					if (!values) continue;
 					if (Array.isArray(values))
 						values.forEach((v) => {
-							urlSearchParams.append(key, String(v));
+							if (typeof v === "object") {
+								urlSearchParams.append(key, JSON.stringify(v));
+							} else urlSearchParams.append(key, String(v));
 						});
-					else urlSearchParams.append(key, String(values));
+					else {
+						if (typeof values === "object") {
+							urlSearchParams.append(key, JSON.stringify(values));
+						} else urlSearchParams.append(key, String(values));
+					}
 				}
 				url.search = urlSearchParams.toString();
 			}

@@ -23,12 +23,10 @@ class ProjectFixture extends Fixture implements DependentFixtureInterface
         $project = new Project()
             ->setName('Main Project')
             ->setDescription('
-        - Link to the wiki: <https://wikipedia.org>
-        - Link to moodle: <https://moodle.org>
+- Link to the wiki: <https://wikipedia.org>
+- Link to moodle: <https://moodle.org>
 
-        ```php echo "Welcome"```
-
-        This is the main project.
+This is the main project.
         ')
             ->setCreatedBy($mainUser)
             ->addParticipant($mainUser)

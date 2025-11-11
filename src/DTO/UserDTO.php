@@ -23,10 +23,10 @@ class UserDTO
     public ?string $name = null;
 
     #[Assert\NotBlank(message: 'The password field cannot be empty.', groups: ['create', 'password'])]
-    #[Assert\Sequentially([
-        new Assert\PasswordStrength,
-        new Assert\NotCompromisedPassword,
-    ], groups: ['create', 'password'])]
+    // #[Assert\Sequentially([
+    //    new Assert\PasswordStrength,
+    //    new Assert\NotCompromisedPassword,
+    // ], groups: ['create', 'password'])]
     public ?string $password = null;
 
     #[Assert\EqualTo(propertyPath: 'password', message: 'The passwords do not match.', groups: ['create', 'password'])]

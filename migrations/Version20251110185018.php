@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20251107091807 extends AbstractMigration
+final class Version20251110185018 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -26,6 +26,10 @@ final class Version20251107091807 extends AbstractMigration
         $this->addSql('CREATE TABLE project_user (project_id INT NOT NULL, user_id INT NOT NULL, PRIMARY KEY(project_id, user_id))');
         $this->addSql('CREATE INDEX IDX_B4021E51166D1F9C ON project_user (project_id)');
         $this->addSql('CREATE INDEX IDX_B4021E51A76ED395 ON project_user (user_id)');
+        $this->addSql('CREATE TABLE project_invitation (id SERIAL NOT NULL, project_id INT NOT NULL, guest_email VARCHAR(255) NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, status VARCHAR(255) NOT NULL, identifier UUID NOT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE INDEX IDX_E9BB1A90166D1F9C ON project_invitation (project_id)');
+        $this->addSql('COMMENT ON COLUMN project_invitation.created_at IS \'(DC2Type:datetime_immutable)\'');
+        $this->addSql('COMMENT ON COLUMN project_invitation.identifier IS \'(DC2Type:ulid)\'');
         $this->addSql('CREATE TABLE reset_password_request (id SERIAL NOT NULL, user_id INT NOT NULL, selector VARCHAR(20) NOT NULL, hashed_token VARCHAR(100) NOT NULL, requested_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, expires_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE INDEX IDX_7CE748AA76ED395 ON reset_password_request (user_id)');
         $this->addSql('COMMENT ON COLUMN reset_password_request.requested_at IS \'(DC2Type:datetime_immutable)\'');
@@ -61,6 +65,7 @@ final class Version20251107091807 extends AbstractMigration
         $this->addSql('ALTER TABLE project ADD CONSTRAINT FK_2FB3D0EEB03A8386 FOREIGN KEY (created_by_id) REFERENCES "user" (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
         $this->addSql('ALTER TABLE project_user ADD CONSTRAINT FK_B4021E51166D1F9C FOREIGN KEY (project_id) REFERENCES project (id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE');
         $this->addSql('ALTER TABLE project_user ADD CONSTRAINT FK_B4021E51A76ED395 FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE');
+        $this->addSql('ALTER TABLE project_invitation ADD CONSTRAINT FK_E9BB1A90166D1F9C FOREIGN KEY (project_id) REFERENCES project (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
         $this->addSql('ALTER TABLE reset_password_request ADD CONSTRAINT FK_7CE748AA76ED395 FOREIGN KEY (user_id) REFERENCES "user" (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
         $this->addSql('ALTER TABLE task ADD CONSTRAINT FK_527EDB25164FD2CE FOREIGN KEY (related_column_id) REFERENCES task_column (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
         $this->addSql('ALTER TABLE task ADD CONSTRAINT FK_527EDB25166D1F9C FOREIGN KEY (project_id) REFERENCES project (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
@@ -76,6 +81,7 @@ final class Version20251107091807 extends AbstractMigration
         $this->addSql('ALTER TABLE project DROP CONSTRAINT FK_2FB3D0EEB03A8386');
         $this->addSql('ALTER TABLE project_user DROP CONSTRAINT FK_B4021E51166D1F9C');
         $this->addSql('ALTER TABLE project_user DROP CONSTRAINT FK_B4021E51A76ED395');
+        $this->addSql('ALTER TABLE project_invitation DROP CONSTRAINT FK_E9BB1A90166D1F9C');
         $this->addSql('ALTER TABLE reset_password_request DROP CONSTRAINT FK_7CE748AA76ED395');
         $this->addSql('ALTER TABLE task DROP CONSTRAINT FK_527EDB25164FD2CE');
         $this->addSql('ALTER TABLE task DROP CONSTRAINT FK_527EDB25166D1F9C');
@@ -84,6 +90,7 @@ final class Version20251107091807 extends AbstractMigration
         $this->addSql('ALTER TABLE task_column DROP CONSTRAINT FK_46FA03AD166D1F9C');
         $this->addSql('DROP TABLE project');
         $this->addSql('DROP TABLE project_user');
+        $this->addSql('DROP TABLE project_invitation');
         $this->addSql('DROP TABLE reset_password_request');
         $this->addSql('DROP TABLE task');
         $this->addSql('DROP TABLE task_user');

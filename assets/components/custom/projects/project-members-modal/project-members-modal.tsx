@@ -82,7 +82,7 @@ export const ProjectMembersModal = memo(
 							</TabsContent>
 
 							<TabsContent value="invite" className="mt-4">
-								<InviteMemberTab />
+								<InviteMemberTab id={project.id} />
 							</TabsContent>
 
 							<TabsContent value="invites">

@@ -4,9 +4,9 @@ namespace App\Controller;
 
 use App\Attribute\ValidateCsrfHeader;
 use App\DTO\UserDTO;
+use App\Entity\ProjectInvitation;
 use App\Entity\User;
 use App\Event\SendVerificationMailEvent;
-use App\Event\UserCreatedEvent;
 use App\Security\Auth\JsonLoginAuthenticator;
 use App\Security\EmailVerifier;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -25,6 +26,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Uid\Ulid;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 
 #[Route('/api', name: 'api.')]
@@ -79,15 +81,29 @@ final class SecurityController extends AbstractController
         Security $security,
         UserPasswordHasherInterface $passwordHasher,
         ObjectMapperInterface $objectMapper,
+        #[MapQueryParameter] ?string $projectInvitationId
     ): JsonResponse {
         $user = $objectMapper->map($userDTO, User::class);
         $user->setPassword(
             $passwordHasher->hashPassword($user, $userDTO->password),
         );
         $this->entityManager->persist($user);
-        $this->entityManager->flush();
 
-        $this->eventDispatcher->dispatch(new UserCreatedEvent($user));
+        if ($projectInvitationId) {
+            $invitation = $this->entityManager
+                ->getRepository(ProjectInvitation::class)
+                ->findOneBy(['identifier' => Ulid::fromString($projectInvitationId)]);
+
+            if ($invitation) {
+                $project = $invitation->getProject();
+                $project->addParticipant($user);
+                $this->entityManager->remove($invitation);
+            }
+        } else {
+            $this->eventDispatcher->dispatch(new SendVerificationMailEvent($user));
+        }
+
+        $this->entityManager->flush();
 
         return $security->login($user, JsonLoginAuthenticator::class, 'main');
     }

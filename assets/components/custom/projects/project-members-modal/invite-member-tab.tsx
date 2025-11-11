@@ -14,23 +14,53 @@ import {
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useApiFetch } from "@/hooks/use-api-fetch";
+import type { FormErrors, Project } from "@/types";
+import { toast } from "sonner";
+import { setFormErrors } from "@/lib/forms";
 
 const schema = z.object({
 	email: z.string().email("This email is not a valid email address"),
 });
 
-export const InviteMemberTab = memo(() => {
-	const form = useForm({
+export const InviteMemberTab = memo(({ id }: Pick<Project, "id">) => {
+	const form = useForm<z.infer<typeof schema>>({
 		resolver: zodResolver(schema),
 		defaultValues: {
 			email: "",
 		},
 	});
 
+	const { pending: sendingInvite, action: sendInvite } = useApiFetch<
+		null,
+		FormErrors | { message: string },
+		z.infer<typeof schema>
+	>({
+		url: `/api/projects/${id}/invite`,
+		options: {
+			onSuccess() {
+				toast.success("An invitation has been sent to the email address.");
+			},
+			onError(err) {
+				const error = err.response.data;
+
+				if ("message" in error) {
+					toast.error(error.message);
+				} else {
+					setFormErrors(form, error);
+				}
+			},
+		},
+		deps: [id],
+	});
+
 	return (
 		<div className="space-y-4">
 			<Form {...form}>
-				<form className="space-y-4">
+				<form
+					onSubmit={form.handleSubmit(async (data) => sendInvite({ data }))}
+					className="space-y-4"
+				>
 					<FormField
 						control={form.control}
 						name="email"

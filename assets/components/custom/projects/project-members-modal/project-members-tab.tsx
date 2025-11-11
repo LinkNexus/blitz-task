@@ -28,9 +28,10 @@ export const ProjectMembersTab = memo(
 		const { user } = useAccount();
 		const { participants, createdBy } = project;
 
-		const { pending: removing, action: removeMember } = useApiFetch<{
-			memberId: number;
-		}>({
+		const { pending: removing, action: removeMember } = useApiFetch<
+			{ memberId: number },
+			{ message: string }
+		>({
 			url: `/api/projects/${project.id}/remove-member`,
 			options: {
 				method: "POST",
@@ -46,6 +47,15 @@ export const ProjectMembersTab = memo(
 					});
 
 					toast.success("Participant removed successfully.");
+				},
+				onError(e) {
+					toast.error(
+						"An error happened when trying to remove the member from the project",
+						{
+							description: e.response.data.message,
+							closeButton: true,
+						},
+					);
 				},
 			},
 			deps: [project.id, setProject],

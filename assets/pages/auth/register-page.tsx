@@ -3,7 +3,7 @@ import { Loader2, UserPlus } from "lucide-react";
 import { memo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Link } from "wouter";
+import { Link, useSearchParams } from "wouter";
 import type z from "zod";
 import { AuthPageStructure } from "@/components/custom/auth/structure";
 import { Button } from "@/components/ui/button";
@@ -20,15 +20,19 @@ import { Separator } from "@/components/ui/separator";
 import { useApiFetch } from "@/hooks/use-api-fetch";
 import { useAppStore } from "@/hooks/use-store";
 import { type RegistrationForm, registrationSchema } from "@/schemas";
-import type { FormErrors, User } from "@/types";
+import type { FormErrors, ProjectInvitation, User } from "@/types";
 
 export const RegistrationPage = memo(() => {
 	const setUser = useAppStore.use.setUser();
+	const [params] = useSearchParams();
+	const projectInvitation = params.has("projectInvitation")
+		? (JSON.parse(params.get("projectInvitation")!) as ProjectInvitation)
+		: null;
 
 	const form = useForm<RegistrationForm>({
 		resolver: zodResolver(registrationSchema),
 		defaultValues: {
-			email: "",
+			email: projectInvitation?.guestEmail || "",
 			name: "",
 			password: "",
 			confirmPassword: "",
@@ -63,17 +67,20 @@ export const RegistrationPage = memo(() => {
 				toast.success("Your account was successfully created!", {
 					closeButton: true,
 				});
-				toast.info(
-					"A validation email may be or has been sent to your given email address.",
-					{
-						action: {
-							label: isSendingMail ? "Sending..." : "Resend",
-							async onClick() {
-								await sendMail();
+
+				if (!projectInvitation) {
+					toast.info(
+						"A validation email may be or has been sent to your given email address.",
+						{
+							action: {
+								label: isSendingMail ? "Sending..." : "Resend",
+								async onClick() {
+									await sendMail();
+								},
 							},
 						},
-					},
-				);
+					);
+				}
 			},
 			onError(err) {
 				err.response.data.violations.forEach((v) => {
@@ -86,7 +93,7 @@ export const RegistrationPage = memo(() => {
 				});
 			},
 		},
-		deps: [setUser],
+		deps: [setUser, projectInvitation],
 	});
 
 	return (
@@ -97,7 +104,15 @@ export const RegistrationPage = memo(() => {
 			<Form {...form}>
 				<form
 					className="space-y-4"
-					onSubmit={form.handleSubmit(async (data) => await register({ data }))}
+					onSubmit={form.handleSubmit(
+						async (data) =>
+							await register({
+								data,
+								searchParams: {
+									projectInvitationId: projectInvitation?.identifier,
+								},
+							}),
+					)}
 				>
 					<FormField
 						control={form.control}

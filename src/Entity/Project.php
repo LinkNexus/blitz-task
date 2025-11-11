@@ -56,11 +56,18 @@ class Project
     #[Groups(['projects:read', 'project:read'])]
     private ?string $icon = null;
 
+    /**
+     * @var Collection<int, ProjectInvitation>
+     */
+    #[ORM\OneToMany(targetEntity: ProjectInvitation::class, mappedBy: 'project', orphanRemoval: true)]
+    private Collection $invitations;
+
     public function __construct()
     {
         $this->columns = new ArrayCollection;
         $this->participants = new ArrayCollection;
         $this->createdAt = new \DateTimeImmutable;
+        $this->invitations = new ArrayCollection;
     }
 
     public function getId(): ?int
@@ -190,6 +197,36 @@ class Project
     public function setIcon(?string $icon): static
     {
         $this->icon = $icon;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProjectInvitation>
+     */
+    public function getInvitations(): Collection
+    {
+        return $this->invitations;
+    }
+
+    public function addInvitation(ProjectInvitation $invitation): static
+    {
+        if (!$this->invitations->contains($invitation)) {
+            $this->invitations->add($invitation);
+            $invitation->setProject($this);
+        }
+
+        return $this;
+    }
+
+    public function removeInvitation(ProjectInvitation $invitation): static
+    {
+        if ($this->invitations->removeElement($invitation)) {
+            // set the owning side to null (unless already changed)
+            if ($invitation->getProject() === $this) {
+                $invitation->setProject(null);
+            }
+        }
 
         return $this;
     }

@@ -26,6 +26,13 @@ class UserFixture extends Fixture
         $manager->persist($user);
         $this->addReference(self::MAIN_USER_REFERENCE, $user);
 
+        $secondUser = new User()
+            ->setName('John Doe')
+            ->setIsVerified(true)
+            ->setEmail('john@doe.com');
+        $secondUser->setPassword($this->passwordHasher->hashPassword($secondUser, 'test'));
+        $manager->persist($secondUser);
+
         for ($i = 0; $i < 50; $i++) {
             $user = new User()
                 ->setName($faker->name())
