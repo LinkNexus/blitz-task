@@ -43,6 +43,7 @@ export interface Task {
 }
 
 export interface ProjectInvitation {
-	identifier: string;
+	id: number;
 	guestEmail: string;
+	createdAt: string;
 }

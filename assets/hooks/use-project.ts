@@ -28,6 +28,7 @@ export function useProject(id: number): UseProjectReturn {
 				toast.error("Failed to load project data.");
 				navigate("/projects");
 			},
+			invalidationTime: false,
 		},
 		deps: [id],
 	});
@@ -51,6 +52,7 @@ export function useProject(id: number): UseProjectReturn {
 				});
 				toast.error("Failed to update project");
 			},
+			invalidationTime: false,
 		},
 	});
 

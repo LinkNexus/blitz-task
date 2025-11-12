@@ -190,8 +190,8 @@ final class ProjectController extends AbstractController
                 'guestEmail' => $dto->email,
             ]);
 
-        if ($existingInvitation) {
-            return $this->json(['message' => 'An invitation has already been sent to this email for the specified project'], 400);
+        if ($existingInvitation && new \DateTime < (clone $existingInvitation->getCreatedAt())->modify('+7 days')) {
+            return $this->json(['message' => 'A valid invitation has already been sent to this email for the specified project'], 400);
         }
 
         $invitation = new ProjectInvitation()
@@ -269,15 +269,42 @@ final class ProjectController extends AbstractController
         } else {
             return $this->redirectToRoute('index', [
                 'url' => 'register',
-                'projectInvitation' => $serializer->serialize($invitation, format: 'json', context: ['groups' => 'project_invitation:read']),
+                'email' => $invitation->getGuestEmail(),
                 'messages' => json_encode([
                     'success' => [
-                        'Please register an account to join the project.',
+                        'Please create an account first with this email address to be able to join the project.',
                     ],
                 ]),
             ]);
         }
     }
 
-    public function listInvitations() {}
+    #[Route('/{id}/invitations', name: 'list_invitations', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    #[IsGranted('PROJECT_OWNER', subject: 'project')]
+    public function listInvitations(
+        Project $project
+    ) {
+        return $this->json(
+            $project->getInvitations(),
+            context: ['groups' => 'project_invitations:read']
+        );
+    }
+
+    #[Route('/invitations/revoke', name: 'revoke_invitation', methods: ['POST'])]
+    public function revokeInvitation(
+        #[MapQueryParameter] int $id
+    ) {
+        $invitation = $this->entityManager->getRepository(ProjectInvitation::class)
+            ->find($id);
+
+        if (! $invitation) {
+            return $this->json(['message' => 'Invitation not found'], 404);
+        }
+
+        $this->entityManager->remove($invitation);
+        $this->entityManager->flush();
+
+        return $this->json(null, 204);
+    }
 }
