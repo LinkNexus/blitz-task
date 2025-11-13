@@ -26,21 +26,20 @@ export const PendingInvitesTab = memo(({ id }: Pick<Project, "id">) => {
 			onSuccess(res) {
 				setInvites(res.data);
 			},
-			invalidationTime: false,
 		},
 		deps: [id],
 	});
 
 	const { pending: revoking, action: revokeInvite } = useApiFetch<
-		{ identifier: string },
+		{ id: number },
 		{ message: string }
 	>({
-		url: `/api/projects/${id}/revoke-invitation`,
+		url: "/api/projects/invitations/revoke/:id",
 		options: {
 			method: "POST",
 			onSuccess(res) {
 				setInvites((prev) =>
-					prev.filter((invite) => invite.identifier !== res.data.identifier),
+					prev.filter((invite) => invite.id !== res.data.id),
 				);
 				toast.success("Invitation revoked successfully.");
 			},
@@ -64,7 +63,7 @@ export const PendingInvitesTab = memo(({ id }: Pick<Project, "id">) => {
 			<div className="space-y-3">
 				{invites.map((invite) => (
 					<div
-						key={invite.identifier}
+						key={invite.id}
 						className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
 					>
 						<div className="flex items-center gap-3 flex-1">
@@ -77,7 +76,9 @@ export const PendingInvitesTab = memo(({ id }: Pick<Project, "id">) => {
 								<p className="font-medium text-sm truncate">
 									{invite.guestEmail}
 								</p>
-								<p className="text-xs text-muted-foreground">Pending</p>
+								<p className="text-xs text-muted-foreground">
+									Sent on {new Date(invite.createdAt).toLocaleDateString()}
+								</p>
 							</div>
 						</div>
 
@@ -93,7 +94,7 @@ export const PendingInvitesTab = memo(({ id }: Pick<Project, "id">) => {
 										confirmAction({
 											async action() {
 												await revokeInvite({
-													searchParams: { identifier: invite.identifier },
+													params: { id: invite.id },
 												});
 											},
 											title: "Revoke Invitation",

@@ -291,20 +291,13 @@ final class ProjectController extends AbstractController
         );
     }
 
-    #[Route('/invitations/revoke', name: 'revoke_invitation', methods: ['POST'])]
+    #[Route('/invitations/revoke/{id}', name: 'revoke_invitation', methods: ['POST'])]
     public function revokeInvitation(
-        #[MapQueryParameter] int $id
+        ProjectInvitation $invitation
     ) {
-        $invitation = $this->entityManager->getRepository(ProjectInvitation::class)
-            ->find($id);
-
-        if (! $invitation) {
-            return $this->json(['message' => 'Invitation not found'], 404);
-        }
-
         $this->entityManager->remove($invitation);
         $this->entityManager->flush();
 
-        return $this->json(null, 204);
+        return $this->json(['id' => $invitation->getId()]);
     }
 }

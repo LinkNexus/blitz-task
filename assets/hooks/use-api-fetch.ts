@@ -16,8 +16,10 @@ export type UseApiFetchActionParams<U> = {
 	data?: ApiFetchOptions<U>["data"];
 	searchParams?: Record<
 		string,
-		(string | number | object | null | undefined) | (string | number | object)[]
+		| (string | number | boolean | object | null | undefined)
+		| (string | number | object | boolean)[]
 	>;
+	params?: Record<string, string | number | boolean>;
 };
 
 export type UseApiFetchAction<U> = (
@@ -44,20 +46,37 @@ export function useApiFetch<T, S = null, U = never>({
 			params = {
 				data: options.data,
 				searchParams: {},
+				params: {},
 			},
 		) => {
-			const { data, searchParams } = params;
+			const { data, params: routeParams } = params;
+			let searchParams = params.searchParams;
 
 			setPending(true);
 			setError(null);
 
 			if (!(url instanceof URL)) url = new URL(url, window.location.origin);
 
+			if (routeParams && Object.keys(routeParams).length > 0) {
+				let path = url.pathname;
+				for (const [key, value] of Object.entries(routeParams)) {
+					const token = `:${key}`;
+					if (path.includes(token)) {
+						path = path.replaceAll(token, encodeURIComponent(String(value)));
+					} else {
+						if (!searchParams) searchParams = {};
+
+						if (!(key in searchParams)) searchParams[key] = value;
+					}
+				}
+				url.pathname = path;
+			}
+
 			if (searchParams && Object.keys(searchParams).length > 0) {
 				const urlSearchParams = new URLSearchParams();
 
 				for (const [key, values] of Object.entries(searchParams)) {
-					if (!values) continue;
+					if (typeof values !== "boolean" && !values) continue;
 					if (Array.isArray(values))
 						values.forEach((v) => {
 							if (typeof v === "object") {
