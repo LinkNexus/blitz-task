@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useProject } from "@/hooks/use-project";
 import { toFormData } from "@/lib/utils";
 import type { ProjectForm } from "@/schemas";
+import { KanbanBoard } from "@/components/custom/projects/kanban-board/kanban-board";
 
 export const ProjectPage = memo(() => {
 	const { id } = useParams<{ id: string }>();
@@ -83,40 +84,7 @@ export const ProjectPage = memo(() => {
 			</div>
 
 			{/* Main Content Area - Kanban Board Container */}
-			<div className="flex-1 overflow-hidden">
-				<div className="h-full p-4 lg:p-6">
-					{/* Kanban Board Placeholder */}
-					<Card className="h-full border-dashed border-2 border-muted-foreground/20">
-						<CardHeader className="text-center">
-							<h3 className="text-lg font-semibold text-muted-foreground">
-								Kanban Board
-							</h3>
-							<p className="text-sm text-muted-foreground">
-								The kanban board will be implemented here
-							</p>
-						</CardHeader>
-						<CardContent className="flex-1 flex items-center justify-center">
-							<div className="text-center space-y-4">
-								<div className="w-24 h-24 mx-auto bg-muted rounded-lg flex items-center justify-center">
-									<div className="w-12 h-12 bg-primary/20 rounded flex items-center justify-center">
-										<div className="w-6 h-6 bg-primary/40 rounded-sm"></div>
-									</div>
-								</div>
-								<div className="space-y-2">
-									<p className="text-sm font-medium">
-										Ready for Kanban Implementation
-									</p>
-									<p className="text-xs text-muted-foreground max-w-sm">
-										This area is prepared for the kanban board component. The
-										layout is responsive and will adapt to different screen
-										sizes.
-									</p>
-								</div>
-							</div>
-						</CardContent>
-					</Card>
-				</div>
-			</div>
+			<KanbanBoard id={project.id} />
 		</div>
 	);
 });

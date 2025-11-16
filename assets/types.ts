@@ -33,6 +33,7 @@ export interface TaskColumn {
 }
 
 export interface Task {
+	id: number;
 	name: string;
 	description: string;
 	priority: "low" | "medium" | "high" | "urgent";
@@ -40,6 +41,12 @@ export interface Task {
 	dueAt: string | null;
 	createdAt: string;
 	score: number;
+	labels: TaskLabel[];
+}
+
+export interface TaskLabel {
+	id: number;
+	name: string;
 }
 
 export interface ProjectInvitation {

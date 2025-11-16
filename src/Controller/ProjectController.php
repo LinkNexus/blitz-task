@@ -9,12 +9,14 @@ use App\DTO\ProjectDTO;
 use App\Entity\Project;
 use App\Entity\ProjectInvitation;
 use App\Entity\User;
+use App\Event\ProjectCreatedEvent;
 use App\Repository\ProjectRepository;
 use App\Service\FileUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -40,7 +42,8 @@ final class ProjectController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly ProjectRepository $projectRepository,
         private FileUploader $fileUploader,
-        private readonly ObjectMapperInterface $objectMapper
+        private readonly ObjectMapperInterface $objectMapper,
+        private readonly EventDispatcherInterface $eventDispatcher
     ) {}
 
     #[Route('', name: 'list', methods: ['GET'])]
@@ -89,6 +92,10 @@ final class ProjectController extends AbstractController
 
         $project->setCreatedBy($user);
         $project->addParticipant($user);
+
+        $this->eventDispatcher->dispatch(
+            new ProjectCreatedEvent($project),
+        );
 
         $this->entityManager->persist($project);
         $this->entityManager->flush();

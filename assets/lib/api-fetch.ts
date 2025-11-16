@@ -55,11 +55,11 @@ export async function apiFetch<T, S = null>(
 		options.data = toFormData(options.data) as S;
 	}
 
-	const cachedResponse = cache.get<T>(url.toString(), options.method);
-
-	if (cachedResponse) {
-		return cachedResponse;
-	}
+	// const cachedResponse = cache.get<T>(url.toString(), options.method);
+	//
+	// if (cachedResponse) {
+	// 	return cachedResponse;
+	// }
 
 	const res = await fetch(url, {
 		...options,
@@ -100,12 +100,12 @@ export async function apiFetch<T, S = null>(
 		...res,
 	};
 
-	cache.set(
-		url.toString(),
-		options.method as HttpMethod,
-		response,
-		options.cacheDuration,
-	);
+	// cache.set(
+	// 	url.toString(),
+	// 	options.method as HttpMethod,
+	// 	response,
+	// 	options.cacheDuration,
+	// );
 
 	return response;
 }

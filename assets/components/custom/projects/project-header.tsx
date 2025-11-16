@@ -37,7 +37,7 @@ export const ProjectHeader = memo(({ project, setProject, update }: Props) => {
 	const { user } = useAccount();
 
 	return (
-		<div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+		<div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
 			<div className="flex flex-col gap-4 p-4 lg:p-6">
 				{/* Main Project Info */}
 				<div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">

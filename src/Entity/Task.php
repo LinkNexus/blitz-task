@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 class Task
@@ -15,24 +16,30 @@ class Task
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['task:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['task:read'])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['task:read'])]
     private ?string $description = null;
 
     /**
      * @var Collection<int, User>
      */
     #[ORM\ManyToMany(targetEntity: User::class)]
+    #[Groups(['task:read'])]
     private Collection $assignees;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['task:read'])]
     private ?\DateTimeImmutable $dueAt = null;
 
     #[ORM\Column]
+    #[Groups(['task:read'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'tasks')]
@@ -44,11 +51,22 @@ class Task
     private ?Project $project = null;
 
     #[ORM\Column(enumType: TaskPriority::class)]
+    #[Groups(['task:read'])]
     private ?TaskPriority $priority = null;
+
+    /**
+     * @var Collection<int, TaskLabel>
+     */
+    #[ORM\ManyToMany(targetEntity: TaskLabel::class, inversedBy: 'tasks')]
+    #[Groups(['task:read'])]
+    private Collection $labels;
 
     public function __construct()
     {
-        $this->assignees = new ArrayCollection();
+        $this->assignees = new ArrayCollection;
+        $this->createdAt = new \DateTimeImmutable;
+        $this->priority = TaskPriority::MEDIUM;
+        $this->labels = new ArrayCollection;
     }
 
     public function getId(): ?int
@@ -90,7 +108,7 @@ class Task
 
     public function addAssignee(User $assignee): static
     {
-        if (!$this->assignees->contains($assignee)) {
+        if (! $this->assignees->contains($assignee)) {
             $this->assignees->add($assignee);
         }
 
@@ -160,6 +178,30 @@ class Task
     public function setPriority(TaskPriority $priority): static
     {
         $this->priority = $priority;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TaskLabel>
+     */
+    public function getLabels(): Collection
+    {
+        return $this->labels;
+    }
+
+    public function addLabel(TaskLabel $label): static
+    {
+        if (! $this->labels->contains($label)) {
+            $this->labels->add($label);
+        }
+
+        return $this;
+    }
+
+    public function removeLabel(TaskLabel $label): static
+    {
+        $this->labels->removeElement($label);
 
         return $this;
     }

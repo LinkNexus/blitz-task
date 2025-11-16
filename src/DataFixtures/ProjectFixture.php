@@ -4,13 +4,19 @@ namespace App\DataFixtures;
 
 use App\Entity\Project;
 use App\Entity\User;
+use App\Event\ProjectCreatedEvent;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class ProjectFixture extends Fixture implements DependentFixtureInterface
 {
+    public function __construct(
+        private readonly EventDispatcherInterface $eventDispatcher,
+    ) {}
+
     public function load(ObjectManager $manager): void
     {
         $mainUser = $this->getReference(UserFixture::MAIN_USER_REFERENCE, User::class);
@@ -50,7 +56,7 @@ This is the main project.
         array_walk($members, fn (User $user) => $project->addParticipant($user));
 
         $manager->persist($project);
-
+        $this->eventDispatcher->dispatch(new ProjectCreatedEvent($project));
         $manager->flush();
     }
 

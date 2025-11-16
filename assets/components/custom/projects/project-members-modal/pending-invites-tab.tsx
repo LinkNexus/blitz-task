@@ -1,5 +1,6 @@
-import { Mail, MailX, MoreHorizontal } from "lucide-react";
+import { Loader2, Mail, MailX, MoreHorizontal } from "lucide-react";
 import { memo, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,6 @@ import { useApiFetch } from "@/hooks/use-api-fetch";
 import { getInitials } from "@/lib/utils";
 import type { Project, ProjectInvitation } from "@/types";
 import { confirmAction } from "../../confirm-action-modal";
-import { toast } from "sonner";
 
 export const PendingInvitesTab = memo(({ id }: Pick<Project, "id">) => {
 	const [invites, setInvites] = useState<ProjectInvitation[]>([]);
@@ -82,32 +82,36 @@ export const PendingInvitesTab = memo(({ id }: Pick<Project, "id">) => {
 							</div>
 						</div>
 
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" size="icon-sm">
-									<MoreHorizontal className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem
-									onClick={() => {
-										confirmAction({
-											async action() {
-												await revokeInvite({
-													params: { id: invite.id },
-												});
-											},
-											title: "Revoke Invitation",
-											description: `Are you sure you want to revoke the invitation for ${invite.guestEmail}? This action cannot be undone.`,
-										});
-									}}
-									className="text-destructive focus:text-destructive"
-								>
-									<MailX className="size-4 text-destructive" />
-									Revoke
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
+						{revoking ? (
+							<Loader2 className="size-5 animate-spin text-muted-foreground ml-2" />
+						) : (
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="ghost" size="icon-sm">
+										<MoreHorizontal className="size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem
+										onClick={() => {
+											confirmAction({
+												async action() {
+													await revokeInvite({
+														params: { id: invite.id },
+													});
+												},
+												title: "Revoke Invitation",
+												description: `Are you sure you want to revoke the invitation for ${invite.guestEmail}? This action cannot be undone.`,
+											});
+										}}
+										className="text-destructive focus:text-destructive"
+									>
+										<MailX className="size-4 text-destructive" />
+										Revoke
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						)}
 					</div>
 				))}
 

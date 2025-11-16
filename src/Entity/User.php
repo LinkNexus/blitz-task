@@ -18,7 +18,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user:read', 'users:read', 'project:read'])]
+    #[Groups(['user:read', 'users:read', 'project:read', 'task:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
@@ -42,7 +42,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     private bool $isVerified = false;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read', 'users:read', 'project:read'])]
+    #[Groups(['user:read', 'users:read', 'project:read', 'task:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255, nullable: true)]

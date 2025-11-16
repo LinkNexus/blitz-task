@@ -6,6 +6,7 @@ use App\Repository\TaskColumnRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: TaskColumnRepository::class)]
 class TaskColumn
@@ -13,15 +14,15 @@ class TaskColumn
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['column:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['column:read'])]
     private ?string $name = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $color = null;
-
     #[ORM\Column]
+    #[Groups(['column:read'])]
     private ?float $score = null;
 
     #[ORM\ManyToOne(inversedBy: 'columns')]
@@ -36,7 +37,7 @@ class TaskColumn
 
     public function __construct()
     {
-        $this->tasks = new ArrayCollection();
+        $this->tasks = new ArrayCollection;
     }
 
     public function getId(): ?int
@@ -52,18 +53,6 @@ class TaskColumn
     public function setName(string $name): static
     {
         $this->name = $name;
-
-        return $this;
-    }
-
-    public function getColor(): ?string
-    {
-        return $this->color;
-    }
-
-    public function setColor(string $color): static
-    {
-        $this->color = $color;
 
         return $this;
     }
@@ -102,7 +91,7 @@ class TaskColumn
 
     public function addTask(Task $task): static
     {
-        if (!$this->tasks->contains($task)) {
+        if (! $this->tasks->contains($task)) {
             $this->tasks->add($task);
             $task->setRelatedColumn($this);
         }

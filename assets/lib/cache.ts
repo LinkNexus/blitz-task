@@ -58,4 +58,10 @@ export class Cache {
 			this.store.delete(key);
 		}
 	}
+
+	public mutatate<T extends never>(
+		url: string,
+		method: HttpMethod,
+		response: ApiFetchResponse<T>,
+	): void {}
 }
