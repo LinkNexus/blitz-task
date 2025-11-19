@@ -53,10 +53,10 @@ export const ProjectPage = memo(() => {
 				update={update}
 			/>
 
-			{/* Toolbar */}
-			<div className="border-b bg-muted/30">
+			{/* Toolbar - Fixed */}
+			<div className="border-b bg-muted/30 flex-shrink-0">
 				<div className="flex flex-col sm:flex-row gap-3 p-4 items-start sm:items-center justify-between">
-					<div className="flex items-center gap-2 flex-1 max-w-md">
+					<div className="flex items-center gap-2 w-full sm:w-auto sm:max-w-md">
 						<div className="relative flex-1">
 							<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
 							<Input
@@ -64,18 +64,18 @@ export const ProjectPage = memo(() => {
 								className="pl-10 bg-background"
 							/>
 						</div>
-						<Button variant="outline" size="sm">
+						<Button variant="outline" size="sm" className="flex-shrink-0">
 							<Filter className="size-4" />
 							<span className="hidden sm:inline">Filter</span>
 						</Button>
 					</div>
 
-					<div className="flex items-center gap-2">
-						<Button size="sm">
+					<div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+						<Button size="sm" className="flex-shrink-0">
 							<Plus className="size-4" />
 							New Task
 						</Button>
-						<Button variant="outline" size="sm">
+						<Button variant="outline" size="sm" className="flex-shrink-0">
 							<Plus className="size-4" />
 							New Column
 						</Button>
@@ -83,8 +83,12 @@ export const ProjectPage = memo(() => {
 				</div>
 			</div>
 
-			{/* Main Content Area - Kanban Board Container */}
-			<KanbanBoard id={project.id} />
+			{/* Main Content Area - Kanban Board Container with proper overflow */}
+			<div className="flex-1 overflow-auto">
+				<div className="p-4">
+					<KanbanBoard id={project.id} />
+				</div>
+			</div>
 		</div>
 	);
 });

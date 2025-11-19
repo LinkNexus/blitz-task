@@ -41,11 +41,11 @@ export const KanbanColumn = memo(({ column, columns }: Props) => {
 	);
 
 	return (
-		<div className="flex flex-col min-w-[280px] sm:min-w-[300px] flex-shrink-0">
+		<div className="flex flex-col min-w-[280px] sm:min-w-[320px] w-[280px] sm:w-[320px] flex-shrink-0">
 			<div className="flex items-center justify-between mb-3 sm:mb-4 p-2 sm:p-3 rounded-lg bg-muted/50">
 				<div className="flex items-center gap-1 sm:gap-2">
-					<h3 className="font-semibold text-xs sm:text-sm">{column.name}</h3>
-					<Badge variant="secondary" className="text-xs">
+					<h3 className="font-semibold text-xs sm:text-sm truncate max-w-[150px] sm:max-w-[180px]">{column.name}</h3>
+					<Badge variant="secondary" className="text-xs flex-shrink-0">
 						{column.tasks.length}
 					</Badge>
 				</div>
@@ -55,9 +55,9 @@ export const KanbanColumn = memo(({ column, columns }: Props) => {
 						<Button
 							variant="ghost"
 							size="sm"
-							className="size-5 sm:h-6 sm:w-6 p-6"
+							className="h-7 w-7 p-0 flex-shrink-0"
 						>
-							<MoreHorizontal className="size-3 sm:size-4" />
+							<MoreHorizontal className="size-4" />
 						</Button>
 					</DropdownMenuTrigger>
 
@@ -96,7 +96,7 @@ export const KanbanColumn = memo(({ column, columns }: Props) => {
 
 			<div
 				ref={setNodeRef}
-				className={`flex-1 space-y-2 sm:space-y-3 min-h-[400px] sm:min-h-[500px] p-1 sm:p-2 rounded-lg border-2 border-dashed transition-colors ${
+				className={`flex-1 space-y-2 sm:space-y-3 min-h-[400px] sm:min-h-[500px] p-2 rounded-lg border-2 border-dashed transition-colors ${
 					isOver
 						? "border-primary bg-primary/10"
 						: "border-muted-foreground/25 hover:border-muted-foreground/50"

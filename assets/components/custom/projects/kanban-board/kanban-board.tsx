@@ -34,7 +34,7 @@ export const KanbanBoard = memo(({ id }: Props) => {
 	if (fetchingColumns) return <div>Loading...</div>;
 
 	return (
-		<div className=" mt-6 flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px] overflow-x-auto pb-4">
+		<div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px]">
 			{sortedColumns.map((column, idx) => (
 				<KanbanColumn key={column.id} column={column} columns={columns} />
 			))}

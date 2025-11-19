@@ -1,9 +1,9 @@
+import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { Calendar, Clock, MessageSquare, Paperclip } from "lucide-react";
+import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CardContent } from "@/components/ui/card";
 import type { Task } from "@/types";
-import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
-import { Calendar, Clock, MessageSquare, Paperclip } from "lucide-react";
-import { memo } from "react";
 
 type Props = {
 	task: Task;
