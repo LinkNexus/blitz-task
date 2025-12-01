@@ -16,6 +16,22 @@ class TaskRepository extends ServiceEntityRepository
         parent::__construct($registry, Task::class);
     }
 
+    /**
+     * Find a task with its column.
+     * @param int $id The id of the task to find
+     * @return Task|null The found task or null if not found
+     */
+    public function findWithColumn(int $id): ?Task
+    {
+        return $this->createQueryBuilder('t')
+            ->leftJoin('t.column', 'c')
+            ->addSelect('c')
+            ->where('t.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     //    /**
     //     * @return Task[] Returns an array of Task objects
     //     */

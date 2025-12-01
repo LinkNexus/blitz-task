@@ -14,11 +14,11 @@ class TaskLabel
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['task:read'])]
+    #[Groups(['task:read', "labels:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['task:read'])]
+    #[Groups(['task:read', "labels:read"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
@@ -74,7 +74,7 @@ class TaskLabel
 
     public function addTask(Task $task): static
     {
-        if (! $this->tasks->contains($task)) {
+        if (!$this->tasks->contains($task)) {
             $this->tasks->add($task);
             $task->addLabel($this);
         }

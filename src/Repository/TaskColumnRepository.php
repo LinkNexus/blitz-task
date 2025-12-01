@@ -16,6 +16,22 @@ class TaskColumnRepository extends ServiceEntityRepository
         parent::__construct($registry, TaskColumn::class);
     }
 
+    /**
+     * Get a column with its project.
+     * @param int $columnId The id of the column to find
+     * @return TaskColumn|null The found column or null if not found
+     */
+    public function findWithProject(int $columnId): ?TaskColumn
+    {
+        return $this->createQueryBuilder('c')
+            ->leftJoin("c.project", "p")
+            ->addSelect("p")
+            ->where("c.id = :columnId")
+            ->setParameter("columnId", $columnId)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
 //    /**
 //     * @return TaskColumn[] Returns an array of TaskColumn objects
 //     */

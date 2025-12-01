@@ -44,11 +44,8 @@ class Task
 
     #[ORM\ManyToOne(inversedBy: 'tasks')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['task:read'])]
     private ?TaskColumn $relatedColumn = null;
-
-    #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Project $project = null;
 
     #[ORM\Column(enumType: TaskPriority::class)]
     #[Groups(['task:read'])]
@@ -108,7 +105,7 @@ class Task
 
     public function addAssignee(User $assignee): static
     {
-        if (! $this->assignees->contains($assignee)) {
+        if (!$this->assignees->contains($assignee)) {
             $this->assignees->add($assignee);
         }
 
@@ -158,18 +155,6 @@ class Task
         return $this;
     }
 
-    public function getProject(): ?Project
-    {
-        return $this->project;
-    }
-
-    public function setProject(?Project $project): static
-    {
-        $this->project = $project;
-
-        return $this;
-    }
-
     public function getPriority(): ?TaskPriority
     {
         return $this->priority;
@@ -192,7 +177,7 @@ class Task
 
     public function addLabel(TaskLabel $label): static
     {
-        if (! $this->labels->contains($label)) {
+        if (!$this->labels->contains($label)) {
             $this->labels->add($label);
         }
 

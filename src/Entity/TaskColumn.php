@@ -14,7 +14,7 @@ class TaskColumn
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['column:read'])]
+    #[Groups(['column:read', "task:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -91,7 +91,7 @@ class TaskColumn
 
     public function addTask(Task $task): static
     {
-        if (! $this->tasks->contains($task)) {
+        if (!$this->tasks->contains($task)) {
             $this->tasks->add($task);
             $task->setRelatedColumn($this);
         }

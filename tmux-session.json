@@ -2,14 +2,13 @@
 	"windows": [
 		{
 			"name": "editor",
+			"split": "vertical",
 			"panes": [
 				{
-					"command": "nvim .",
-					"width": "75%"
+					"command": "nvim ."
 				},
 				{
-					"command": "copilot",
-					"horizontal": false
+					"command": "copilot"
 				}
 			]
 		},

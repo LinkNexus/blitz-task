@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -30,16 +31,19 @@ use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 final class SecurityController extends AbstractController
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
+        private readonly EntityManagerInterface   $entityManager,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly EmailVerifier $emailVerifier,
-        private readonly ClientRegistry $clientRegistry,
-    ) {}
+        private readonly EmailVerifier            $emailVerifier,
+        private readonly ClientRegistry           $clientRegistry,
+    )
+    {
+    }
 
     #[Route('/csrf-token', name: 'csrf_token', methods: ['GET'])]
     public function getCsrfCookie(
         CsrfTokenManagerInterface $csrfTokenManager,
-    ): JsonResponse {
+    ): JsonResponse
+    {
         $csrfToken = $csrfTokenManager->getToken('api')->getValue();
         $cookie = Cookie::create('XSRF-TOKEN')
             ->withValue($csrfToken)
@@ -61,24 +65,17 @@ final class SecurityController extends AbstractController
         return $this->json($user, context: ['groups' => ['user:read']]);
     }
 
-    #[Route('/login', name: 'login', methods: ['POST'])]
-    public function login(): JsonResponse
-    {
-        throw new \LogicException(
-            'This method should never be called, as the authenticator will handle the login process.',
-        );
-    }
-
     #[Route('/register', name: 'register', methods: ['POST'])]
     #[ValidateCsrfHeader]
     public function register(
         #[MapRequestPayload(
             validationGroups: ['create']
-        )] UserDTO $userDTO,
-        Security $security,
+        )] UserDTO                  $userDTO,
+        Security                    $security,
         UserPasswordHasherInterface $passwordHasher,
-        ObjectMapperInterface $objectMapper,
-    ): JsonResponse {
+        ObjectMapperInterface       $objectMapper,
+    ): Response
+    {
         $user = $objectMapper->map($userDTO, User::class);
         $user->setPassword(
             $passwordHasher->hashPassword($user, $userDTO->password),
@@ -91,7 +88,15 @@ final class SecurityController extends AbstractController
         return $security->login($user, JsonLoginAuthenticator::class, 'main');
     }
 
-    #[IsGranted(['ROLE_USER'])]
+    #[Route('/login', name: 'login', methods: ['POST'])]
+    public function login(): JsonResponse
+    {
+        throw new \LogicException(
+            'This method should never be called, as the authenticator will handle the login process.',
+        );
+    }
+
+    #[IsGranted('ROLE_USER')]
     #[Route('/resend-verification-mail', name: 'resend_verification_mail', methods: ['POST'])]
     public function resendVerificationMail(#[CurrentUser] User $user): JsonResponse
     {
@@ -107,8 +112,9 @@ final class SecurityController extends AbstractController
     #[Route('/verify-email', name: 'verify_email', methods: ['GET'])]
     public function verifyEmail(
         #[CurrentUser] User $user,
-        Request $request
-    ): RedirectResponse {
+        Request             $request
+    ): RedirectResponse
+    {
         try {
             $this->emailVerifier->handleEmailConfirmation($request, $user);
         } catch (VerifyEmailExceptionInterface $exception) {
@@ -125,7 +131,8 @@ final class SecurityController extends AbstractController
     #[Route('/connect/{service}')]
     public function connect(
         string $service
-    ): RedirectResponse {
+    ): RedirectResponse
+    {
         $scopes = [];
 
         // if ($service === 'github') {

@@ -21,6 +21,7 @@ use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\MapUploadedFile;
@@ -39,12 +40,14 @@ use Symfony\Component\Validator\Constraints\Image;
 final class ProjectController extends AbstractController
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly ProjectRepository $projectRepository,
-        private FileUploader $fileUploader,
-        private readonly ObjectMapperInterface $objectMapper,
+        private readonly EntityManagerInterface   $entityManager,
+        private readonly ProjectRepository        $projectRepository,
+        private readonly FileUploader             $fileUploader,
+        private readonly ObjectMapperInterface    $objectMapper,
         private readonly EventDispatcherInterface $eventDispatcher
-    ) {}
+    )
+    {
+    }
 
     #[Route('', name: 'list', methods: ['GET'])]
     #[ValidateCsrfHeader]
@@ -54,17 +57,6 @@ final class ProjectController extends AbstractController
         return $this->json(
             $this->projectRepository->findProjectsByUser($user->getId()),
             context: ['groups' => 'projects:read']
-        );
-    }
-
-    #[Route('/{id}', name: 'get', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
-    #[IsGranted('PROJECT_PARTICIPANT', subject: 'project')]
-    public function getProject(Project $project): JsonResponse
-    {
-        return $this->json(
-            $project,
-            context: ['groups' => 'project:read']
         );
     }
 
@@ -78,11 +70,12 @@ final class ProjectController extends AbstractController
                     maxSize: '2M'
                 ),
             ]
-        )] ?UploadedFile $image,
-        #[CurrentUser] User $user
-    ): JsonResponse {
+        )] ?UploadedFile                $image,
+        #[CurrentUser] User             $user
+    ): JsonResponse
+    {
 
-        /** @var Project */
+        /** @var $project Project */
         $project = $this->objectMapper->map($projectDTO);
 
         if ($image !== null) {
@@ -102,8 +95,8 @@ final class ProjectController extends AbstractController
 
         return $this->json(
             $project,
-            context: ['groups' => 'project:read'],
-            status: 201
+            status: 201,
+            context: ['groups' => 'project:read']
         );
     }
 
@@ -111,7 +104,7 @@ final class ProjectController extends AbstractController
     #[IsGranted('ROLE_USER')]
     #[IsGranted('PROJECT_PARTICIPANT', subject: 'project')]
     public function update(
-        Project $project,
+        Project                         $project,
         #[MapRequestPayload] ProjectDTO $projectDTO,
         #[MapUploadedFile(
             constraints: [
@@ -119,8 +112,9 @@ final class ProjectController extends AbstractController
                     maxSize: '2M'
                 ),
             ]
-        )] ?UploadedFile $image,
-    ) {
+        )] ?UploadedFile                $image,
+    ): JsonResponse
+    {
         $this->objectMapper->map(
             source: $projectDTO,
             target: $project
@@ -146,8 +140,9 @@ final class ProjectController extends AbstractController
     #[IsGranted('ROLE_USER')]
     public function showImage(
         #[Autowire('%kernel.project_dir%/uploads/projects')] string $projectsUploadDir,
-        string $filename
-    ): BinaryFileResponse {
+        string                                                      $filename
+    ): BinaryFileResponse
+    {
         return $this->file(
             Path::join($projectsUploadDir, $filename)
         );
@@ -157,12 +152,13 @@ final class ProjectController extends AbstractController
     #[IsGranted('ROLE_USER')]
     #[IsGranted('PROJECT_OWNER', subject: 'project')]
     public function removeMember(
-        Project $project,
+        Project                  $project,
         #[MapQueryParameter] int $memberId,
-    ) {
+    ): JsonResponse
+    {
         $member = $this->entityManager->getRepository(User::class)->find($memberId);
 
-        if (! $member) {
+        if (!$member) {
             return $this->json(['message' => 'Member not found'], 404);
         }
 
@@ -178,12 +174,13 @@ final class ProjectController extends AbstractController
     #[IsGranted('ROLE_USER')]
     #[IsGranted('PROJECT_OWNER', subject: 'project')]
     public function invite(
-        Project $project,
-        #[MapRequestPayload] InviteMemberDTO $dto,
-        MailerInterface $mailer,
-        #[Autowire('%env(APP_NAME)%')] string $appName,
+        Project                                     $project,
+        #[MapRequestPayload] InviteMemberDTO        $dto,
+        MailerInterface                             $mailer,
+        #[Autowire('%env(APP_NAME)%')] string       $appName,
         #[Autowire('%env(NO_REPLY_EMAIL)%')] string $noReplyEmail,
-    ) {
+    ): JsonResponse
+    {
         $invitedUser = $this->entityManager->getRepository(User::class)
             ->findOneBy(['email' => $dto->email]);
 
@@ -229,10 +226,11 @@ final class ProjectController extends AbstractController
     #[Route('/invitations/accept/{identifier:invitation}', name: 'accept_invitation')]
     #[NotValidateCsrfHeader]
     public function acceptInvitation(
-        ?ProjectInvitation $invitation,
+        ?ProjectInvitation  $invitation,
         SerializerInterface $serializer
-    ) {
-        if (! $invitation) {
+    ): RedirectResponse
+    {
+        if (!$invitation) {
             return $this->redirectToRoute('index', [
                 'url' => '',
                 'messages' => json_encode([
@@ -286,12 +284,24 @@ final class ProjectController extends AbstractController
         }
     }
 
+    #[Route('/{id}', name: 'get', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    #[IsGranted('PROJECT_PARTICIPANT', subject: 'project')]
+    public function getProject(Project $project): JsonResponse
+    {
+        return $this->json(
+            $project,
+            context: ['groups' => 'project:read']
+        );
+    }
+
     #[Route('/{id}/invitations', name: 'list_invitations', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     #[IsGranted('PROJECT_OWNER', subject: 'project')]
     public function listInvitations(
         Project $project
-    ) {
+    ): JsonResponse
+    {
         return $this->json(
             $project->getInvitations(),
             context: ['groups' => 'project_invitations:read']
@@ -301,7 +311,8 @@ final class ProjectController extends AbstractController
     #[Route('/invitations/revoke/{id}', name: 'revoke_invitation', methods: ['POST'])]
     public function revokeInvitation(
         ProjectInvitation $invitation
-    ) {
+    ): JsonResponse
+    {
         $this->entityManager->remove($invitation);
         $this->entityManager->flush();
 

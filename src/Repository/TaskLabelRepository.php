@@ -20,12 +20,32 @@ class TaskLabelRepository extends ServiceEntityRepository
     /**
      * Search for a label by its slug.
      *
-     * @param  string  $slug  The name to slugify and search for
+     * @param string $slug The name to slugify and search for
      * @return ?TaskLabel The found TaskLabel or null if not found
      */
     public function findOneBySlug($slug)
     {
         return $this->findOneBy(['slug' => $this->slugger->slug($slug)->lower()->toString()]);
+    }
+
+    /**
+     * Find labels by a query.
+     * @param string $query
+     * @param int $limit
+     * @param int $offset
+     * @return TaskLabel[]
+     */
+    public function findAllByQuery(string $query, int $limit = 10, int $offset = 0): array
+    {
+        return $this->createQueryBuilder("l")
+            ->where("ILIKE(l.name, :query) = true")
+            ->orWhere("ILIKE(l.slug, :query) = true")
+            ->setParameter("query", "%$query%")
+            ->orderBy("l.name", "ASC")
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
     }
 
     //    /**
