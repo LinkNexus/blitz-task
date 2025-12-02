@@ -21,11 +21,13 @@ class TaskRepository extends ServiceEntityRepository
      * @param int $id The id of the task to find
      * @return Task|null The found task or null if not found
      */
-    public function findWithColumn(int $id): ?Task
+    public function findWithColumnAndProject(int $id): ?Task
     {
         return $this->createQueryBuilder('t')
             ->leftJoin('t.column', 'c')
             ->addSelect('c')
+            ->leftJoin('c.project', 'p')
+            ->addSelect('p')
             ->where('t.id = :id')
             ->setParameter('id', $id)
             ->getQuery()

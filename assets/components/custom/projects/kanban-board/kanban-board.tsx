@@ -108,12 +108,27 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
       ))
     }
 
+    function onTaskDeleted(ev: Event) {
+      const taskId = (ev as CustomEvent).detail.id;
+      setColumns(prevState => prevState.map(
+        c => {
+          if (!c.tasks.some(t => t.id === taskId)) return c;
+          return {
+            ...c,
+            tasks: c.tasks.filter(t => t.id != taskId)
+          }
+        }
+      ))
+    }
+
     document.addEventListener("task.created", onTaskCreatedOrUpdated);
     document.addEventListener("task.updated", onTaskCreatedOrUpdated);
+    document.addEventListener("task.deleted", onTaskDeleted);
 
     return () => {
       document.removeEventListener("task.created", onTaskCreatedOrUpdated);
       document.removeEventListener("task.updated", onTaskCreatedOrUpdated);
+      document.addEventListener("task.deleted", onTaskDeleted);
     }
   }, []);
 
@@ -150,7 +165,7 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
           )}
         </DragOverlay>
       </DndContext>
-      <TaskModal participants={participants}/>
+      <TaskModal projectId={id} participants={participants}/>
     </>
   );
 });

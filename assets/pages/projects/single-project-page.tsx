@@ -70,7 +70,8 @@ export const ProjectPage = memo(() => {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <Button size="sm" className="flex-shrink-0">
+            <Button onClick={() => document.dispatchEvent(new CustomEvent("task.create"))} size="sm"
+                    className="flex-shrink-0">
               <Plus className="size-4"/>
               New Task
             </Button>

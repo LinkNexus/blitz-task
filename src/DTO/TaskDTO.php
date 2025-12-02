@@ -3,6 +3,7 @@
 namespace App\DTO;
 
 use App\Enum\TaskPriority;
+use DateTimeImmutable;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class TaskDTO
@@ -15,12 +16,12 @@ class TaskDTO
 
     public TaskPriority $priority = TaskPriority::MEDIUM;
 
-    #[Assert\PositiveOrZero]
-    public ?int $columnId = null;
+    #[Assert\Positive]
+    public int $projectId = 0;
 
     public array $assigneesIds = [];
 
     public array $labelsIds = [];
 
-    public ?\DateTimeImmutable $dueAt = null;
+    public ?DateTimeImmutable $dueAt = null;
 }

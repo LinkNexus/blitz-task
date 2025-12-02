@@ -24,10 +24,11 @@ import {setFormErrors} from "@/lib/forms.ts";
 import {Loader2} from "lucide-react";
 
 type Props = {
+  projectId: number;
   participants: Project["participants"];
 };
 
-export const TaskModal = memo(({participants}: Props) => {
+export const TaskModal = memo(({projectId, participants}: Props) => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const isEditing = !!editingTask;
 
@@ -79,7 +80,7 @@ export const TaskModal = memo(({participants}: Props) => {
 
   const {watch, setValue, reset} = form;
 
-  const {pending, action: createOrUpdateTask} = useApiFetch<Task, FormErrors, TaskForm>({
+  const {pending, action: createOrUpdateTask} = useApiFetch<Task, FormErrors, TaskForm & { projectId: number }>({
     url: editingTask?.id ? `/api/tasks/${editingTask.id}` : "/api/tasks",
     options: {
       onSuccess(response) {
@@ -117,7 +118,9 @@ export const TaskModal = memo(({participants}: Props) => {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(
-              async (data) => await createOrUpdateTask({data})
+              async (data) => await createOrUpdateTask({
+                data: {...data, projectId}
+              })
             )}
             className="space-y-6"
           >

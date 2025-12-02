@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route("/api/tasks", name: "api.task.", format: "json")]
 final class TaskController extends AbstractController
@@ -27,10 +28,16 @@ final class TaskController extends AbstractController
         #[MapRequestPayload] TaskDTO $taskDTO
     ): Response
     {
-        $column = $this
-            ->entityManager
-            ->getRepository(TaskColumn::class)
-            ->findWithProject($taskDTO->columnId);
+        $column = $this->entityManager
+            ->createQueryBuilder()
+            ->select("c")
+            ->from(TaskColumn::class, "c")
+            ->where("c.project = :project")
+            ->orderBy("c.id", "ASC")
+            ->setParameter("project", $taskDTO->projectId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
 
         if (!$column) {
             throw $this->createNotFoundException('Column not found');
@@ -43,6 +50,15 @@ final class TaskController extends AbstractController
         $task->setDueAt($taskDTO->dueAt);
         $task->setPriority($taskDTO->priority);
         $task->setRelatedColumn($column);
+
+        $maxScore = $this->entityManager
+            ->createQueryBuilder()
+            ->select("MAX(t.score)")
+            ->from(Task::class, "t")
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $task->setScore($maxScore + 100);
 
         foreach ($taskDTO->assigneesIds as $assigneeId) {
             $assignee = $this->entityManager
@@ -160,5 +176,33 @@ final class TaskController extends AbstractController
 
         $this->entityManager->flush();
         return $this->json($task, context: ["groups" => "task:read"]);
+    }
+
+    #[Route("/{id}", name: "delete", methods: ["DELETE"])]
+    public function delete(
+        int                 $id,
+        #[CurrentUser] User $user
+    ): JsonResponse
+    {
+        $task = $this->entityManager
+            ->getRepository(Task::class)
+            ->createQueryBuilder("t")
+            ->leftJoin("t.relatedColumn", "c")
+            ->addSelect("c")
+            ->leftJoin("c.project", "p")
+            ->addSelect("p")
+            ->where("t.id = :id")
+            ->setParameter("id", $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (!$task) {
+            throw $this->createNotFoundException('Task not found');
+        }
+
+        $this->denyAccessUnlessGranted("PROJECT_PARTICIPANT", $task->getRelatedColumn()->getProject());
+        $this->entityManager->remove($task);
+        $this->entityManager->flush();
+        return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 }
