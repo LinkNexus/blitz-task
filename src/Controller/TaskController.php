@@ -2,10 +2,11 @@
 
 namespace App\Controller;
 
+use App\DataStructures\Set;
 use App\DTO\TaskDTO;
 use App\Entity\Task;
 use App\Entity\TaskColumn;
-use App\Entity\TaskLabel;
+use App\Entity\TaskTag;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -55,11 +56,11 @@ final class TaskController extends AbstractController
 
         foreach ($taskDTO->labelsIds as $labelId) {
             $label = $this->entityManager
-                ->getRepository(TaskLabel::class)
+                ->getRepository(TaskTag::class)
                 ->find($labelId);
 
             if ($label) {
-                $task->addLabel($label);
+                $task->addTag($label);
             }
         }
 
@@ -78,13 +79,14 @@ final class TaskController extends AbstractController
         #[MapRequestPayload] TaskDTO $taskDTO,
     ): JsonResponse
     {
+        /** @var Task $task */
         $task = $this->entityManager->getRepository(Task::class)
             ->createQueryBuilder("t")
-            ->leftJoin("t.column", "c")
+            ->leftJoin("t.relatedColumn", "c")
             ->addSelect("c")
             ->leftJoin("t.assignees", "a")
             ->addSelect("a")
-            ->leftJoin("t.labels", "l")
+            ->leftJoin("t.tags", "l")
             ->addSelect("l")
             ->leftJoin("c.project", "p")
             ->addSelect("p")
@@ -127,24 +129,32 @@ final class TaskController extends AbstractController
             }
         }
 
-        $addedLabelsIds = array_diff($taskDTO->labelsIds, $task->getLabels()->map(fn(TaskLabel $label) => $label->getId())->toArray());
-        $removedLabelsIds = array_diff($task->getLabels()->map(fn(TaskLabel $label) => $label->getId())->toArray(), $taskDTO->labelsIds);
+        $labelsIds = $task->getTags()->map(fn(TaskTag $label) => $label->getId())->toArray();
 
-        foreach ($addedLabelsIds as $labelId) {
-            $label = $this->entityManager
-                ->getRepository(TaskLabel::class)
-                ->find($labelId);
-            if ($label) {
-                $task->addLabel($label);
-            }
-        }
+        $addedLabelsIds = array_diff(
+            $taskDTO->labelsIds,
+            $labelsIds
+        );
+        $removedLabelsIds = array_diff(
+            $labelsIds,
+            $taskDTO->labelsIds
+        );
 
         foreach ($removedLabelsIds as $labelId) {
             $label = $this->entityManager
-                ->getRepository(TaskLabel::class)
+                ->getRepository(TaskTag::class)
                 ->find($labelId);
             if ($label) {
-                $task->removeLabel($label);
+                $task->removeTag($label);
+            }
+        }
+
+        foreach ($addedLabelsIds as $labelId) {
+            $label = $this->entityManager
+                ->getRepository(TaskTag::class)
+                ->find($labelId);
+            if ($label) {
+                $task->addTag($label);
             }
         }
 

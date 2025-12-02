@@ -69,7 +69,6 @@ export const taskSchema = z.object({
     .max(255, "The task name must be less than 255 characters"),
   description: z.string().optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
-  columnId: z.number(),
   assigneesIds: z.array(z.number()),
   labelsIds: z.array(z.number()),
   dueAt: z.date().optional(),

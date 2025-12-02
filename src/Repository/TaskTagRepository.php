@@ -2,26 +2,26 @@
 
 namespace App\Repository;
 
-use App\Entity\TaskLabel;
+use App\Entity\TaskTag;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 /**
- * @extends ServiceEntityRepository<TaskLabel>
+ * @extends ServiceEntityRepository<TaskTag>
  */
-class TaskLabelRepository extends ServiceEntityRepository
+class TaskTagRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry, private readonly SluggerInterface $slugger)
     {
-        parent::__construct($registry, TaskLabel::class);
+        parent::__construct($registry, TaskTag::class);
     }
 
     /**
      * Search for a label by its slug.
      *
      * @param string $slug The name to slugify and search for
-     * @return ?TaskLabel The found TaskLabel or null if not found
+     * @return ?TaskTag The found TaskLabel or null if not found
      */
     public function findOneBySlug($slug)
     {
@@ -33,7 +33,7 @@ class TaskLabelRepository extends ServiceEntityRepository
      * @param string $query
      * @param int $limit
      * @param int $offset
-     * @return TaskLabel[]
+     * @return TaskTag[]
      */
     public function findAllByQuery(string $query, int $limit = 10, int $offset = 0): array
     {

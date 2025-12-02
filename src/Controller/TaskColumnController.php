@@ -16,13 +16,16 @@ final class TaskColumnController extends AbstractController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly NormalizerInterface $normalizer,
-    ) {}
+        private readonly NormalizerInterface    $normalizer,
+    )
+    {
+    }
 
     #[Route('', name: 'get_columns', methods: ['GET'])]
     public function getColumns(
         #[MapQueryParameter] int $projectId
-    ) {
+    )
+    {
 
         /** @var Project|null $project */
         $project = $this->entityManager
@@ -32,7 +35,7 @@ final class TaskColumnController extends AbstractController
             ->addSelect('c')
             ->leftJoin('c.tasks', 't')
             ->addSelect('t')
-            ->leftJoin('t.labels', 'l')
+            ->leftJoin('t.tags', 'l')
             ->addSelect('l')
             ->where('p.id = :projectId')
             ->setParameter('projectId', $projectId)
@@ -47,25 +50,25 @@ final class TaskColumnController extends AbstractController
 
         return $this->json([
             ...(
-                array_map(
-                    function ($column) {
-                        return [
-                            ...(
-                                $this->normalizer
-                                    ->normalize(
-                                        $column,
-                                        context: ['groups' => ['column:read']]
-                                    )
+            array_map(
+                function ($column) {
+                    return [
+                        ...(
+                        $this->normalizer
+                            ->normalize(
+                                $column,
+                                context: ['groups' => ['column:read']]
+                            )
+                        ),
+                        'tasks' => $this->normalizer
+                            ->normalize(
+                                $column->getTasks(),
+                                context: ['groups' => ['task:read']]
                             ),
-                            'tasks' => $this->normalizer
-                                ->normalize(
-                                    $column->getTasks(),
-                                    context: ['groups' => ['task:read']]
-                                ),
-                        ];
-                    },
-                    $project->getColumns()->toArray()
-                )
+                    ];
+                },
+                $project->getColumns()->toArray()
+            )
             ),
         ]);
 

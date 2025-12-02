@@ -92,26 +92,28 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
 
       setColumns(prevState => prevState.map(
         c => {
-          if (c.id === task.relatedColumn.id) {
-            if (c.tasks.some(t => t.id === task.id)) {
-              return {
-                ...c,
-                tasks: c.tasks.map(
-                  t => t.id === task.id ? task : t
-                )
-              }
-            }
-            return {...c, tasks: [...c.tasks, task]}
-          }
-          return c;
+          if (c.id !== task.relatedColumn.id) return c;
+
+          if (!c.tasks.some(t => t.id === task.id))
+            return {
+              ...c,
+              tasks: [...c.tasks, task]
+            };
+
+          return {
+            ...c,
+            tasks: c.tasks.map(t => t.id === task.id ? task : t)
+          };
         }
       ))
     }
 
     document.addEventListener("task.created", onTaskCreatedOrUpdated);
+    document.addEventListener("task.updated", onTaskCreatedOrUpdated);
 
     return () => {
       document.removeEventListener("task.created", onTaskCreatedOrUpdated);
+      document.removeEventListener("task.updated", onTaskCreatedOrUpdated);
     }
   }, []);
 
@@ -148,8 +150,7 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
           )}
         </DragOverlay>
       </DndContext>
-      <TaskModal
-        columns={columns} participants={participants}/>
+      <TaskModal participants={participants}/>
     </>
   );
 });

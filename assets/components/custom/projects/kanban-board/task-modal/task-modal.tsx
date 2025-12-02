@@ -1,5 +1,5 @@
 import {AssigneesField} from "@/components/custom/projects/kanban-board/task-modal/assignees-field.tsx";
-import {LabelsField} from "@/components/custom/projects/kanban-board/task-modal/labels-field.tsx";
+import {TagsField} from "@/components/custom/projects/kanban-board/task-modal/tags-field.tsx";
 import {DateTimePicker} from "@/components/forms/date-time-picker.tsx";
 import {
   Dialog,
@@ -24,28 +24,24 @@ import {setFormErrors} from "@/lib/forms.ts";
 import {Loader2} from "lucide-react";
 
 type Props = {
-  columns: Project["columns"];
   participants: Project["participants"];
 };
 
-export const TaskModal = memo(({participants, columns}: Props) => {
+export const TaskModal = memo(({participants}: Props) => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const isEditing = !!editingTask;
 
   const [open, setOpen] = useState(false);
-  const [columnId, setColumnId] = useState<number>(0);
 
   useEffect(() => {
-    document.addEventListener("task.create", (e) => {
-      const columnId = (e as CustomEvent).detail.columnId;
+    document.addEventListener("task.create", () => {
       setEditingTask(null);
-      if (columnId) setColumnId(columnId);
       setOpen(true);
     });
 
     document.addEventListener("task.update", (e) => {
       const task = (e as CustomEvent).detail;
-      setEditingTask(task);
+      setEditingTask({...task});
       setOpen(true);
     });
   }, []);
@@ -54,16 +50,12 @@ export const TaskModal = memo(({participants, columns}: Props) => {
     reset({
       name: "",
       description: undefined,
-      priority: undefined,
+      priority: "medium",
       assigneesIds: [],
       labelsIds: [],
       dueAt: undefined
     });
-  });
-
-  useEffect(() => {
-    setValue("columnId", columnId);
-  }, [columnId]);
+  }, []);
 
   useEffect(() => {
     if (editingTask) {
@@ -72,7 +64,7 @@ export const TaskModal = memo(({participants, columns}: Props) => {
         description: editingTask.description,
         priority: editingTask.priority,
         assigneesIds: editingTask.assignees.map(a => a.id),
-        labelsIds: editingTask.labels.map(l => l.id),
+        labelsIds: editingTask.tags.map(l => l.id),
         dueAt: editingTask.dueAt ? new Date(editingTask.dueAt) : undefined
       })
     } else {
@@ -82,12 +74,6 @@ export const TaskModal = memo(({participants, columns}: Props) => {
 
   const form = useForm<TaskForm>({
     resolver: zodResolver(taskSchema),
-    defaultValues: {
-      name: "",
-      columnId: 0,
-      assigneesIds: [],
-      labelsIds: [],
-    },
     mode: "onBlur",
   });
 
@@ -97,7 +83,13 @@ export const TaskModal = memo(({participants, columns}: Props) => {
     url: editingTask?.id ? `/api/tasks/${editingTask.id}` : "/api/tasks",
     options: {
       onSuccess(response) {
-        document.dispatchEvent(new CustomEvent(editingTask?.id ? "task.updated" : "task.created", {detail: response.data}));
+        document.dispatchEvent(
+          new CustomEvent(
+            editingTask?.id ? "task.updated" : "task.created",
+            {detail: response.data}
+          )
+        );
+        // setEditingTask(null);
         setOpen(false);
       },
       onError(err) {
@@ -157,63 +149,31 @@ export const TaskModal = memo(({participants, columns}: Props) => {
               )}
             />
 
-            <div className={"flex flex-row gap-x-3 flex-wrap"}>
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({field}) => (
-                  <FormItem>
-                    <FormLabel>Priority</FormLabel>
-                    <FormControl>
-                      <Select {...field}>
-                        <SelectTrigger className={"w-full"}>
-                          <SelectValue placeholder={"Select an option"}/>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={"low"}>Low</SelectItem>
-                          <SelectItem value={"medium"}>Medium</SelectItem>
-                          <SelectItem value={"high"}>High</SelectItem>
-                          <SelectItem value={"urgent"}>Urgent</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {!editingTask && (
-                <FormField
-                  control={form.control}
-                  name="columnId"
-                  render={({field}) => (
-                    <FormItem>
-                      <FormLabel>Column</FormLabel>
-                      <FormControl>
-                        <Select
-                          value={
-                            field.value !== undefined && field.value !== null
-                              ? String(field.value)
-                              : undefined
-                          }
-                          onValueChange={(v) => field.onChange(Number(v))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder={"Select an option"}/>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {columns.map((c) => (
-                              <SelectItem value={String(c.id)} key={c.id}>
-                                {c.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+            <FormField
+              control={form.control}
+              name="priority"
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel>Priority</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className={"w-full"}>
+                        <SelectValue placeholder={"Select an option"}/>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={"low"}>Low</SelectItem>
+                        <SelectItem value={"medium"}>Medium</SelectItem>
+                        <SelectItem value={"high"}>High</SelectItem>
+                        <SelectItem value={"urgent"}>Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
               )}
-            </div>
+            />
 
             <FormField
               control={form.control}
@@ -235,10 +195,10 @@ export const TaskModal = memo(({participants, columns}: Props) => {
               participants={participants}
             />
 
-            <LabelsField
+            <TagsField
               onChange={(val) => setValue("labelsIds", val)}
               watchedLabelIds={watch("labelsIds")}
-              labels={editingTask?.labels || []}
+              labels={editingTask?.tags || []}
             />
 
             <DialogFooter>

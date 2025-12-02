@@ -4,20 +4,30 @@ namespace App\EventSubscriber;
 
 use App\Entity\Task;
 use App\Entity\TaskColumn;
-use App\Entity\TaskLabel;
+use App\Entity\TaskTag;
 use App\Event\ProjectCreatedEvent;
-use App\Repository\TaskLabelRepository;
+use App\Repository\TaskTagRepository;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
-class ProjectCreatedSubscriber implements EventSubscriberInterface
+readonly class ProjectCreatedSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly TaskLabelRepository $labelRepository,
-        private readonly SluggerInterface $slugger,
-    ) {}
+        private EntityManagerInterface $entityManager,
+        private TaskTagRepository      $labelRepository,
+        private SluggerInterface       $slugger,
+    )
+    {
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            ProjectCreatedEvent::class => 'createDefaultColumns',
+        ];
+    }
 
     public function createDefaultColumns(ProjectCreatedEvent $event): void
     {
@@ -25,7 +35,7 @@ class ProjectCreatedSubscriber implements EventSubscriberInterface
         $defaultTask = new Task()
             ->setName('Welcome to your new project!')
             ->setDescription('This is your first task. You can edit or delete it as you like.')
-            ->setDueAt((new \DateTimeImmutable)->modify('+7 days'));
+            ->setDueAt((new DateTimeImmutable)->modify('+7 days'));
 
         foreach (['Backlog', 'In Progess', 'Review', 'Done'] as $index => $columnName) {
             $column = new TaskColumn()
@@ -39,7 +49,7 @@ class ProjectCreatedSubscriber implements EventSubscriberInterface
                     ->findOneBySlug($labelName);
 
                 if ($label === null) {
-                    $label = new TaskLabel()
+                    $label = new TaskTag()
                         ->setName($labelName)
                         ->setSlug(
                             $this->slugger
@@ -50,9 +60,10 @@ class ProjectCreatedSubscriber implements EventSubscriberInterface
                     $this->entityManager->persist($label);
                 }
 
-                $defaultTask->setProject($project)
+                $defaultTask
                     ->setRelatedColumn($column)
-                    ->addLabel($label);
+                    ->addTag($label)
+                    ->setScore(0);
 
                 $this->entityManager->persist($defaultTask);
             }
@@ -61,12 +72,5 @@ class ProjectCreatedSubscriber implements EventSubscriberInterface
 
         $this->entityManager->flush();
 
-    }
-
-    public static function getSubscribedEvents(): array
-    {
-        return [
-            ProjectCreatedEvent::class => 'createDefaultColumns',
-        ];
     }
 }

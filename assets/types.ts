@@ -41,11 +41,11 @@ export interface Task {
   dueAt: string | null;
   createdAt: string;
   score: number;
-  labels: TaskLabel[];
+  tags: TaskTag[];
   relatedColumn: Pick<TaskColumn, "id">
 }
 
-export interface TaskLabel {
+export interface TaskTag {
   id: number;
   name: string;
 }

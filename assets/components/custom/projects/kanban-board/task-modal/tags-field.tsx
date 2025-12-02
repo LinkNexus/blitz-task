@@ -1,6 +1,6 @@
 import {memo, useCallback, useEffect, useState} from "react";
 import {FormLabel} from "@/components/ui/form.tsx";
-import type {FormErrors, TaskLabel} from "@/types.ts";
+import type {FormErrors, TaskTag} from "@/types.ts";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Loader2, Plus, Tag, X} from "lucide-react";
@@ -15,19 +15,19 @@ import {toast} from "sonner";
 type Props = {
   onChange: (labelIds: number[]) => void;
   watchedLabelIds: number[];
-  labels: TaskLabel[];
+  labels: TaskTag[];
 }
 
-export const LabelsField = memo(function ({onChange, watchedLabelIds, ...props}: Props) {
-  const [labels, setLabels] = useState<TaskLabel[]>([...props.labels]);
+export const TagsField = memo(function ({onChange, watchedLabelIds, ...props}: Props) {
+  const [labels, setLabels] = useState<TaskTag[]>([...props.labels]);
   const [labelSearchValue, setLabelSearchValue] = useState("");
-  const [searchedLabels, setSearchedLabels] = useState<TaskLabel[]>([]);
+  const [searchedLabels, setSearchedLabels] = useState<TaskTag[]>([]);
   const [open, setOpen] = useState(false);
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
 
   const trimmedLabelSearchValue = labelSearchValue.trim();
 
-  const {pending: isSearchingLabels, action: searchLabels} = useApiFetch<TaskLabel[]>({
+  const {pending: isSearchingLabels, action: searchLabels} = useApiFetch<TaskTag[]>({
     url: "/api/labels",
     options: {
       onSuccess(res) {
@@ -48,7 +48,7 @@ export const LabelsField = memo(function ({onChange, watchedLabelIds, ...props}:
     }
   }, [trimmedLabelSearchValue, open]);
 
-  const addLabel = useCallback(function (label: TaskLabel) {
+  const addLabel = useCallback(function (label: TaskTag) {
     if (!watchedLabelIds.includes(label.id)) {
       setLabels([...labels, label]);
       onChange([...watchedLabelIds, label.id]);
@@ -72,7 +72,7 @@ export const LabelsField = memo(function ({onChange, watchedLabelIds, ...props}:
     }
 
     setIsCreatingLabel(true);
-    await apiFetch<TaskLabel, { name: string }>("/api/labels", {
+    await apiFetch<TaskTag, { name: string }>("/api/labels", {
       data: {
         name: trimmedName
       }

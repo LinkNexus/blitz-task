@@ -104,18 +104,6 @@ export const KanbanColumn = memo(({column, columns}: Props) => {
             />
           ))}
         </SortableContext>
-
-        {/* Add task button in column */}
-        <Button
-          variant="ghost"
-          className="w-full h-10 sm:h-12 border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors text-xs sm:text-sm"
-          onClick={() => {
-            document.dispatchEvent(new CustomEvent("task.create", {detail: {columnId: column.id}}))
-          }}
-        >
-          <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2"/>
-          Add task
-        </Button>
       </div>
     </div>
   );

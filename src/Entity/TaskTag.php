@@ -2,23 +2,28 @@
 
 namespace App\Entity;
 
-use App\Repository\TaskLabelRepository;
+use App\Repository\TaskTagRepository;
+use App\Validator\UniqueEntityValue;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity(repositoryClass: TaskLabelRepository::class)]
-class TaskLabel
+#[ORM\Entity(repositoryClass: TaskTagRepository::class)]
+class TaskTag
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['task:read', "labels:read"])]
+    #[Groups(['task:read', "tags:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['task:read', "labels:read"])]
+    #[Groups(['task:read', "tags:read"])]
+    #[Assert\NotBlank(message: "The name field cannot be empty.", normalizer: "trim")]
+    #[Assert\Length(min: 2, max: 255, minMessage: "The name must be at least {{ limit }} characters long.", maxMessage: "The name cannot be longer than {{ limit }} characters.")]
+    #[UniqueEntityValue('name', entityClass: self::class, message: 'This label already exists')]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
@@ -76,7 +81,7 @@ class TaskLabel
     {
         if (!$this->tasks->contains($task)) {
             $this->tasks->add($task);
-            $task->addLabel($this);
+            $task->addTag($this);
         }
 
         return $this;
@@ -85,7 +90,7 @@ class TaskLabel
     public function removeTask(Task $task): static
     {
         if ($this->tasks->removeElement($task)) {
-            $task->removeLabel($this);
+            $task->removeTag($this);
         }
 
         return $this;

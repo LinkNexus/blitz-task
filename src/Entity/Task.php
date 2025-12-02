@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Enum\TaskPriority;
 use App\Repository\TaskRepository;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -36,11 +37,11 @@ class Task
 
     #[ORM\Column(nullable: true)]
     #[Groups(['task:read'])]
-    private ?\DateTimeImmutable $dueAt = null;
+    private ?DateTimeImmutable $dueAt = null;
 
     #[ORM\Column]
     #[Groups(['task:read'])]
-    private ?\DateTimeImmutable $createdAt = null;
+    private ?DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'tasks')]
     #[ORM\JoinColumn(nullable: false)]
@@ -52,18 +53,21 @@ class Task
     private ?TaskPriority $priority = null;
 
     /**
-     * @var Collection<int, TaskLabel>
+     * @var Collection<int, TaskTag>
      */
-    #[ORM\ManyToMany(targetEntity: TaskLabel::class, inversedBy: 'tasks')]
+    #[ORM\ManyToMany(targetEntity: TaskTag::class, inversedBy: 'tasks')]
     #[Groups(['task:read'])]
-    private Collection $labels;
+    private Collection $tags;
+
+    #[ORM\Column]
+    private ?float $score = null;
 
     public function __construct()
     {
         $this->assignees = new ArrayCollection;
-        $this->createdAt = new \DateTimeImmutable;
+        $this->createdAt = new DateTimeImmutable;
         $this->priority = TaskPriority::MEDIUM;
-        $this->labels = new ArrayCollection;
+        $this->tags = new ArrayCollection;
     }
 
     public function getId(): ?int
@@ -119,24 +123,24 @@ class Task
         return $this;
     }
 
-    public function getDueAt(): ?\DateTimeImmutable
+    public function getDueAt(): ?DateTimeImmutable
     {
         return $this->dueAt;
     }
 
-    public function setDueAt(?\DateTimeImmutable $dueAt): static
+    public function setDueAt(?DateTimeImmutable $dueAt): static
     {
         $this->dueAt = $dueAt;
 
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    public function setCreatedAt(DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
 
@@ -168,25 +172,37 @@ class Task
     }
 
     /**
-     * @return Collection<int, TaskLabel>
+     * @return Collection<int, TaskTag>
      */
-    public function getLabels(): Collection
+    public function getTags(): Collection
     {
-        return $this->labels;
+        return $this->tags;
     }
 
-    public function addLabel(TaskLabel $label): static
+    public function addTag(TaskTag $label): static
     {
-        if (!$this->labels->contains($label)) {
-            $this->labels->add($label);
+        if (!$this->tags->contains($label)) {
+            $this->tags->add($label);
         }
 
         return $this;
     }
 
-    public function removeLabel(TaskLabel $label): static
+    public function removeTag(TaskTag $label): static
     {
-        $this->labels->removeElement($label);
+        $this->tags->removeElement($label);
+
+        return $this;
+    }
+
+    public function getScore(): ?float
+    {
+        return $this->score;
+    }
+
+    public function setScore(float $score): static
+    {
+        $this->score = $score;
 
         return $this;
     }
