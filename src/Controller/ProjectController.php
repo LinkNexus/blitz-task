@@ -172,7 +172,7 @@ final class ProjectController extends AbstractController
         $realUploadDirWithSlash = rtrim($realUploadDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
         
         // Verify the resolved path starts with the allowed directory
-        if (!str_starts_with($realPath . DIRECTORY_SEPARATOR, $realUploadDirWithSlash)) {
+        if (!str_starts_with($realPath, $realUploadDirWithSlash)) {
             throw $this->createNotFoundException();
         }
         
