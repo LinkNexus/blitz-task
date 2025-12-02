@@ -158,11 +158,25 @@ final class ProjectController extends AbstractController
 
         $basename = basename($filename);
         $path = Path::join($projectsUploadDir, $basename);
-        $real = realpath($path);
-        if (!$real || str_starts_with($real, realpath($projectsUploadDir)) === false) {
+        
+        // Resolve the real path to prevent symlink attacks
+        $realPath = realpath($path);
+        $realUploadDir = realpath($projectsUploadDir);
+        
+        // Ensure both paths exist and the file is within the allowed directory
+        if (!$realPath || !$realUploadDir) {
             throw $this->createNotFoundException();
         }
-        return $this->file($real);
+        
+        // Add trailing slash to prevent partial directory name matches
+        $realUploadDirWithSlash = rtrim($realUploadDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        
+        // Verify the resolved path starts with the allowed directory
+        if (!str_starts_with($realPath, $realUploadDirWithSlash)) {
+            throw $this->createNotFoundException();
+        }
+        
+        return $this->file($realPath);
     }
 
     #[Route('/{id}/remove-member', name: 'remove_member', methods: ['POST'])]
@@ -211,7 +225,7 @@ final class ProjectController extends AbstractController
                 'guestEmail' => $dto->email,
             ]);
 
-        if ($existingInvitation && new DateTime < (clone $existingInvitation->getCreatedAt())->modify('+7 days')) {
+        if ($existingInvitation && new DateTime() < (clone $existingInvitation->getCreatedAt())->modify('+7 days')) {
             return $this->json(['message' => 'A valid invitation has already been sent to this email for the specified project'], 400);
         }
 
