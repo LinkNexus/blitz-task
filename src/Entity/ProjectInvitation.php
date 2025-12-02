@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\ProjectInvitationRepository;
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Uid\Ulid;
@@ -25,15 +26,15 @@ class ProjectInvitation
     private ?Project $project = null;
 
     #[ORM\Column]
-    #[Groups(['groups' => 'project_invitations:read'])]
-    private ?\DateTimeImmutable $createdAt = null;
+    #[Groups(['project_invitations:read'])]
+    private ?DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: 'ulid')]
     private ?Ulid $identifier = null;
 
     public function __construct()
     {
-        $this->createdAt = new \DateTimeImmutable;
+        $this->createdAt = new DateTimeImmutable;
         $this->identifier = new Ulid;
     }
 
@@ -66,12 +67,12 @@ class ProjectInvitation
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    public function setCreatedAt(DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
 
