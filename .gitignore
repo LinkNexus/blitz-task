@@ -15,4 +15,4 @@
 ###< pentatrion/vite-bundle ###
 
 /uploads/
-./supervisord.pid
+/supervisord.pid
