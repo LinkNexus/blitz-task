@@ -13,3 +13,6 @@
 /node_modules/
 /public/build/
 ###< pentatrion/vite-bundle ###
+
+/uploads/
+/supervisord.pid

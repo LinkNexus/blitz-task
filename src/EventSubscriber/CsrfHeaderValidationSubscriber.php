@@ -30,6 +30,8 @@ class CsrfHeaderValidationSubscriber implements EventSubscriberInterface
             $reflection->getDeclaringClass()->getAttributes(ValidateCsrfHeader::class)
         );
 
+        $excluded = $reflection->getAttributes(\App\Attribute\NotValidateCsrfHeader::class);
+
         if (! $attributes) {
             return;
         }
@@ -39,6 +41,10 @@ class CsrfHeaderValidationSubscriber implements EventSubscriberInterface
 
         $request = $event->getRequest();
         $token = $request->headers->get('X-XSRF-TOKEN');
+
+        if (is_array($excluded) && count($excluded) !== 0) {
+            return;
+        }
 
         if (! $token) {
             $event->setController(fn () => new JsonResponse(['message' => 'Missing CSRF token.'], 419));
