@@ -37,7 +37,7 @@ readonly class ProjectCreatedSubscriber implements EventSubscriberInterface
             ->setDescription('This is your first task. You can edit or delete it as you like.')
             ->setDueAt((new DateTimeImmutable)->modify('+7 days'));
 
-        foreach (['Backlog', 'In Progess', 'Review', 'Done'] as $index => $columnName) {
+        foreach (['Backlog', 'In Progress', 'Review', 'Done'] as $index => $columnName) {
             $column = new TaskColumn()
                 ->setName($columnName)
                 ->setProject($project)

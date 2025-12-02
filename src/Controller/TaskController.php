@@ -13,7 +13,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route("/api/tasks", name: "api.task.", format: "json")]
 final class TaskController extends AbstractController
@@ -179,8 +178,7 @@ final class TaskController extends AbstractController
 
     #[Route("/{id}", name: "delete", methods: ["DELETE"])]
     public function delete(
-        int                 $id,
-        #[CurrentUser] User $user
+        int $id,
     ): JsonResponse
     {
         $task = $this->entityManager

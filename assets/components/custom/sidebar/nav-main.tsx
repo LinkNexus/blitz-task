@@ -1,9 +1,5 @@
-import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import {Badge} from "@/components/ui/badge";
+import {Collapsible, CollapsibleContent, CollapsibleTrigger,} from "@/components/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -14,10 +10,10 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { Spinner } from "@/components/ui/spinner";
-import { Bot, Folder, Home, Inbox, Kanban, Search } from "lucide-react";
-import { useCallback, useMemo, type ComponentType } from "react";
-import { Link, useLocation, useSearchParams } from "wouter";
+import {Spinner} from "@/components/ui/spinner";
+import {Bot, Home, Inbox, Search} from "lucide-react";
+import {type ComponentType, useMemo} from "react";
+import {Link, useLocation} from "wouter";
 
 type NavigationItem = {
   title: string;
@@ -91,14 +87,14 @@ export function NavMain() {
                       tooltip={item.title}
                       isActive={item.isActive}
                     >
-                      {item.icon && <item.icon />}
+                      {item.icon && <item.icon/>}
                       <span>{item.title}</span>
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub className="w-full">
                       {!projects ? (
-                        <Spinner className="size-3" />
+                        <Spinner className="size-3"/>
                       ) : (
                         projects.map((p) => (
                           <SidebarMenuSubItem key={p.name}>
@@ -120,7 +116,7 @@ export function NavMain() {
                   isActive={item.isActive}
                 >
                   <Link href={item.url}>
-                    {item.icon && <item.icon />}
+                    {item.icon && <item.icon/>}
                     <span>{item.title}</span>
                     {"badge" in item && item.badge && (
                       <Badge variant="secondary" className="ml-auto">

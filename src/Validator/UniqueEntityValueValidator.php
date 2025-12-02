@@ -3,7 +3,7 @@
 namespace App\Validator;
 
 use Doctrine\ORM\EntityManagerInterface;
-use http\Exception\InvalidArgumentException;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Exception\UnexpectedValueException;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;

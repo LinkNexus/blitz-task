@@ -12,6 +12,7 @@ use App\Entity\User;
 use App\Event\ProjectCreatedEvent;
 use App\Repository\ProjectRepository;
 use App\Service\FileUploader;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -143,9 +144,25 @@ final class ProjectController extends AbstractController
         string                                                      $filename
     ): BinaryFileResponse
     {
-        return $this->file(
-            Path::join($projectsUploadDir, $filename)
-        );
+        $project = $this->entityManager
+            ->getRepository(Project::class)
+            ->findOneBy([
+                "image" => $filename,
+            ]);
+
+        if (!$project) {
+            throw $this->createNotFoundException("The project corresponding to the image does not exist.");
+        }
+
+        $this->denyAccessUnlessGranted('PROJECT_PARTICIPANT', $project);
+
+        $basename = basename($filename);
+        $path = Path::join($projectsUploadDir, $basename);
+        $real = realpath($path);
+        if (!$real || str_starts_with($real, realpath($projectsUploadDir)) === false) {
+            throw $this->createNotFoundException();
+        }
+        return $this->file($real);
     }
 
     #[Route('/{id}/remove-member', name: 'remove_member', methods: ['POST'])]
@@ -194,7 +211,7 @@ final class ProjectController extends AbstractController
                 'guestEmail' => $dto->email,
             ]);
 
-        if ($existingInvitation && new \DateTime < (clone $existingInvitation->getCreatedAt())->modify('+7 days')) {
+        if ($existingInvitation && new DateTime < (clone $existingInvitation->getCreatedAt())->modify('+7 days')) {
             return $this->json(['message' => 'A valid invitation has already been sent to this email for the specified project'], 400);
         }
 
@@ -243,7 +260,7 @@ final class ProjectController extends AbstractController
 
         $expirationDate = (clone $invitation->getCreatedAt())->modify('+7 days');
 
-        if (new \DateTime > $expirationDate) {
+        if (new DateTime > $expirationDate) {
             return $this->redirectToRoute('index', [
                 'url' => '',
                 'messages' => json_encode([
@@ -309,6 +326,8 @@ final class ProjectController extends AbstractController
     }
 
     #[Route('/invitations/revoke/{id}', name: 'revoke_invitation', methods: ['POST'])]
+    #[IsGranted("ROLE_USER")]
+    #[IsGranted("PROJECT_OWNER", subject: "invitation.project")]
     public function revokeInvitation(
         ProjectInvitation $invitation
     ): JsonResponse
