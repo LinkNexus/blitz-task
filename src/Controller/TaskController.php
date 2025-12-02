@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Attribute\ValidateCsrfHeader;
 use App\DTO\TaskDTO;
 use App\Entity\Task;
 use App\Entity\TaskColumn;
@@ -15,6 +16,7 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route("/api/tasks", name: "api.task.", format: "json")]
+#[ValidateCsrfHeader]
 final class TaskController extends AbstractController
 {
     public function __construct(private readonly EntityManagerInterface $entityManager)
@@ -40,6 +42,8 @@ final class TaskController extends AbstractController
         if (!$column) {
             throw $this->createNotFoundException('Column not found');
         }
+
+        $this->denyAccessUnlessGranted("PROJECT_PARTICIPANT", $column->getProject());
 
         $task = new Task();
 
@@ -112,6 +116,8 @@ final class TaskController extends AbstractController
         if (!$task) {
             throw $this->createNotFoundException('Task not found');
         }
+
+        $this->denyAccessUnlessGranted("PROJECT_PARTICIPANT", $task->getRelatedColumn()->getProject());
 
         $task->setName($taskDTO->name);
         $task->setDescription($taskDTO->description);

@@ -13,6 +13,7 @@ use App\Event\ProjectCreatedEvent;
 use App\Repository\ProjectRepository;
 use App\Service\FileUploader;
 use DateTime;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -33,7 +34,6 @@ use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Constraints\Image;
 
 #[Route('/api/projects', name: 'api.projects.')]
@@ -256,9 +256,10 @@ final class ProjectController extends AbstractController
 
     #[Route('/invitations/accept/{identifier:invitation}', name: 'accept_invitation')]
     #[NotValidateCsrfHeader]
+    #[IsGranted('ROLE_USER')]
     public function acceptInvitation(
         ?ProjectInvitation  $invitation,
-        SerializerInterface $serializer
+        #[CurrentUser] User $currentUser
     ): RedirectResponse
     {
         if (!$invitation) {
@@ -274,7 +275,7 @@ final class ProjectController extends AbstractController
 
         $expirationDate = (clone $invitation->getCreatedAt())->modify('+7 days');
 
-        if (new DateTime() > $expirationDate) {
+        if (new DateTimeImmutable() > $expirationDate) {
             return $this->redirectToRoute('index', [
                 'url' => '',
                 'messages' => json_encode([
@@ -289,6 +290,17 @@ final class ProjectController extends AbstractController
             ->findOneBy(['email' => $invitation->getGuestEmail()]);
 
         if ($user) {
+            if ($user->getId() !== $currentUser->getId()) {
+                return $this->redirectToRoute('index', [
+                    'url' => '',
+                    'messages' => json_encode([
+                        'error' => [
+                            "You cannot join this project because you are logged in with a different account.",
+                        ]
+                    ])
+                ]);
+            }
+
             $project = $invitation->getProject();
             $project->addParticipant($user);
             $this->entityManager->remove($invitation);
