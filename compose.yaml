@@ -21,6 +21,7 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      - uploads:/app/uploads
 
   # Mercure is installed as a Caddy module, prevent the Flex recipe from installing another service
   ###> symfony/mercure-bundle ###
@@ -56,6 +57,7 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+  uploads:
   ###> symfony/mercure-bundle ###
   ###< symfony/mercure-bundle ###
 

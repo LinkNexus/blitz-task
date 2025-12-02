@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -16,7 +18,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user:read', 'users:read'])]
+    #[Groups(['user:read', 'users:read', 'project:read', 'task:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
@@ -40,11 +42,29 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     private bool $isVerified = false;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read', 'users:read'])]
+    #[Groups(['user:read', 'users:read', 'project:read', 'task:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $googleId = null;
+
+    /**
+     * @var Collection<int, Project>
+     */
+    #[ORM\OneToMany(targetEntity: Project::class, mappedBy: 'createdBy')]
+    private Collection $createdProjects;
+
+    /**
+     * @var Collection<int, Project>
+     */
+    #[ORM\ManyToMany(targetEntity: Project::class, mappedBy: 'participants')]
+    private Collection $projects;
+
+    public function __construct()
+    {
+        $this->createdProjects = new ArrayCollection;
+        $this->projects = new ArrayCollection;
+    }
 
     public function getId(): ?int
     {
@@ -159,6 +179,63 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     public function setGoogleId(?string $googleId): static
     {
         $this->googleId = $googleId;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Project>
+     */
+    public function getCreatedProjects(): Collection
+    {
+        return $this->createdProjects;
+    }
+
+    public function addCreatedProject(Project $createdProject): static
+    {
+        if (! $this->createdProjects->contains($createdProject)) {
+            $this->createdProjects->add($createdProject);
+            $createdProject->setCreatedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCreatedProject(Project $createdProject): static
+    {
+        if ($this->createdProjects->removeElement($createdProject)) {
+            // set the owning side to null (unless already changed)
+            if ($createdProject->getCreatedBy() === $this) {
+                $createdProject->setCreatedBy(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Project>
+     */
+    public function getProjects(): Collection
+    {
+        return $this->projects;
+    }
+
+    public function addProject(Project $project): static
+    {
+        if (! $this->projects->contains($project)) {
+            $this->projects->add($project);
+            $project->addParticipant($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProject(Project $project): static
+    {
+        if ($this->projects->removeElement($project)) {
+            $project->removeParticipant($this);
+        }
 
         return $this;
     }

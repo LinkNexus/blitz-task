@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\DTO\ChangePasswordDTO;
+use App\DTO\UserDTO;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use JsonException;
@@ -111,7 +111,9 @@ final class ResetPasswordController extends AbstractController
     #[Route('/reset', name: 'reset', methods: ['POST'])]
     public function reset(
         UserPasswordHasherInterface $passwordHasher,
-        #[MapRequestPayload] ChangePasswordDTO $passwordDTO,
+        #[MapRequestPayload(
+            validationGroups: ['password']
+        )] UserDTO $userDTO
     ): JsonResponse {
         $token = $this->getTokenFromSession();
 
@@ -133,7 +135,7 @@ final class ResetPasswordController extends AbstractController
         }
 
         $this->resetPasswordHelper->removeResetRequest($token);
-        $user->setPassword($passwordHasher->hashPassword($user, $passwordDTO->password));
+        $user->setPassword($passwordHasher->hashPassword($user, $userDTO->password));
         $this->entityManager->flush();
 
         $this->cleanSessionAfterReset();
