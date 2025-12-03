@@ -32,7 +32,7 @@ class TaskTag
     /**
      * @var Collection<int, Task>
      */
-    #[ORM\ManyToMany(targetEntity: Task::class, mappedBy: 'labels')]
+    #[ORM\ManyToMany(targetEntity: Task::class, mappedBy: 'tags')]
     private Collection $tasks;
 
     public function __construct()
