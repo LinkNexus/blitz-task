@@ -6,7 +6,6 @@ import {
   closestCorners,
   DndContext,
   type DragEndEvent,
-  type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
   KeyboardSensor,
@@ -78,13 +77,41 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
     }
   }, []);
 
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    console.log(event);
-  }, []);
-
   const handleDragEnd = useCallback((event: DragEndEvent) => {
-    console.log(event);
-  }, []);
+    const {active, over} = event;
+    const activeId = active.id as string;
+    const overId = over?.id as string;
+
+    const activeColumn = findColumn(activeId);
+    const overColumn = findColumn(overId);
+
+    if (!activeColumn || !overColumn) return;
+
+    if (activeColumn.id !== overColumn.id) {
+      setColumns(columns => {
+        const activeTaskId = Number(activeId.replace("task-", ""));
+        const activeTask = columns.flatMap(c => c.tasks).find(t => t.id === Number(activeTaskId));
+
+        return !activeTask ?
+          columns :
+          columns.map(c => {
+            if (c.id === activeColumn.id) {
+              return {
+                ...c,
+                tasks: c.tasks.filter(t => t.id !== activeTaskId)
+              }
+            }
+            if (c.id === overColumn.id) {
+              return {
+                ...c,
+                tasks: [...c.tasks, activeTask]
+              }
+            }
+            return c;
+          })
+      })
+    }
+  }, [findColumn]);
 
   useEffect(() => {
     function onTaskCreatedOrUpdated(ev: Event) {
@@ -146,7 +173,6 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px]">

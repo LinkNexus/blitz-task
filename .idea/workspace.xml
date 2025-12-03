@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ae3d2c09-14f8-4661-afca-8bc8833230d9" name="Changes" comment="chore: adjust .gitignore to fix supervisord.pid path formatting" />
+    <list default="true" id="ae3d2c09-14f8-4661-afca-8bc8833230d9" name="Changes" comment="chore: adjust .gitignore to fix supervisord.pid path formatting">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -218,6 +221,7 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;code.cleanup.on.save&quot;: &quot;true&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;tasks&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/nkenenglevy/Labs/projects/blitz-task/uploads/projects&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
@@ -290,6 +294,7 @@
       <workItem from="1764664960974" duration="3286000" />
       <workItem from="1764673565933" duration="2662000" />
       <workItem from="1764687367774" duration="9641000" />
+      <workItem from="1764751744130" duration="2502000" />
     </task>
     <task id="LOCAL-00001" summary="refactor: consolidate and re-add migrations with updated schema changes&#10;&#10;- Recreate migrations for project, task, and user-related tables with schema updates.&#10;- Remove obsolete `status` column from project_invitation table.&#10;- Remove `color` column from task_column table.&#10;- Add `task_task_label` linking table and constraints for task labels.&#10;- Drop `project_id` column from task table.&#10;- Replace `labels` with `tags` in frontend task components. Updated related modal fields and event listeners.&#10;- Include IntelliJ code style configuration.">
       <option name="closed" value="true" />
