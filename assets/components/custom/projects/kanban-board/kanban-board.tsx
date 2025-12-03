@@ -4,12 +4,15 @@ import {memo, useCallback, useEffect, useMemo, useState} from "react";
 import {KanbanColumn} from "./kanban-column";
 import {
   closestCorners,
+  type CollisionDetection,
   DndContext,
   type DragEndEvent,
   DragOverlay,
   type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
+  pointerWithin,
+  rectIntersection,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -40,6 +43,26 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
       },
     },
   });
+
+  const collisionDetection: CollisionDetection = useCallback((args) => {
+    // Prefer what the pointer is actually over
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) return pointerCollisions;
+
+    // If dragging a task and nothing is under the pointer, try columns first
+    if ((args.active.data.current as { type?: string })?.type === "task") {
+      const columnCollisions = rectIntersection({
+        ...args,
+        droppableContainers: args.droppableContainers.filter((c) =>
+          String(c.id).startsWith("column-")
+        ),
+      });
+      if (columnCollisions.length > 0) return columnCollisions;
+    }
+
+    // Fallback
+    return closestCorners(args);
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -81,47 +104,84 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const {active, over} = event;
-    const activeId = active.id as string;
-    const overId = over?.id as string;
 
-    const moveTaskData: { id: number, score: number, columnId: number } | null = null;
+    setActiveTask(null);
 
-    const activeColumn = findColumn(activeId);
-    const overColumn = findColumn(overId);
+    if (!over) return;
 
-    if (!activeColumn || !overColumn) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
 
-    if (activeColumn.id !== overColumn.id) {
-      setColumns(columns => {
-        const activeTaskId = Number(activeId.replace("task-", ""));
-        const activeTask = columns.flatMap(c => c.tasks).find(t => t.id === Number(activeTaskId));
+    const sourceColumn = findColumn(activeId);
+    const destinationColumn = findColumn(overId);
 
-        // moveTaskData = {
-        //   id: activeTaskId,
-        //   columnId: overColumn.id,
-        //   score: activeTask!.score
-        // }
+    if (!sourceColumn || !destinationColumn) return;
 
-        return !activeTask ?
-          columns :
-          columns.map(c => {
-            if (c.id === activeColumn.id) {
-              return {
-                ...c,
-                tasks: c.tasks.filter(t => t.id !== activeTaskId)
-              }
-            }
-            if (c.id === overColumn.id) {
-              return {
-                ...c,
-                tasks: [...c.tasks, {...activeTask, relatedColumn: {id: c.id}}]
-              }
-            }
-            return c;
-          })
-      })
+    const activeTaskId = Number(activeId.replace("task-", ""));
+    const activeData = active.data.current as { type?: string; task?: Task } | undefined;
+    const task: Task | undefined = activeData?.type === "task" ? (activeData.task as Task) :
+      columns.flatMap((c) => c.tasks).find((t) => t.id === activeTaskId);
+    if (!task) return;
+
+    // Determine destination tasks sorted by score (desc)
+    const destTasksSorted = [...destinationColumn.tasks].sort((a, b) => b.score - a.score);
+
+    // If dropping over the same task, do nothing
+    if (overId.startsWith("task-")) {
+      const overTaskId = Number(overId.replace("task-", ""));
+      if (overTaskId === activeTaskId) return;
     }
-  }, [findColumn]);
+
+    // Compute insertion index in destination list (before the over task)
+    let insertIndex: number;
+    if (overId.startsWith("task-")) {
+      const overTaskId = Number(overId.replace("task-", ""));
+      insertIndex = destTasksSorted.findIndex((t) => t.id === overTaskId);
+      if (insertIndex === -1) insertIndex = destTasksSorted.length;
+    } else {
+      // Dropped on column, append to end (bottom)
+      insertIndex = destTasksSorted.length;
+    }
+
+    // For same-column move, remove the moving task from consideration
+    const listForScoring = destinationColumn.id === sourceColumn.id
+      ? destTasksSorted.filter((t) => t.id !== activeTaskId)
+      : destTasksSorted;
+
+    // Clamp insertIndex within the list after potential removal
+    if (insertIndex > listForScoring.length) insertIndex = listForScoring.length;
+
+    // Compute new integer score
+    let newScore: number;
+    if (listForScoring.length === 0) {
+      newScore = 100;
+    } else if (insertIndex === 0) {
+      newScore = (listForScoring[0]?.score ?? 0) + 100;
+    } else if (insertIndex >= listForScoring.length) {
+      const lastScore = listForScoring[listForScoring.length - 1]?.score ?? 0;
+      newScore = lastScore - 100;
+    } else {
+      const prev = listForScoring[insertIndex - 1].score;
+      const next = listForScoring[insertIndex].score;
+      if (prev - next > 1) {
+        newScore = Math.floor((prev + next) / 2);
+      } else {
+        // No space between neighbors; nudge above prev
+        newScore = prev + 1;
+      }
+    }
+
+    // Dispatch a global event to let the existing listener optimistically update state and persist
+    document.dispatchEvent(
+      new CustomEvent("task.move", {
+        detail: {
+          columnId: destinationColumn.id,
+          task,
+          score: newScore,
+        },
+      }),
+    );
+  }, [columns, findColumn]);
 
   useEffect(() => {
     function onTaskCreatedOrUpdated(ev: Event) {
@@ -192,7 +252,6 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
                       !score ?
                         (function () {
                           const highestScore = c.tasks.length < 1 ? 0 : Math.max(...c.tasks.map(t => t.score))
-                          console.log(highestScore);
                           moveTaskData["score"] = highestScore;
                           return highestScore;
                         })() :
@@ -253,7 +312,7 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
     <>
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >

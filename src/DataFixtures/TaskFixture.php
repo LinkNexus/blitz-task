@@ -5,6 +5,7 @@ namespace App\DataFixtures;
 use App\Entity\Project;
 use App\Entity\Task;
 use App\Entity\TaskTag;
+use App\Enum\TaskPriority;
 use DateTimeImmutable;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
@@ -37,7 +38,8 @@ class TaskFixture extends Fixture implements DependentFixtureInterface
                     $faker->numberBetween(0, 1) === 0 ?
                         null :
                         DateTimeImmutable::createFromMutable($faker->dateTimeBetween('-1 month', '+1 month'))
-                );
+                )
+                ->setPriority(TaskPriority::random());
 
             for ($j = 0; $j < $faker->numberBetween(1, 5); $j++) {
                 $task->addTag($labels[$faker->numberBetween(0, count($labelsIds) - 1)]);

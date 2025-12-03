@@ -4,15 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ae3d2c09-14f8-4661-afca-8bc8833230d9" name="Changes" comment="refactor: improve Kanban board drag-and-drop logic&#10;&#10;- Remove unused `DragOverEvent` references and handler.&#10;- Refactor `handleDragEnd` to support cross-column task movement with column validation.">
-      <change afterPath="$PROJECT_DIR$/src/DTO/MoveTaskDTO.php" afterDir="false" />
+    <list default="true" id="ae3d2c09-14f8-4661-afca-8bc8833230d9" name="Changes" comment="feat: add task movement functionality and data fixtures for project setup&#10;&#10;- Implement cross-column task movement support in Kanban board with backend validation.&#10;- Add `MoveTaskDTO` for managing task move payloads.&#10;- Extend `TaskController` with a new `move` endpoint.&#10;- Update `TaskRepository` for fetching tasks with related entities.&#10;- Implement `TaskFixture` and `TaskTagFixture` to populate database with example tasks and tags.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card-menu.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card-menu.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/lib/api-fetch.ts" beforeDir="false" afterPath="$PROJECT_DIR$/assets/lib/api-fetch.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Controller/TaskController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/TaskController.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/DataFixtures/ProjectFixture.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/DataFixtures/ProjectFixture.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Repository/TaskRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/TaskRepository.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/DataFixtures/TaskFixture.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/DataFixtures/TaskFixture.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Entity/Task.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entity/Task.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Enum/TaskPriority.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Enum/TaskPriority.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -237,7 +235,7 @@
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;php.override.implement.member.chooser.php.doc&quot;: &quot;NONE&quot;,
     &quot;rearrange.code.on.save&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;settings.php.debug.servers&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.intellij.themeswitcher.ThemeSwitcherSettingsConfigurable&quot;,
     &quot;settings.editor.splitter.proportion&quot;: &quot;0.25134265&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
     &quot;ts.external.directory.path&quot;: &quot;/Users/nkenenglevy/Applications/PhpStorm.app/Contents/plugins/javascript-plugin/jsLanguageServicesImpl/external&quot;,
@@ -300,7 +298,8 @@
       <workItem from="1764664960974" duration="3286000" />
       <workItem from="1764673565933" duration="2662000" />
       <workItem from="1764687367774" duration="9641000" />
-      <workItem from="1764751744130" duration="10253000" />
+      <workItem from="1764751744130" duration="16072000" />
+      <workItem from="1764785385405" duration="4862000" />
     </task>
     <task id="LOCAL-00001" summary="refactor: consolidate and re-add migrations with updated schema changes&#10;&#10;- Recreate migrations for project, task, and user-related tables with schema updates.&#10;- Remove obsolete `status` column from project_invitation table.&#10;- Remove `color` column from task_column table.&#10;- Add `task_task_label` linking table and constraints for task labels.&#10;- Drop `project_id` column from task table.&#10;- Replace `labels` with `tags` in frontend task components. Updated related modal fields and event listeners.&#10;- Include IntelliJ code style configuration.">
       <option name="closed" value="true" />
@@ -366,7 +365,15 @@
       <option name="project" value="LOCAL" />
       <updated>1764755983093</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="feat: add task movement functionality and data fixtures for project setup&#10;&#10;- Implement cross-column task movement support in Kanban board with backend validation.&#10;- Add `MoveTaskDTO` for managing task move payloads.&#10;- Extend `TaskController` with a new `move` endpoint.&#10;- Update `TaskRepository` for fetching tasks with related entities.&#10;- Implement `TaskFixture` and `TaskTagFixture` to populate database with example tasks and tags.">
+      <option name="closed" value="true" />
+      <created>1764772351414</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1764772351414</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -392,7 +399,8 @@
     <MESSAGE value="chore: remove supervisord.pid file" />
     <MESSAGE value="chore: adjust .gitignore to fix supervisord.pid path formatting" />
     <MESSAGE value="refactor: improve Kanban board drag-and-drop logic&#10;&#10;- Remove unused `DragOverEvent` references and handler.&#10;- Refactor `handleDragEnd` to support cross-column task movement with column validation." />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor: improve Kanban board drag-and-drop logic&#10;&#10;- Remove unused `DragOverEvent` references and handler.&#10;- Refactor `handleDragEnd` to support cross-column task movement with column validation." />
+    <MESSAGE value="feat: add task movement functionality and data fixtures for project setup&#10;&#10;- Implement cross-column task movement support in Kanban board with backend validation.&#10;- Add `MoveTaskDTO` for managing task move payloads.&#10;- Extend `TaskController` with a new `move` endpoint.&#10;- Update `TaskRepository` for fetching tasks with related entities.&#10;- Implement `TaskFixture` and `TaskTagFixture` to populate database with example tasks and tags." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: add task movement functionality and data fixtures for project setup&#10;&#10;- Implement cross-column task movement support in Kanban board with backend validation.&#10;- Add `MoveTaskDTO` for managing task move payloads.&#10;- Extend `TaskController` with a new `move` endpoint.&#10;- Update `TaskRepository` for fetching tasks with related entities.&#10;- Implement `TaskFixture` and `TaskTagFixture` to populate database with example tasks and tags." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

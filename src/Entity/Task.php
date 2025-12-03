@@ -60,6 +60,7 @@ class Task
     private Collection $tags;
 
     #[ORM\Column]
+    #[Groups(['task:read'])]
     private ?float $score = null;
 
     public function __construct()

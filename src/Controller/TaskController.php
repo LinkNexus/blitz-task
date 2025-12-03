@@ -207,7 +207,7 @@ final class TaskController extends AbstractController
     #[Route("/move", name: "move", methods: ["POST"])]
     public function move(
         #[MapRequestPayload] MoveTaskDTO $moveTaskDTO
-    )
+    ): JsonResponse
     {
         $task = $this->entityManager
             ->getRepository(Task::class)
@@ -221,7 +221,8 @@ final class TaskController extends AbstractController
 
         $task->setScore($moveTaskDTO->score);
         if ($moveTaskDTO->columnId === $task->getRelatedColumn()->getId()) {
-            dump("Hello");
+            // Persist score change even when staying in the same column
+            $this->entityManager->flush();
             return $this->json(null, Response::HTTP_NO_CONTENT);
         }
 

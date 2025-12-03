@@ -8,4 +8,10 @@ enum TaskPriority: string
     case MEDIUM = 'medium';
     case HIGH = 'high';
     case URGENT = 'urgent';
+
+    public static function random(): self
+    {
+        $values = array_values(self::cases());
+        return $values[array_rand($values)];
+    }
 }
