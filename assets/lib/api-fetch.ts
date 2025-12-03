@@ -80,6 +80,12 @@ export async function apiFetch<T, S = null>(
     return apiFetch<T, S>(url, options, retryAttempt + 1);
   }
 
+  if (res.status === 204)
+    return {
+      data: null as unknown as T,
+      ...res,
+    };
+
   if (!res.ok)
     throw new ApiError(
       {

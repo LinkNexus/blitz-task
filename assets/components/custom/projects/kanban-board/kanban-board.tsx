@@ -16,6 +16,8 @@ import {
 import {sortableKeyboardCoordinates} from "@dnd-kit/sortable";
 import {TaskCard} from "@/components/custom/projects/kanban-board/task-card/task-card.tsx";
 import {TaskModal} from "@/components/custom/projects/kanban-board/task-modal/task-modal.tsx";
+import {apiFetch} from "@/lib/api-fetch.ts";
+import {toast} from "sonner";
 
 type Props = Pick<Project, "id" | "participants">
 
@@ -82,6 +84,8 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
     const activeId = active.id as string;
     const overId = over?.id as string;
 
+    const moveTaskData: { id: number, score: number, columnId: number } | null = null;
+
     const activeColumn = findColumn(activeId);
     const overColumn = findColumn(overId);
 
@@ -91,6 +95,12 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
       setColumns(columns => {
         const activeTaskId = Number(activeId.replace("task-", ""));
         const activeTask = columns.flatMap(c => c.tasks).find(t => t.id === Number(activeTaskId));
+
+        // moveTaskData = {
+        //   id: activeTaskId,
+        //   columnId: overColumn.id,
+        //   score: activeTask!.score
+        // }
 
         return !activeTask ?
           columns :
@@ -104,7 +114,7 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
             if (c.id === overColumn.id) {
               return {
                 ...c,
-                tasks: [...c.tasks, activeTask]
+                tasks: [...c.tasks, {...activeTask, relatedColumn: {id: c.id}}]
               }
             }
             return c;
@@ -148,14 +158,86 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
       ))
     }
 
+    async function onTaskMove(e: Event) {
+      const {columnId, task, score} = (e as CustomEvent).detail as {
+        columnId: number,
+        task: Task,
+        score: number | null
+      };
+
+      const moveTaskData: { columnId: number; score: number; id: number } = {
+        columnId,
+        id: task.id,
+        score: 0
+      };
+
+      setColumns(columns => columns.map(
+        c => {
+          if (task.relatedColumn.id !== columnId) {
+            if (c.id === task.relatedColumn.id) {
+              return {
+                ...c,
+                tasks: c.tasks.filter(t => t.id !== task.id)
+              }
+            }
+            if (c.id === columnId) {
+              return {
+                ...c,
+                tasks: [
+                  ...c.tasks,
+                  {
+                    ...task,
+                    relatedColumn: {id: c.id},
+                    score:
+                      !score ?
+                        (function () {
+                          const highestScore = c.tasks.length < 1 ? 0 : Math.max(...c.tasks.map(t => t.score))
+                          console.log(highestScore);
+                          moveTaskData["score"] = highestScore;
+                          return highestScore;
+                        })() :
+                        score
+                  }
+                ]
+              }
+            }
+
+            return c;
+          }
+          return {
+            ...c,
+            tasks: c.tasks.map(t => {
+              moveTaskData["score"] = score!;
+              if (t.id === task.id) {
+                return {
+                  ...t,
+                  score: score!
+                }
+              }
+              return t
+            })
+          };
+        }
+      ))
+
+      await apiFetch("/api/tasks/move", {
+        data: moveTaskData
+      })
+        .catch(() => {
+          toast.error("An error happened when moving the task");
+        })
+    }
+
     document.addEventListener("task.created", onTaskCreatedOrUpdated);
     document.addEventListener("task.updated", onTaskCreatedOrUpdated);
     document.addEventListener("task.deleted", onTaskDeleted);
+    document.addEventListener("task.move", onTaskMove);
 
     return () => {
       document.removeEventListener("task.created", onTaskCreatedOrUpdated);
       document.removeEventListener("task.updated", onTaskCreatedOrUpdated);
-      document.addEventListener("task.deleted", onTaskDeleted);
+      document.removeEventListener("task.deleted", onTaskDeleted);
+      document.removeEventListener("task.move", onTaskMove);
     }
   }, []);
 

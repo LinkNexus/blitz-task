@@ -4,9 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ae3d2c09-14f8-4661-afca-8bc8833230d9" name="Changes" comment="chore: adjust .gitignore to fix supervisord.pid path formatting">
+    <list default="true" id="ae3d2c09-14f8-4661-afca-8bc8833230d9" name="Changes" comment="refactor: improve Kanban board drag-and-drop logic&#10;&#10;- Remove unused `DragOverEvent` references and handler.&#10;- Refactor `handleDragEnd` to support cross-column task movement with column validation.">
+      <change afterPath="$PROJECT_DIR$/src/DTO/MoveTaskDTO.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card-menu.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card-menu.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/lib/api-fetch.ts" beforeDir="false" afterPath="$PROJECT_DIR$/assets/lib/api-fetch.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/TaskController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/TaskController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/DataFixtures/ProjectFixture.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/DataFixtures/ProjectFixture.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Repository/TaskRepository.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Repository/TaskRepository.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -294,7 +300,7 @@
       <workItem from="1764664960974" duration="3286000" />
       <workItem from="1764673565933" duration="2662000" />
       <workItem from="1764687367774" duration="9641000" />
-      <workItem from="1764751744130" duration="2502000" />
+      <workItem from="1764751744130" duration="10253000" />
     </task>
     <task id="LOCAL-00001" summary="refactor: consolidate and re-add migrations with updated schema changes&#10;&#10;- Recreate migrations for project, task, and user-related tables with schema updates.&#10;- Remove obsolete `status` column from project_invitation table.&#10;- Remove `color` column from task_column table.&#10;- Add `task_task_label` linking table and constraints for task labels.&#10;- Drop `project_id` column from task table.&#10;- Replace `labels` with `tags` in frontend task components. Updated related modal fields and event listeners.&#10;- Include IntelliJ code style configuration.">
       <option name="closed" value="true" />
@@ -352,7 +358,15 @@
       <option name="project" value="LOCAL" />
       <updated>1764709284521</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="refactor: improve Kanban board drag-and-drop logic&#10;&#10;- Remove unused `DragOverEvent` references and handler.&#10;- Refactor `handleDragEnd` to support cross-column task movement with column validation.">
+      <option name="closed" value="true" />
+      <created>1764755983093</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1764755983093</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -377,7 +391,8 @@
     <MESSAGE value="feat: enhance security and task-related functionality with Csrf validation and authorization checks&#10;&#10;- Incorporate `ValidateCsrfHeader` attribute in `TaskController`.&#10;- Add access control checks for project participants in task endpoints.&#10;- Standardize usage of `DateTimeImmutable` in `ProjectInvitation` entity and related logic.&#10;- Implement user identity validation for accepting project invitations.&#10;- Improve expiration checks for invitations with `DateTimeImmutable`." />
     <MESSAGE value="chore: remove supervisord.pid file" />
     <MESSAGE value="chore: adjust .gitignore to fix supervisord.pid path formatting" />
-    <option name="LAST_COMMIT_MESSAGE" value="chore: adjust .gitignore to fix supervisord.pid path formatting" />
+    <MESSAGE value="refactor: improve Kanban board drag-and-drop logic&#10;&#10;- Remove unused `DragOverEvent` references and handler.&#10;- Refactor `handleDragEnd` to support cross-column task movement with column validation." />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: improve Kanban board drag-and-drop logic&#10;&#10;- Remove unused `DragOverEvent` references and handler.&#10;- Refactor `handleDragEnd` to support cross-column task movement with column validation." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

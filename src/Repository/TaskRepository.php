@@ -24,7 +24,7 @@ class TaskRepository extends ServiceEntityRepository
     public function findWithColumnAndProject(int $id): ?Task
     {
         return $this->createQueryBuilder('t')
-            ->leftJoin('t.column', 'c')
+            ->leftJoin('t.relatedColumn', 'c')
             ->addSelect('c')
             ->leftJoin('c.project', 'p')
             ->addSelect('p')

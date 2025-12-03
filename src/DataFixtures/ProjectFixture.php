@@ -13,16 +13,21 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class ProjectFixture extends Fixture implements DependentFixtureInterface
 {
+
+    public const string MAIN_PROJECT_REFERENCE = 'main-project';
+
     public function __construct(
         private readonly EventDispatcherInterface $eventDispatcher,
-    ) {}
+    )
+    {
+    }
 
     public function load(ObjectManager $manager): void
     {
         $mainUser = $this->getReference(UserFixture::MAIN_USER_REFERENCE, User::class);
         $faker = Factory::create();
 
-        if (! ($mainUser instanceof User)) {
+        if (!($mainUser instanceof User)) {
             return;
         }
 
@@ -44,18 +49,19 @@ This is the main project.
 
         $members = array_filter(
             array_map(
-                fn (int $id) => array_find($allUsers, fn (User $user) => $user->getId() === $id),
+                fn(int $id) => array_find($allUsers, fn(User $user) => $user->getId() === $id),
                 $faker->randomElements(
-                    array_map(fn (User $user) => $user->getId(), $allUsers),
+                    array_map(fn(User $user) => $user->getId(), $allUsers),
                     10
                 )
             ),
-            fn (mixed $user) => $user instanceof User && $user->getId() !== $mainUser->getId()
+            fn(mixed $user) => $user instanceof User && $user->getId() !== $mainUser->getId()
         );
 
-        array_walk($members, fn (User $user) => $project->addParticipant($user));
+        array_walk($members, fn(User $user) => $project->addParticipant($user));
 
         $manager->persist($project);
+        $this->addReference(self::MAIN_PROJECT_REFERENCE, $project);
         $this->eventDispatcher->dispatch(new ProjectCreatedEvent($project));
         $manager->flush();
     }

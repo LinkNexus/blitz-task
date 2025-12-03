@@ -53,7 +53,19 @@ export const TaskCardMenu = memo(
                 .map((c) => (
                   <DropdownMenuItem
                     key={c.id}
-                    onClick={() => console.log("Move to", c, "task", task)}
+                    onClick={
+                      () => document.dispatchEvent(
+                        new CustomEvent(
+                          "task.move", {
+                            detail: {
+                              columnId: c.id,
+                              task,
+                              score: null
+                            }
+                          }
+                        )
+                      )
+                    }
                   >
                     <div
                       className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"

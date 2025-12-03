@@ -3,17 +3,20 @@
 namespace App\Controller;
 
 use App\Attribute\ValidateCsrfHeader;
+use App\DTO\MoveTaskDTO;
 use App\DTO\TaskDTO;
 use App\Entity\Task;
 use App\Entity\TaskColumn;
 use App\Entity\TaskTag;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Exception\ORMException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
 
 #[Route("/api/tasks", name: "api.task.", format: "json")]
 #[ValidateCsrfHeader]
@@ -91,7 +94,7 @@ final class TaskController extends AbstractController
         );
     }
 
-    #[Route("/{id}", name: "update", methods: ["POST"])]
+    #[Route("/{id}", name: "update", requirements: ["id" => Requirement::DIGITS], methods: ["POST"])]
     public function update(
         int                          $id,
         #[MapRequestPayload] TaskDTO $taskDTO,
@@ -182,22 +185,14 @@ final class TaskController extends AbstractController
         return $this->json($task, context: ["groups" => "task:read"]);
     }
 
-    #[Route("/{id}", name: "delete", methods: ["DELETE"])]
+    #[Route("/{id}", name: "delete", requirements: ["id" => Requirement::DIGITS], methods: ["DELETE"])]
     public function delete(
         int $id,
     ): JsonResponse
     {
         $task = $this->entityManager
             ->getRepository(Task::class)
-            ->createQueryBuilder("t")
-            ->leftJoin("t.relatedColumn", "c")
-            ->addSelect("c")
-            ->leftJoin("c.project", "p")
-            ->addSelect("p")
-            ->where("t.id = :id")
-            ->setParameter("id", $id)
-            ->getQuery()
-            ->getOneOrNullResult();
+            ->findWithColumnAndProject($id);
 
         if (!$task) {
             throw $this->createNotFoundException('Task not found');
@@ -205,6 +200,43 @@ final class TaskController extends AbstractController
 
         $this->denyAccessUnlessGranted("PROJECT_PARTICIPANT", $task->getRelatedColumn()->getProject());
         $this->entityManager->remove($task);
+        $this->entityManager->flush();
+        return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route("/move", name: "move", methods: ["POST"])]
+    public function move(
+        #[MapRequestPayload] MoveTaskDTO $moveTaskDTO
+    )
+    {
+        $task = $this->entityManager
+            ->getRepository(Task::class)
+            ->findWithColumnAndProject($moveTaskDTO->id);
+
+        if (!$task) {
+            throw $this->createNotFoundException('Task not found');
+        }
+
+        $this->denyAccessUnlessGranted("PROJECT_PARTICIPANT", $task->getRelatedColumn()->getProject());
+
+        $task->setScore($moveTaskDTO->score);
+        if ($moveTaskDTO->columnId === $task->getRelatedColumn()->getId()) {
+            dump("Hello");
+            return $this->json(null, Response::HTTP_NO_CONTENT);
+        }
+
+        try {
+            $column = $this->entityManager
+                ->getReference(TaskColumn::class, $moveTaskDTO->columnId);
+        } catch (ORMException $exception) {
+            return $this->json(['error' => $exception->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (!$column) {
+            throw $this->createNotFoundException('Column not found');
+        }
+
+        $task->setRelatedColumn($column);
         $this->entityManager->flush();
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
