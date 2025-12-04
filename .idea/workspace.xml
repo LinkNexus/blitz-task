@@ -6,8 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="ae3d2c09-14f8-4661-afca-8bc8833230d9" name="Changes" comment="feat: enhance Kanban board with improved task movement and scoring logic&#10;&#10;- Refactor task movement functionality to support cross-column operations with validation.&#10;- Introduce custom collision detection for drag-and-drop interactions.&#10;- Update task scoring mechanism to ensure consistent task ordering.&#10;- Modify task-related event handlers for better state management and performance.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card-content.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card-content.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-modal/assignees-field.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-modal/assignees-field.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/components/custom/editable-content.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/editable-content.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-modal/task-modal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-modal/task-modal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/project-modal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/project-modal.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -17,6 +20,13 @@
   <component name="ComposerSettings" synchronizationState="SYNCHRONIZE">
     <pharConfigPath>$PROJECT_DIR$/composer.json</pharConfigPath>
     <execution />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="TypeScript JSX File" />
+      </list>
+    </option>
   </component>
   <component name="FormatOnSaveOptions">
     <option name="myRunOnSave" value="true" />

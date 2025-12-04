@@ -1,8 +1,8 @@
-import { TaskCard } from "@/components/custom/projects/kanban-board/task-card/task-card.tsx";
-import { TaskModal } from "@/components/custom/projects/kanban-board/task-modal/task-modal.tsx";
-import { useApiFetch } from "@/hooks/use-api-fetch";
-import { apiFetch } from "@/lib/api-fetch.ts";
-import type { Project, Task, TaskColumn } from "@/types";
+import {TaskCard} from "@/components/custom/projects/kanban-board/task-card/task-card.tsx";
+import {TaskModal} from "@/components/custom/projects/kanban-board/task-modal/task-modal.tsx";
+import {useApiFetch} from "@/hooks/use-api-fetch";
+import {apiFetch} from "@/lib/api-fetch.ts";
+import type {Project, Task, TaskColumn} from "@/types";
 import {
   closestCorners,
   type CollisionDetection,
@@ -17,14 +17,14 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import { KanbanColumn } from "./kanban-column";
+import {sortableKeyboardCoordinates} from "@dnd-kit/sortable";
+import {memo, useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {toast} from "sonner";
+import {KanbanColumn} from "./kanban-column";
 
 type Props = Pick<Project, "id" | "participants">;
 
-export const KanbanBoard = memo(({ id, participants }: Props) => {
+export const KanbanBoard = memo(({id, participants}: Props) => {
   const [columns, setColumns] = useState<TaskColumn[]>([]);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const activeColumn = columns.find(
@@ -53,7 +53,7 @@ export const KanbanBoard = memo(({ id, participants }: Props) => {
     return [...columns].sort((a, b) => a.score - b.score);
   }, [columns]);
 
-  const { pending: fetchingColumns, action: fetchColumns } = useApiFetch<
+  const {pending: fetchingColumns, action: fetchColumns} = useApiFetch<
     TaskColumn[]
   >({
     url: `/api/columns`,
@@ -91,6 +91,9 @@ export const KanbanBoard = memo(({ id, participants }: Props) => {
     })
   );
 
+  // Keep a snapshot to restore state on cancel
+  const dragSnapshot = useRef<TaskColumn[] | null>(null);
+
   const findColumn = useCallback(
     (rawId: string | null) => {
       if (!rawId) return null;
@@ -112,21 +115,32 @@ export const KanbanBoard = memo(({ id, participants }: Props) => {
     [columns, isColumnId, isTaskId, parseColumnId, parseTaskId]
   );
 
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    const { active } = event;
-    const activeData = active.data.current;
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const {active} = event;
+      const activeData = active.data.current;
 
-    if (activeData?.type === "task") {
-      setActiveTask(activeData.task as Task);
-    }
-  }, []);
+      // snapshot columns for potential cancel restoration
+      dragSnapshot.current = columns;
+
+      if (activeData?.type === "task") {
+        setActiveTask(activeData.task as Task);
+      }
+    },
+    [columns]
+  );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      const { active, over } = event;
+      const {active, over} = event;
 
       setActiveTask(null);
-      if (!over) return;
+      if (!over) {
+        // restore snapshot if drag was canceled
+        if (dragSnapshot.current) setColumns(dragSnapshot.current);
+        dragSnapshot.current = null;
+        return;
+      }
 
       const activeId = String(active.id);
       const overId = String(over.id);
@@ -198,6 +212,8 @@ export const KanbanBoard = memo(({ id, participants }: Props) => {
           },
         })
       );
+      // clear snapshot after successful drop
+      dragSnapshot.current = null;
     },
     [columns, findColumn, isTaskId, parseTaskId]
   );
@@ -238,7 +254,7 @@ export const KanbanBoard = memo(({ id, participants }: Props) => {
     }
 
     async function onTaskMove(e: Event) {
-      const { columnId, task, score } = (e as CustomEvent).detail as {
+      const {columnId, task, score} = (e as CustomEvent).detail as {
         columnId: number;
         task: Task;
         score: number;
@@ -260,7 +276,7 @@ export const KanbanBoard = memo(({ id, participants }: Props) => {
                   ...c.tasks,
                   {
                     ...task,
-                    relatedColumn: { id: c.id },
+                    relatedColumn: {id: c.id},
                     score: score,
                   },
                 ],
@@ -310,7 +326,7 @@ export const KanbanBoard = memo(({ id, participants }: Props) => {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    fetchColumns({ searchParams: { projectId: id } });
+    fetchColumns({searchParams: {projectId: id}});
   }, [id]);
 
   if (fetchingColumns) return <div>Loading...</div>;
@@ -325,7 +341,7 @@ export const KanbanBoard = memo(({ id, participants }: Props) => {
       >
         <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px]">
           {sortedColumns.map((column) => (
-            <KanbanColumn key={column.id} column={column} columns={columns} />
+            <KanbanColumn key={column.id} column={column} columns={columns}/>
           ))}
         </div>
 
@@ -339,7 +355,7 @@ export const KanbanBoard = memo(({ id, participants }: Props) => {
           )}
         </DragOverlay>
       </DndContext>
-      <TaskModal projectId={id} participants={participants} />
+      <TaskModal projectId={id} participants={participants}/>
     </>
   );
 });
