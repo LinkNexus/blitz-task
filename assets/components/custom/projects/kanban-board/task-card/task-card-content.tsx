@@ -1,9 +1,10 @@
-import {Avatar, AvatarFallback, AvatarImage} from "@radix-ui/react-avatar";
 import {Calendar, Clock, MessageSquare, Paperclip} from "lucide-react";
 import {memo} from "react";
 import {Badge} from "@/components/ui/badge";
 import {CardContent} from "@/components/ui/card";
 import type {Task} from "@/types";
+import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.tsx";
+import {getInitials} from "@/lib/utils.ts";
 
 type Props = {
   task: Task;
@@ -62,14 +63,11 @@ export const TaskCardContent = memo(({task, isOverdue}: Props) => {
             {task.assignees.slice(0, 2).map((assignee) => (
               <Avatar
                 key={assignee.id}
-                className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-background"
+                className="w-5 h-5 sm:w-6 sm:h-6 border-background"
               >
                 <AvatarImage src="" alt={assignee.name}/>
                 <AvatarFallback className="text-xs">
-                  {assignee.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
+                  {getInitials(assignee.name)}
                 </AvatarFallback>
               </Avatar>
             ))}

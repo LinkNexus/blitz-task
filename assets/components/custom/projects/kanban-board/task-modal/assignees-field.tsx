@@ -7,6 +7,7 @@ import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/
 import type {Project} from "@/types.ts";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.tsx";
 import {Badge} from "@/components/ui/badge.tsx";
+import {useAccount} from "@/hooks/use-account.ts";
 
 type Props = {
   onChange: (assigneeIds: number[]) => void;
@@ -14,6 +15,8 @@ type Props = {
   participants: Project["participants"];
 }
 export const AssigneesField = memo(function ({onChange, watchedAssigneeIds, participants}: Props) {
+  const {user} = useAccount();
+
   const addAssignee = useCallback(function (userId: number) {
     if (!watchedAssigneeIds.includes(userId)) {
       onChange([...watchedAssigneeIds, userId]);
@@ -99,6 +102,12 @@ export const AssigneesField = memo(function ({onChange, watchedAssigneeIds, part
           </Command>
         </PopoverContent>
       </Popover>
+
+      <span
+        onClick={() => {
+          onChange(Array.from(new Set([...watchedAssigneeIds, user!.id])));
+        }}
+        className="text-sm text-accent-foreground underline cursor-pointer">Assign to me</span>
     </div>
   )
 })
