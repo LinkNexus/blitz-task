@@ -4,13 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ae3d2c09-14f8-4661-afca-8bc8833230d9" name="Changes" comment="feat: enhance Kanban board with improved task movement and scoring logic&#10;&#10;- Refactor task movement functionality to support cross-column operations with validation.&#10;- Introduce custom collision detection for drag-and-drop interactions.&#10;- Update task scoring mechanism to ensure consistent task ordering.&#10;- Modify task-related event handlers for better state management and performance.">
+    <list default="true" id="ae3d2c09-14f8-4661-afca-8bc8833230d9" name="Changes" comment="refactor: clean up code formatting and improve readability in editable content and Kanban board components">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/components/custom/editable-content.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/editable-content.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/App.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-modal/task-modal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-modal/task-modal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/project-modal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/project-modal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/pages/projects/single-project-page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/pages/projects/single-project-page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Controller/ProjectController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/ProjectController.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -221,34 +221,37 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Docker.Unnamed.executor&quot;: &quot;Run&quot;,
-    &quot;JavaScript Debug.ProjectController.php.executor&quot;: &quot;Debug&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;PHP Web Page.Unnamed.executor&quot;: &quot;Debug&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;code.cleanup.on.save&quot;: &quot;true&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;tasks&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/nkenenglevy/Labs/projects/blitz-task/uploads/projects&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;php.override.implement.member.chooser.php.doc&quot;: &quot;NONE&quot;,
-    &quot;rearrange.code.on.save&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.intellij.themeswitcher.ThemeSwitcherSettingsConfigurable&quot;,
-    &quot;settings.editor.splitter.proportion&quot;: &quot;0.25134265&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;/Users/nkenenglevy/Applications/PhpStorm.app/Contents/plugins/javascript-plugin/jsLanguageServicesImpl/external&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Docker.Unnamed.executor": "Run",
+    "JavaScript Debug.ProjectController.php.executor": "Debug",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "PHP Web Page.Unnamed.executor": "Debug",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "code.cleanup.on.save": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "tasks",
+    "javascript.nodejs.core.library.configured.version": "25.1.0",
+    "javascript.nodejs.core.library.typings.version": "24.10.1",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "/usr/local/bin/node",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_interpreter_path": "/usr/local/bin/node",
+    "nodejs_package_manager_path": "npm",
+    "php.override.implement.member.chooser.php.doc": "NONE",
+    "rearrange.code.on.save": "true",
+    "settings.editor.selected.configurable": "settings.nodejs",
+    "settings.editor.splitter.proportion": "0.25134265",
+    "to.speed.mode.migration.done": "true",
+    "ts.external.directory.path": "/Users/nkenenglevy/Applications/PhpStorm.app/Contents/plugins/javascript-plugin/jsLanguageServicesImpl/external",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/uploads/projects" />
@@ -307,6 +310,10 @@
       <workItem from="1764687367774" duration="9641000" />
       <workItem from="1764751744130" duration="16072000" />
       <workItem from="1764785385405" duration="7106000" />
+      <workItem from="1764888339945" duration="661000" />
+      <workItem from="1764916798983" duration="614000" />
+      <workItem from="1764933843099" duration="184000" />
+      <workItem from="1764934038103" duration="954000" />
     </task>
     <task id="LOCAL-00001" summary="refactor: consolidate and re-add migrations with updated schema changes&#10;&#10;- Recreate migrations for project, task, and user-related tables with schema updates.&#10;- Remove obsolete `status` column from project_invitation table.&#10;- Remove `color` column from task_column table.&#10;- Add `task_task_label` linking table and constraints for task labels.&#10;- Drop `project_id` column from task table.&#10;- Replace `labels` with `tags` in frontend task components. Updated related modal fields and event listeners.&#10;- Include IntelliJ code style configuration.">
       <option name="closed" value="true" />
@@ -396,7 +403,15 @@
       <option name="project" value="LOCAL" />
       <updated>1764793239464</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="refactor: clean up code formatting and improve readability in editable content and Kanban board components">
+      <option name="closed" value="true" />
+      <created>1764843375526</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1764843375526</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -425,7 +440,8 @@
     <MESSAGE value="feat: add task movement functionality and data fixtures for project setup&#10;&#10;- Implement cross-column task movement support in Kanban board with backend validation.&#10;- Add `MoveTaskDTO` for managing task move payloads.&#10;- Extend `TaskController` with a new `move` endpoint.&#10;- Update `TaskRepository` for fetching tasks with related entities.&#10;- Implement `TaskFixture` and `TaskTagFixture` to populate database with example tasks and tags." />
     <MESSAGE value="feat: implement cross-column task movement and update task scoring logic&#10;&#10;- Enhance Kanban board to support task movement across columns with validation.&#10;- Introduce custom collision detection for drag-and-drop functionality.&#10;- Update TaskController to persist score changes when tasks are moved.&#10;- Add random priority assignment in task fixtures for better test coverage." />
     <MESSAGE value="feat: enhance Kanban board with improved task movement and scoring logic&#10;&#10;- Refactor task movement functionality to support cross-column operations with validation.&#10;- Introduce custom collision detection for drag-and-drop interactions.&#10;- Update task scoring mechanism to ensure consistent task ordering.&#10;- Modify task-related event handlers for better state management and performance." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: enhance Kanban board with improved task movement and scoring logic&#10;&#10;- Refactor task movement functionality to support cross-column operations with validation.&#10;- Introduce custom collision detection for drag-and-drop interactions.&#10;- Update task scoring mechanism to ensure consistent task ordering.&#10;- Modify task-related event handlers for better state management and performance." />
+    <MESSAGE value="refactor: clean up code formatting and improve readability in editable content and Kanban board components" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: clean up code formatting and improve readability in editable content and Kanban board components" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

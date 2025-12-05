@@ -44,7 +44,7 @@ export const ProjectPage = memo(() => {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden max-w-full">
       {/* Project Header */}
       <ProjectHeader
         project={project}

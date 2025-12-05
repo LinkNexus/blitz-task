@@ -87,11 +87,10 @@ final class ProjectController extends AbstractController
         $project->setCreatedBy($user);
         $project->addParticipant($user);
 
+        $this->entityManager->persist($project);
         $this->eventDispatcher->dispatch(
             new ProjectCreatedEvent($project),
         );
-
-        $this->entityManager->persist($project);
         $this->entityManager->flush();
 
         return $this->json(
@@ -158,24 +157,24 @@ final class ProjectController extends AbstractController
 
         $basename = basename($filename);
         $path = Path::join($projectsUploadDir, $basename);
-        
+
         // Resolve the real path to prevent symlink attacks
         $realPath = realpath($path);
         $realUploadDir = realpath($projectsUploadDir);
-        
+
         // Ensure both paths exist and the file is within the allowed directory
         if (!$realPath || !$realUploadDir) {
             throw $this->createNotFoundException();
         }
-        
+
         // Add trailing slash to prevent partial directory name matches
         $realUploadDirWithSlash = rtrim($realUploadDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-        
+
         // Verify the resolved path starts with the allowed directory
         if (!str_starts_with($realPath, $realUploadDirWithSlash)) {
             throw $this->createNotFoundException();
         }
-        
+
         return $this->file($realPath);
     }
 

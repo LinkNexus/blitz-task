@@ -339,7 +339,7 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px]">
+        <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px] max-w-full">
           {sortedColumns.map((column) => (
             <KanbanColumn key={column.id} column={column} columns={columns}/>
           ))}

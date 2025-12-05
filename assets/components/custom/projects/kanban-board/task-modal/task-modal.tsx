@@ -102,7 +102,7 @@ export const TaskModal = memo(({projectId, participants}: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Edit Task" : "Create a new Task"}
