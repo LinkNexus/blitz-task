@@ -1,7 +1,17 @@
 import {useDroppable} from "@dnd-kit/core";
 import {SortableContext, verticalListSortingStrategy,} from "@dnd-kit/sortable";
-import {Edit, MoreHorizontal, Plus, Trash} from "lucide-react";
-import {memo, type ReactEventHandler, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState} from "react";
+import {Loader2, MoreHorizontal, Plus, Trash} from "lucide-react";
+import {
+  Activity,
+  memo,
+  type ReactEventHandler,
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,} from "@/components/ui/dropdown-menu";
@@ -9,6 +19,8 @@ import type {TaskColumn} from "@/types";
 import {TaskCard} from "./task-card/task-card";
 import {toast} from "sonner";
 import {apiFetch} from "@/lib/api-fetch.ts";
+import {useApiFetch} from "@/hooks/use-api-fetch.ts";
+import {confirmAction} from "@/components/custom/confirm-action-modal.tsx";
 
 type Props = {
   projectId: number;
@@ -42,6 +54,7 @@ export const KanbanColumn = memo(({column, sortedColumns, projectId}: Props) => 
 
   const [isEditing, setIsEditing] = useState(false);
   const oldNameRef = useRef(column.name);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const onColumnNameEmpty = useEffectEvent((trimmedColumnName: string) => {
     if (!trimmedColumnName) {
@@ -73,6 +86,7 @@ export const KanbanColumn = memo(({column, sortedColumns, projectId}: Props) => 
           }
         })
         .catch(() => {
+          toast.error(`An error occurred when ${column.isNotPersisted ? "creating" : "updating"} the column ${oldNameRef.current}`);
           document.dispatchEvent(new CustomEvent("column.renamed", {
             detail: {
               id: column.id,
@@ -99,12 +113,33 @@ export const KanbanColumn = memo(({column, sortedColumns, projectId}: Props) => 
     }
   }, []);
 
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      console.log(isEditing, inputRef.current);
+      inputRef.current.focus();
+    }
+  }, [isEditing]);
+
+  const {pending: isDeleting, action: deleteColumn} = useApiFetch({
+    url: `/api/columns/${column.id}`,
+    options: {
+      method: "DELETE",
+      onSuccess() {
+        document.dispatchEvent(new CustomEvent("column.deleted", {detail: {id: column.id}}));
+      },
+      onError() {
+        toast.error(`An error happened when trying to delete column ${column.name}`);
+      }
+    }
+  })
+
   return (
     <div className="flex flex-col min-w-[280px] sm:min-w-[320px] w-[280px] sm:w-[320px] flex-shrink-0">
       <div className="flex items-center justify-between mb-3 sm:mb-4 p-2 sm:p-3 rounded-lg bg-muted/50">
         <div className="flex items-center gap-1 sm:gap-2">
-          {(isEditing) ? (
+          <Activity mode={isEditing ? "visible" : "hidden"}>
             <input
+              ref={inputRef}
               defaultValue={column.name}
               className="border-none"
               autoFocus
@@ -113,7 +148,8 @@ export const KanbanColumn = memo(({column, sortedColumns, projectId}: Props) => 
                 if (e.key === "Enter") handleChange(e)
               }}
             />
-          ) : (
+          </Activity>
+          <Activity mode={isEditing ? "hidden" : "visible"}>
             <h3
               onClick={() => {
                 setIsEditing(true)
@@ -122,7 +158,7 @@ export const KanbanColumn = memo(({column, sortedColumns, projectId}: Props) => 
             >
               {column.name}
             </h3>
-          )}
+          </Activity>
           <Badge variant="secondary" className="text-xs flex-shrink-0">
             {column.tasks.length}
           </Badge>
@@ -183,17 +219,27 @@ export const KanbanColumn = memo(({column, sortedColumns, projectId}: Props) => 
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <DropdownMenuItem onClick={() => console.log("Edit column")}>
-              <Edit className="w-4 h-4 mr-2"/>
-              Edit
-            </DropdownMenuItem>
             <DropdownMenuItem
               className="text-red-600"
-              onClick={() => console.log("Delete column")}
+              onClick={() => {
+                confirmAction({
+                  title: "Deleting Column",
+                  description: "Are you sure you want to delete this column? All associated tasks will also be deleted and this action cannot be undone",
+                  action: async () => await deleteColumn()
+                })
+              }}
             >
-              <Trash className="w-4 h-4 mr-2 text-red-600"/>
-              Delete
+              {isDeleting ? (
+                <>
+                  <Loader2 className="animate-spin size-4"/>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash className="w-4 h-4 mr-2 text-red-600"/>
+                  Delete
+                </>
+              )}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -52,7 +52,6 @@ export const ProjectPage = memo(() => {
         update={update}
       />
 
-      {/* Toolbar - Fixed */}
       <div className="border-b bg-muted/30 flex-shrink-0">
         <div className="flex flex-col sm:flex-row gap-3 p-4 items-start sm:items-center justify-between">
           <div className="flex items-center gap-2 w-full sm:w-auto sm:max-w-md">
@@ -69,17 +68,11 @@ export const ProjectPage = memo(() => {
             </Button>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <Button onClick={() => document.dispatchEvent(new CustomEvent("task.create"))} size="sm"
-                    className="flex-shrink-0">
-              <Plus className="size-4"/>
-              New Task
-            </Button>
-            <Button variant="outline" size="sm" className="flex-shrink-0">
-              <Plus className="size-4"/>
-              New Column
-            </Button>
-          </div>
+          <Button onClick={() => document.dispatchEvent(new CustomEvent("task.create"))} size="sm"
+                  className="flex-shrink-0">
+            <Plus className="size-4"/>
+            New Task
+          </Button>
         </div>
       </div>
 

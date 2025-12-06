@@ -112,17 +112,11 @@ final class TaskColumnController extends AbstractController
     public function update(
         #[MapRequestPayload] TaskColumnDTO $dto,
         int                                $id
-    )
+    ): JsonResponse
     {
         $column = $this->entityManager
             ->getRepository(TaskColumn::class)
-            ->createQueryBuilder("c")
-            ->leftJoin("c.project", "p")
-            ->addSelect("p")
-            ->where("c.id = :id")
-            ->setParameter("id", $id)
-            ->getQuery()
-            ->getOneOrNullResult();
+            ->findWithProject($id);
 
         if (!$column) {
             throw $this->createNotFoundException('Column not found');
@@ -138,5 +132,23 @@ final class TaskColumnController extends AbstractController
 
         $this->entityManager->flush();
         return $this->json($column, context: ["groups" => "column:read"]);
+    }
+
+    #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
+    public function delete(int $id): JsonResponse
+    {
+        $column = $this->entityManager
+            ->getRepository(TaskColumn::class)
+            ->findWithProject($id);
+
+        if (!$column) {
+            throw $this->createNotFoundException('Column not found');
+        }
+
+        $this->denyAccessUnlessGranted('PROJECT_PARTICIPANT', $column->getProject());
+
+        $this->entityManager->remove($column);
+        $this->entityManager->flush();
+        return $this->json(null, 204);
     }
 }

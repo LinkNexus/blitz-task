@@ -4,19 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ae3d2c09-14f8-4661-afca-8bc8833230d9" name="Changes" comment="refactor: enhance layout responsiveness and code formatting across components &#10;&#10;- Improve layout styles for Kanban board and task modal to ensure proper scrolling and width handling.&#10;- Adjust editor config to enforce consistent spacing and readability.&#10;- Optimize `ProjectController` event and persistence order.">
-      <change afterPath="$PROJECT_DIR$/assets/hooks/use-columns-crud-events.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/hooks/use-task-crud-events.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/DTO/TaskColumnDTO.php" afterDir="false" />
+    <list default="true" id="ae3d2c09-14f8-4661-afca-8bc8833230d9" name="Changes" comment="refactor: improve task column handling and enhance Kanban board interactions&#10;&#10;- Add create and update endpoints for task columns in `TaskColumnController`.&#10;- Enable on-the-fly column renaming and creation with client-server sync.&#10;- Enhance Kanban board to validate column creation order and improve task rendering logic.&#10;- Introduce `isNotPersisted` flag in column types for better state tracking.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-board.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-column.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/kanban-column.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/pages/auth/login-page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/pages/auth/login-page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/assets/types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card-menu.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/components/custom/projects/kanban-board/task-card/task-card-menu.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/pages/projects/single-project-page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/assets/pages/projects/single-project-page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Controller/TaskColumnController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/TaskColumnController.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Controller/TaskController.php" beforeDir="false" afterPath="$PROJECT_DIR$/src/Controller/TaskController.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -322,7 +315,7 @@
       <workItem from="1764933843099" duration="184000" />
       <workItem from="1764934038103" duration="1550000" />
       <workItem from="1764940667485" duration="1137000" />
-      <workItem from="1764959550977" duration="16597000" />
+      <workItem from="1764959550977" duration="19425000" />
     </task>
     <task id="LOCAL-00001" summary="refactor: consolidate and re-add migrations with updated schema changes&#10;&#10;- Recreate migrations for project, task, and user-related tables with schema updates.&#10;- Remove obsolete `status` column from project_invitation table.&#10;- Remove `color` column from task_column table.&#10;- Add `task_task_label` linking table and constraints for task labels.&#10;- Drop `project_id` column from task table.&#10;- Replace `labels` with `tags` in frontend task components. Updated related modal fields and event listeners.&#10;- Include IntelliJ code style configuration.">
       <option name="closed" value="true" />
@@ -428,7 +421,15 @@
       <option name="project" value="LOCAL" />
       <updated>1764935288852</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="refactor: improve task column handling and enhance Kanban board interactions&#10;&#10;- Add create and update endpoints for task columns in `TaskColumnController`.&#10;- Enable on-the-fly column renaming and creation with client-server sync.&#10;- Enhance Kanban board to validate column creation order and improve task rendering logic.&#10;- Introduce `isNotPersisted` flag in column types for better state tracking.">
+      <option name="closed" value="true" />
+      <created>1765014893793</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1765014893793</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -459,7 +460,8 @@
     <MESSAGE value="feat: enhance Kanban board with improved task movement and scoring logic&#10;&#10;- Refactor task movement functionality to support cross-column operations with validation.&#10;- Introduce custom collision detection for drag-and-drop interactions.&#10;- Update task scoring mechanism to ensure consistent task ordering.&#10;- Modify task-related event handlers for better state management and performance." />
     <MESSAGE value="refactor: clean up code formatting and improve readability in editable content and Kanban board components" />
     <MESSAGE value="refactor: enhance layout responsiveness and code formatting across components &#10;&#10;- Improve layout styles for Kanban board and task modal to ensure proper scrolling and width handling.&#10;- Adjust editor config to enforce consistent spacing and readability.&#10;- Optimize `ProjectController` event and persistence order." />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor: enhance layout responsiveness and code formatting across components &#10;&#10;- Improve layout styles for Kanban board and task modal to ensure proper scrolling and width handling.&#10;- Adjust editor config to enforce consistent spacing and readability.&#10;- Optimize `ProjectController` event and persistence order." />
+    <MESSAGE value="refactor: improve task column handling and enhance Kanban board interactions&#10;&#10;- Add create and update endpoints for task columns in `TaskColumnController`.&#10;- Enable on-the-fly column renaming and creation with client-server sync.&#10;- Enhance Kanban board to validate column creation order and improve task rendering logic.&#10;- Introduce `isNotPersisted` flag in column types for better state tracking." />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: improve task column handling and enhance Kanban board interactions&#10;&#10;- Add create and update endpoints for task columns in `TaskColumnController`.&#10;- Enable on-the-fly column renaming and creation with client-server sync.&#10;- Enhance Kanban board to validate column creation order and improve task rendering logic.&#10;- Introduce `isNotPersisted` flag in column types for better state tracking." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

@@ -60,7 +60,7 @@ export const TaskCardMenu = memo(
                             detail: {
                               columnId: c.id,
                               task,
-                              score: null
+                              score: Math.max(...c.tasks.map(t => t.score)) + 1000
                             }
                           }
                         )
