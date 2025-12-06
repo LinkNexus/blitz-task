@@ -63,7 +63,7 @@ final class TaskController extends AbstractController
             ->getQuery()
             ->getSingleScalarResult();
 
-        $task->setScore($maxScore + 100);
+        $task->setScore($maxScore + 1000);
 
         foreach ($taskDTO->assigneesIds as $assigneeId) {
             $assignee = $this->entityManager

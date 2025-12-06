@@ -63,7 +63,7 @@ export const TaskCard = memo(
         className={cn(
           "mb-2 sm:mb-3 transition-all bg-card",
           isDragging ? "opacity-50 shadow-lg z-50" : "hover:shadow-md",
-          isCompleted && "opacity-60",
+          isCompleted && "opacity-60 grayscale",
         )}
       >
         <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">

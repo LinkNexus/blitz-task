@@ -1,7 +1,6 @@
 import {TaskCard} from "@/components/custom/projects/kanban-board/task-card/task-card.tsx";
 import {TaskModal} from "@/components/custom/projects/kanban-board/task-modal/task-modal.tsx";
 import {useApiFetch} from "@/hooks/use-api-fetch";
-import {apiFetch} from "@/lib/api-fetch.ts";
 import type {Project, Task, TaskColumn} from "@/types";
 import {
   closestCorners,
@@ -19,8 +18,9 @@ import {
 } from "@dnd-kit/core";
 import {sortableKeyboardCoordinates} from "@dnd-kit/sortable";
 import {memo, useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {toast} from "sonner";
 import {KanbanColumn} from "./kanban-column";
+import {useTaskCrudEvents} from "@/hooks/use-task-crud-events.ts";
+import {useColumnsCrudEvents} from "@/hooks/use-columns-crud-events.ts";
 
 type Props = Pick<Project, "id" | "participants">;
 
@@ -63,6 +63,8 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
       },
     },
   });
+
+  console.log(columns.map(c => c.score));
 
   const collisionDetection: CollisionDetection = useCallback((args) => {
     // 1) Prefer what the pointer is actually over
@@ -190,10 +192,10 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
 
       // Compute a stable integer score based on neighbors in desc order
       const computeScore = (list: Task[], index: number): number => {
-        if (list.length === 0) return 100;
-        if (index === 0) return (list[0]?.score ?? 0) + 100; // above top
+        if (list.length === 0) return 1000;
+        if (index === 0) return (list[0]?.score ?? 0) + 1000; // above top
         if (index >= list.length)
-          return (list[list.length - 1]?.score ?? 0) - 100; // below bottom
+          return (list[list.length - 1]?.score ?? 0) - 1000; // below bottom
         const prev = list[index - 1].score; // higher
         const next = list[index].score; // lower
         if (prev - next > 1) return Math.floor((prev + next) / 2);
@@ -212,117 +214,12 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
           },
         })
       );
-      // clear snapshot after successful drop
-      dragSnapshot.current = null;
     },
     [columns, findColumn, isTaskId, parseTaskId]
   );
 
-  useEffect(() => {
-    function onTaskCreatedOrUpdated(ev: Event) {
-      const task = (ev as CustomEvent).detail as Task;
-
-      setColumns((prevState) =>
-        prevState.map((c) => {
-          if (c.id !== task.relatedColumn.id) return c;
-
-          if (!c.tasks.some((t) => t.id === task.id))
-            return {
-              ...c,
-              tasks: [...c.tasks, task],
-            };
-
-          return {
-            ...c,
-            tasks: c.tasks.map((t) => (t.id === task.id ? task : t)),
-          };
-        })
-      );
-    }
-
-    function onTaskDeleted(ev: Event) {
-      const taskId = (ev as CustomEvent).detail.id;
-      setColumns((prevState) =>
-        prevState.map((c) => {
-          if (!c.tasks.some((t) => t.id === taskId)) return c;
-          return {
-            ...c,
-            tasks: c.tasks.filter((t) => t.id != taskId),
-          };
-        })
-      );
-    }
-
-    async function onTaskMove(e: Event) {
-      const {columnId, task, score} = (e as CustomEvent).detail as {
-        columnId: number;
-        task: Task;
-        score: number;
-      };
-
-      setColumns((columns) =>
-        columns.map((c) => {
-          if (task.relatedColumn.id !== columnId) {
-            if (c.id === task.relatedColumn.id) {
-              return {
-                ...c,
-                tasks: c.tasks.filter((t) => t.id !== task.id),
-              };
-            }
-            if (c.id === columnId) {
-              return {
-                ...c,
-                tasks: [
-                  ...c.tasks,
-                  {
-                    ...task,
-                    relatedColumn: {id: c.id},
-                    score: score,
-                  },
-                ],
-              };
-            }
-
-            return c;
-          }
-          return {
-            ...c,
-            tasks: c.tasks.map((t) => {
-              if (t.id === task.id) {
-                return {
-                  ...t,
-                  score: score!,
-                };
-              }
-              return t;
-            }),
-          };
-        })
-      );
-
-      await apiFetch("/api/tasks/move", {
-        data: {
-          id: task.id,
-          score,
-          columnId,
-        },
-      }).catch(() => {
-        toast.error("An error happened when moving the task");
-      });
-    }
-
-    document.addEventListener("task.created", onTaskCreatedOrUpdated);
-    document.addEventListener("task.updated", onTaskCreatedOrUpdated);
-    document.addEventListener("task.deleted", onTaskDeleted);
-    document.addEventListener("task.move", onTaskMove);
-
-    return () => {
-      document.removeEventListener("task.created", onTaskCreatedOrUpdated);
-      document.removeEventListener("task.updated", onTaskCreatedOrUpdated);
-      document.removeEventListener("task.deleted", onTaskDeleted);
-      document.removeEventListener("task.move", onTaskMove);
-    };
-  }, []);
+  useTaskCrudEvents(setColumns, dragSnapshot);
+  useColumnsCrudEvents(setColumns);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
@@ -341,7 +238,7 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
       >
         <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px] max-w-full">
           {sortedColumns.map((column) => (
-            <KanbanColumn key={column.id} column={column} columns={columns}/>
+            <KanbanColumn key={column.id} projectId={id} column={column} sortedColumns={sortedColumns}/>
           ))}
         </div>
 
@@ -359,3 +256,4 @@ export const KanbanBoard = memo(({id, participants}: Props) => {
     </>
   );
 });
+

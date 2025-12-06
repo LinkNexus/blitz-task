@@ -30,6 +30,7 @@ export interface TaskColumn {
   color: string;
   score: number;
   tasks: Task[];
+  isNotPersisted?: boolean;
 }
 
 export interface Task {

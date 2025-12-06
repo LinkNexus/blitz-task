@@ -7,7 +7,7 @@ import {Toaster} from "./components/ui/sonner";
 import {useAuth} from "./hooks/use-auth";
 import {useTheme} from "./hooks/use-theme";
 import {ForgotPasswordPage} from "./pages/auth/forgot-password-page";
-import {Login as LoginPage} from "./pages/auth/login-page";
+import {LoginPage} from "./pages/auth/login-page";
 import {RegistrationPage} from "./pages/auth/register-page";
 import {ResetPasswordPage} from "./pages/auth/reset-password-page";
 import {ProjectPage} from "./pages/projects/single-project-page";
