@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BlitzTask.Backend.Tests/BlitzTask.Backend.Tests.csproj" />
+  <Project Path="BlitzTask.Backend/BlitzTask.Backend.csproj" />
+</Solution>

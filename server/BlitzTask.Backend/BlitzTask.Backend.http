@@ -1,0 +1,6 @@
+@BlitzTask.Backend_HostAddress = http://localhost:5121
+
+GET {{BlitzTask.Backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
