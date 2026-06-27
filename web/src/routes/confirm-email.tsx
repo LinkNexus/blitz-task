@@ -1,4 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Navigate, redirect } from "@tanstack/react-router";
+import { useEffect } from "react";
 import z from "zod";
 import { confirmEmail } from "@/api";
 import { getCurrentUserOptions } from "@/api/@tanstack/react-query.gen";
@@ -10,18 +11,18 @@ const ConfirmEmailSchema = z.object(tokenSchemaObject);
 export const Route = createFileRoute("/confirm-email")({
   validateSearch: ConfirmEmailSchema,
   errorComponent: () => {
-    flashMessagesStore.actions.addSingle({
-      type: "error",
-      message: {
-        title: "Invalid confirmation link",
-        description:
-          "The confirmation link you used was either invalid or malformed",
-      },
-    });
+    useEffect(() => {
+      flashMessagesStore.actions.addSingle({
+        type: "error",
+        message: {
+          title: "Invalid confirmation link",
+          description:
+            "The confirmation link you used was either invalid or malformed",
+        },
+      });
+    }, []);
 
-    throw redirect({
-      to: "/dashboard",
-    });
+    return <Navigate to="/login" />;
   },
   async beforeLoad({ search: { userId, token }, context }) {
     const { error } = await confirmEmail({ body: { userId, token } });
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/confirm-email")({
         message: {
           title: "Email confirmed",
           description:
-            "Your email address was successfully confirmed! You can now have access to all features",
+            "Your email address was successfully confirmed! You now have access to all features",
         },
       });
       throw redirect({

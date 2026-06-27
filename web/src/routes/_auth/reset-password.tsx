@@ -3,10 +3,12 @@ import { IconLock } from "@tabler/icons-react";
 import {
   createFileRoute,
   Link,
+  Navigate,
   redirect,
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
@@ -22,17 +24,18 @@ import { Route as LoginRoute } from "./login";
 export const Route = createFileRoute("/_auth/reset-password")({
   validateSearch: z.object(tokenSchemaObject),
   errorComponent: () => {
-    flashMessagesStore.actions.addSingle({
-      type: "error",
-      message: {
-        title: "Invalid link",
-        description:
-          "The reset link used to access this page is invalid or malformed. Retry the reset password process",
-      },
-    });
-    throw redirect({
-      to: "/login",
-    });
+    useEffect(() => {
+      flashMessagesStore.actions.addSingle({
+        type: "error",
+        message: {
+          title: "Invalid link",
+          description:
+            "The reset link used to access this page is invalid or malformed. Retry the reset password process",
+        },
+      });
+    }, []);
+
+    return <Navigate to="/login" />;
   },
   component: RouteComponent,
 });

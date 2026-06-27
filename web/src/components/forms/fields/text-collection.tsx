@@ -1,15 +1,11 @@
 import { IconPlus, IconX } from "@tabler/icons-react";
 import { type ComponentProps, type ReactNode, useId, useRef } from "react";
-import type {
-  ControllerFieldState,
-  ControllerRenderProps,
-  FieldPath,
-  FieldValues,
-} from "react-hook-form";
-import { Badge } from "../../ui/badge";
-import { Button } from "../../ui/button";
-import { Field, FieldError, FieldLabel } from "../../ui/field";
-import { Input } from "../../ui/input";
+import type { FieldPath, FieldValues } from "react-hook-form";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import type { FormFieldProps } from ".";
 
 type SelectedItemsComponentType = (
   items: string[],
@@ -19,11 +15,8 @@ type SelectedItemsComponentType = (
 type Props<
   TFieldValues extends FieldValues,
   TName extends FieldPath<TFieldValues>,
-> = {
-  field: ControllerRenderProps<TFieldValues, TName>;
-  fieldState: ControllerFieldState;
+> = FormFieldProps<TFieldValues, TName> & {
   inputProps?: ComponentProps<typeof Input>;
-  labelProps?: ComponentProps<typeof FieldLabel>;
   selectedItemsComponent?: SelectedItemsComponentType;
 };
 
@@ -51,6 +44,7 @@ export function TextCollectionField<
   fieldState,
   labelProps = {},
   inputProps = {},
+  withErrors = true,
   selectedItemsComponent,
 }: Props<TFieldValues, TName>) {
   const id = useId();
@@ -109,7 +103,9 @@ export function TextCollectionField<
         </Button>
       </div>
 
-      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+      {fieldState.invalid && withErrors && (
+        <FieldError errors={[fieldState.error]} />
+      )}
     </Field>
   );
 }

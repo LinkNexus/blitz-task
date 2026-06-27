@@ -3,7 +3,7 @@ import { IconArrowLeft } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Controller, useForm } from "react-hook-form";
-import z from "zod";
+import type z from "zod";
 import type { ProjectDetails } from "@/api";
 import {
   createProjectMutation,
@@ -19,24 +19,7 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { useAccount } from "@/hooks/use-current-user";
 import { Route as DashboardRoute } from "../dashboard";
-
-export const CreateProjectSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Project name is required")
-    .max(255, "Project name must be at most 255 characters long"),
-  description: z
-    .string()
-    .max(1000, "Description must be at most 1000 characters long"),
-  startDate: z.iso.datetime().nullable(),
-  dueDate: z.iso.datetime().nullable(),
-  tags: z.array(z.string().max(50)).max(10, "Maximum 10 tags allowed"),
-  image: z
-    .file()
-    .max(350_000)
-    .mime(["image/png", "image/jpeg", "image/svg+xml", "image/webp"])
-    .nullable(),
-});
+import { ProjectSchema } from "./$projectId/-schemas";
 
 export const Route = createFileRoute("/_app/projects/create")({
   component: CreateProjectPage,
@@ -48,7 +31,7 @@ function CreateProjectPage() {
   const { user } = useAccount();
 
   const form = useForm({
-    resolver: zodResolver(CreateProjectSchema),
+    resolver: zodResolver(ProjectSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -77,7 +60,7 @@ function CreateProjectPage() {
     onError: (error) => {
       if (error && "errors" in error && error.errors) {
         error.errors.forEach((e) => {
-          form.setError(e.path as keyof z.infer<typeof CreateProjectSchema>, {
+          form.setError(e.path as keyof z.infer<typeof ProjectSchema>, {
             message: e.message,
           });
         });

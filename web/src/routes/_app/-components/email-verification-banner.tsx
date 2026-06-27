@@ -23,8 +23,7 @@ export function EmailVerificationBanner() {
 
                 if (data)
                   toast.success("Email confirmed", {
-                    description:
-                      "A new confirmation email has been sent to your email address",
+                    description: data.message,
                   });
               }}
             >

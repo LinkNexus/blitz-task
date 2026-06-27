@@ -5,6 +5,7 @@ import {
   Link,
   useNavigate,
   useRouteContext,
+  useSearch,
 } from "@tanstack/react-router";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { PasswordSchema } from "@/lib/shared-models";
 import { flashMessagesStore } from "@/lib/store";
 import { Route as LoginRoute } from "@/routes/_auth/login";
+import { AuthRedirectSchema } from "./-schemas";
 
 export const CreateAccountSchema = PasswordSchema.extend({
   name: z
@@ -33,11 +35,15 @@ export const CreateAccountSchema = PasswordSchema.extend({
 
 export const Route = createFileRoute("/_auth/create-account")({
   component: CreateAccountPage,
+  validateSearch: AuthRedirectSchema,
 });
 
 function CreateAccountPage() {
   const navigate = useNavigate();
   const { queryClient } = useRouteContext({ from: "__root__" });
+  const { redirect } = useSearch({
+    from: "/_auth/create-account",
+  });
 
   const form = useForm({
     resolver: zodResolver(CreateAccountSchema),
@@ -87,7 +93,7 @@ function CreateAccountPage() {
       },
     ]);
 
-    await navigate({ to: "/dashboard" });
+    await navigate({ to: redirect || "/dashboard" });
   }
 
   return (
@@ -167,7 +173,10 @@ function CreateAccountPage() {
         </Field>
 
         <FieldDescription className="text-center">
-          Already have an account? <Link to={LoginRoute.to}>Login</Link>
+          Already have an account?{" "}
+          <Link to={LoginRoute.to} search={(prev) => prev}>
+            Login
+          </Link>
         </FieldDescription>
       </FieldGroup>
     </form>

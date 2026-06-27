@@ -1,28 +1,27 @@
 import type { ComponentProps } from "react";
 import { useId } from "react";
-import type {
-  ControllerFieldState,
-  ControllerRenderProps,
-  FieldPath,
-  FieldValues,
-} from "react-hook-form";
+import type { FieldPath, FieldValues } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field.tsx";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import type { FormFieldProps } from ".";
 
 type Props<
   TFieldValues extends FieldValues,
   TName extends FieldPath<TFieldValues>,
-> = {
-  field: ControllerRenderProps<TFieldValues, TName>;
-  fieldState: ControllerFieldState;
+> = FormFieldProps<TFieldValues, TName> & {
   inputProps?: ComponentProps<typeof Checkbox>;
-  labelProps?: ComponentProps<typeof FieldLabel>;
 };
 
 export function CheckboxField<
   TFieldValues extends FieldValues,
   TName extends FieldPath<TFieldValues>,
->({ field, fieldState, labelProps, inputProps }: Props<TFieldValues, TName>) {
+>({
+  field,
+  fieldState,
+  labelProps,
+  inputProps,
+  withErrors = true,
+}: Props<TFieldValues, TName>) {
   const id = useId();
 
   return (
@@ -36,7 +35,9 @@ export function CheckboxField<
         {...inputProps}
       />
       <FieldLabel htmlFor={id} {...labelProps} />
-      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+      {fieldState.invalid && withErrors && (
+        <FieldError errors={[fieldState.error]} />
+      )}
     </Field>
   );
 }

@@ -1,19 +1,20 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
+import { type ApiMessageResponse, resendConfirmEmail } from "@/api";
 import { client } from "@/api/client.gen";
-import { Button } from "@/components/ui/button";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useAccount } from "@/hooks/use-current-user";
+import { flashMessagesStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { EmailVerificationBanner } from "./-components/email-verification-banner";
 import { AppSidebar } from "./-components/sidebar/app-sidebar";
 
-const authErrorsInterceptor = (
+const authErrorsInterceptor = async (
   error: unknown,
   response: Response | undefined,
 ) => {
@@ -25,21 +26,38 @@ const authErrorsInterceptor = (
         to: "/login",
       });
 
-    case 403:
-      toast.error("Email not verified", {
-        description:
-          "You don't have permission to perform this action, because your email address is not verified",
-        action: (
-          <Button
-            onClick={async () => {
-              console.log("hello");
-            }}
-          >
-            Verify
-          </Button>
-        ),
+    case 403: {
+      let message =
+        "You don't have permission to perform this action, because your email address is not verified";
+
+      if (response) {
+        const err = error as ApiMessageResponse & { type?: string };
+        if ("type" in err && err.type === "Authorization")
+          message = err.message;
+        else return error;
+      }
+
+      flashMessagesStore.actions.addSingle({
+        type: "error",
+        message: {
+          title: "Forbidden Access",
+          description: message,
+          action: {
+            label: "Verify",
+            onClick: async () => {
+              const { data } = await resendConfirmEmail();
+              if (data) {
+                toast.success("Email confirmed", {
+                  description: data.message,
+                });
+              }
+            },
+          },
+        },
       });
+
       return null;
+    }
   }
 
   return error;
@@ -48,7 +66,6 @@ const authErrorsInterceptor = (
 export const Route = createFileRoute("/_app")({
   component: RouteComponent,
   beforeLoad({ context, location }) {
-    console.log(context.user);
     if (!context.user) {
       throw redirect({
         to: "/login",
@@ -85,7 +102,7 @@ function RouteComponent() {
             : "md:max-w-[calc(100%-var(--sidebar-width-icon))]",
         )}
       >
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
           </div>

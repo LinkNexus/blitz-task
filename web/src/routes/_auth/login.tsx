@@ -23,19 +23,18 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { AuthRedirectSchema } from "./-schemas.ts";
 import { Route as CreateAccountRoute } from "./create-account.tsx";
 import { Route as RequestPasswordResetRoute } from "./request-reset-password.tsx";
 
 export const LoginSchema = z.object({
-  email: z.email(),
-  password: z.string(),
+  email: z.email("Please, enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
   rememberMe: z.boolean(),
 });
 
 export const Route = createFileRoute("/_auth/login")({
-  validateSearch: z.object({
-    redirect: z.string().optional(),
-  }),
+  validateSearch: AuthRedirectSchema,
   component: LoginPage,
 });
 
@@ -48,7 +47,7 @@ function LoginPage() {
     resolver: zodResolver(LoginSchema),
     defaultValues: {
       email: "",
-      password: undefined,
+      password: "",
       rememberMe: true,
     },
     mode: "onBlur",
@@ -156,7 +155,9 @@ function LoginPage() {
 
         <FieldDescription className="text-center">
           Don&apos;t have an account?{" "}
-          <Link to={CreateAccountRoute.to}>Sign up</Link>
+          <Link to={CreateAccountRoute.to} search={(prev) => prev}>
+            Sign up
+          </Link>
         </FieldDescription>
       </FieldGroup>
     </form>
