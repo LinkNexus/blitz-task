@@ -4,16 +4,17 @@ namespace BlitzTask.Backend.Infrastructure.Extensions
 {
     public static class HttpContextExtensions
     {
-        public static User GetUser(this HttpContext context)
+        public static User GetUser(this HttpContext context) =>
+            GetItem<User>(context, "CurrentUser");
+
+        public static T GetItem<T>(this HttpContext context, string key)
         {
-            if (context.Items.TryGetValue("CurrentUser", out var user) && user is User u)
+            if (context.Items.TryGetValue(key, out var item) && item is T tItem)
             {
-                return u;
+                return tItem;
             }
 
-            throw new InvalidOperationException(
-                "User not found in HttpContext. Is the route protected?"
-            );
+            throw new InvalidOperationException($"{key} not found in HttpContext.");
         }
     }
 }

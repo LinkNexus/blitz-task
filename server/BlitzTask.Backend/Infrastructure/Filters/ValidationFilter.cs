@@ -31,7 +31,9 @@ namespace BlitzTask.Backend.Infrastructure.Filters
                     new ValidationErrors(
                         on,
                         result.Errors.Select(e => new ValidationError(
-                            string.IsNullOrEmpty(e.PropertyName) ? "root" : e.PropertyName,
+                            string.IsNullOrEmpty(e.PropertyName)
+                                ? "root"
+                                : e.PropertyName[0].ToString().ToLower() + e.PropertyName[1..],
                             e.ErrorMessage
                         ))
                     ),

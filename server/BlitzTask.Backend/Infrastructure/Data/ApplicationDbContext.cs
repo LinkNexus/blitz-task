@@ -1,6 +1,9 @@
 using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.Auth;
+using BlitzTask.Backend.Features.ProjectColumns;
+using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.Projects;
+using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +17,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectParticipant> ProjectParticipants => Set<ProjectParticipant>();
+    public DbSet<ProjectInvitation> ProjectInvitations => Set<ProjectInvitation>();
+    public DbSet<ProjectColumn> ProjectColumns => Set<ProjectColumn>();
+    public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

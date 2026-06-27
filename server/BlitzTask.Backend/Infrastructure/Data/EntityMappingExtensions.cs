@@ -2,7 +2,7 @@ using BlitzTask.Backend.Features.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace BlitzTask.Backend.Infrastructure.Data.Configurations
+namespace BlitzTask.Backend.Infrastructure.Data
 {
     public static class EntityMappingExtensions
     {
