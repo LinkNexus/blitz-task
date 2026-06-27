@@ -2,6 +2,15 @@ namespace BlitzTask.Backend.Features.Projects
 {
     public static class ProjectsModelsExtensions
     {
+        public static ProjectDetails WithPermissionsFor(this ProjectDetails details, int userId)
+        {
+            var role = details.Participants.FirstOrDefault(p => p.UserId == userId)?.Role;
+            return details with
+            {
+                UserPermissions = role.HasValue ? role.Value.GetPermissions() : [],
+            };
+        }
+
         public static IQueryable<ProjectDetails> SelectProjectDetails(
             this IQueryable<Project> projects
         )
@@ -15,13 +24,16 @@ namespace BlitzTask.Backend.Features.Projects
                 p.Tags,
                 p.CreatedBy.Id,
                 p.Participants.Select(pp => new ProjectParticipantInfo(
+                        pp.Id,
                         pp.UserId,
                         pp.User.Name,
                         pp.Role,
                         pp.CreatedAt
                     ))
                     .ToList(),
-                p.ImageId
+                p.ImageId,
+                p.Invitations.ToList(),
+                p.Columns.ToList()
             ));
         }
 
@@ -37,13 +49,16 @@ namespace BlitzTask.Backend.Features.Projects
                 project.CreatedBy.Id,
                 [
                     .. project.Participants.Select(pp => new ProjectParticipantInfo(
+                        pp.Id,
                         pp.UserId,
                         pp.User.Name,
                         pp.Role,
                         pp.CreatedAt
                     )),
                 ],
-                project.ImageId
+                project.ImageId,
+                [.. project.Invitations],
+                [.. project.Columns]
             );
         }
     }

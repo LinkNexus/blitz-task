@@ -1,15 +1,65 @@
+using System.Text.Json.Serialization;
 using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.Auth;
+using BlitzTask.Backend.Features.ProjectColumns;
+using BlitzTask.Backend.Features.ProjectMembers;
+using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Models;
 
 namespace BlitzTask.Backend.Features.Projects
 {
+    [JsonConverter(typeof(JsonStringEnumConverter<ProjectRole>))]
     public enum ProjectRole
     {
         Owner,
-        Admin,
+        Collaborator,
         Contributor,
         Viewer,
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter<ProjectPermission>))]
+    public enum ProjectPermission
+    {
+        EditProject,
+        DeleteProject,
+        ManageParticipants,
+        ManageCollaborators,
+        PromoteToCollaborator,
+        ManageColumns,
+        ManageTasks,
+    }
+
+    public static class ProjectPermissions
+    {
+        private static readonly Dictionary<ProjectRole, HashSet<ProjectPermission>> _permissions =
+            new()
+            {
+                [ProjectRole.Owner] =
+                [
+                    ProjectPermission.EditProject,
+                    ProjectPermission.DeleteProject,
+                    ProjectPermission.ManageParticipants,
+                    ProjectPermission.ManageCollaborators,
+                    ProjectPermission.PromoteToCollaborator,
+                    ProjectPermission.ManageColumns,
+                    ProjectPermission.ManageTasks,
+                ],
+                [ProjectRole.Collaborator] =
+                [
+                    ProjectPermission.EditProject,
+                    ProjectPermission.ManageParticipants,
+                    ProjectPermission.ManageColumns,
+                    ProjectPermission.ManageTasks,
+                ],
+                [ProjectRole.Contributor] = [ProjectPermission.ManageTasks],
+                [ProjectRole.Viewer] = [],
+            };
+
+        public static bool HasPermission(this ProjectRole role, ProjectPermission permission) =>
+            _permissions.TryGetValue(role, out var perms) && perms.Contains(permission);
+
+        public static List<ProjectPermission> GetPermissions(this ProjectRole role) =>
+            _permissions.TryGetValue(role, out var perms) ? [.. perms] : [];
     }
 
     public class Project : IAuditable
@@ -28,6 +78,10 @@ namespace BlitzTask.Backend.Features.Projects
         public ICollection<ProjectParticipant> Participants { get; set; } = [];
         public User CreatedBy { get; set; } = null!;
         public Attachment? Image { get; set; }
+        public ICollection<ProjectInvitation> Invitations { get; set; } = [];
+        public ICollection<ProjectColumn> Columns { get; set; } = [];
+        public ICollection<ProjectTask> Tasks { get; set; } = [];
+        public ICollection<Attachment> Attachments { get; set; } = [];
     }
 
     public class ProjectParticipant : ICreateable
@@ -42,16 +96,20 @@ namespace BlitzTask.Backend.Features.Projects
         public Project Project { get; set; } = null!;
     }
 
-    public record CreateProjectRequest(
-        string Name,
-        string Description,
-        IFormFile? Image,
-        List<string>? Tags,
-        DateTimeOffset? StartDate = null,
-        DateTimeOffset? DueDate = null
-    );
+    public record ProjectRequest
+    {
+        public string Name { get; init; } = null!;
+        public string Description { get; init; } = null!;
+        public List<string>? Tags { get; init; }
+        public DateTimeOffset? StartDate { get; init; }
+        public DateTimeOffset? DueDate { get; init; }
+        public IFormFile? Image { get; init; }
+
+        public const int MaxImageSizeInBytes = 400 * 1024;
+    }
 
     public record ProjectParticipantInfo(
+        int Id,
         int UserId,
         string Name,
         ProjectRole Role,
@@ -67,6 +125,11 @@ namespace BlitzTask.Backend.Features.Projects
         List<string> Tags,
         int CreatedBy,
         List<ProjectParticipantInfo> Participants,
-        Guid? ImageId
-    );
+        Guid? ImageId,
+        List<ProjectInvitation> Invitations,
+        List<ProjectColumn> Columns
+    )
+    {
+        public List<ProjectPermission> UserPermissions { get; init; } = [];
+    }
 }
