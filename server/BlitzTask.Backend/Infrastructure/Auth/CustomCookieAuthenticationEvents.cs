@@ -10,17 +10,6 @@ namespace BlitzTask.Backend.Infrastructure.Auth
 {
     public class CustomCookieAuthenticationEvents : CookieAuthenticationEvents
     {
-        public override Task RedirectToLogin(RedirectContext<CookieAuthenticationOptions> context)
-        {
-            context.HttpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            context.HttpContext.Response.WriteAsJsonAsync(
-                new ApiMessageResponse(
-                    "Unauthorized access. You must logged in to access this resource"
-                )
-            );
-            return Task.CompletedTask;
-        }
-
         public override async Task ValidatePrincipal(CookieValidatePrincipalContext context)
         {
             var userIdClaim = context.Principal?.FindFirst(ClaimTypes.NameIdentifier);

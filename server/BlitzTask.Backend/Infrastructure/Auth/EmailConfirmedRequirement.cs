@@ -7,7 +7,7 @@ namespace BlitzTask.Backend.Infrastructure.Auth
 
     public class EmailConfirmedHandler : AuthorizationHandler<EmailConfirmedRequirement>
     {
-        protected override Task HandleRequirementAsync(
+        protected override async Task HandleRequirementAsync(
             AuthorizationHandlerContext context,
             EmailConfirmedRequirement requirement
         )
@@ -21,10 +21,16 @@ namespace BlitzTask.Backend.Infrastructure.Auth
                 )
                 {
                     context.Succeed(requirement);
+                    return;
                 }
             }
 
-            return Task.CompletedTask;
+            context.Fail(
+                new AuthorizationFailureReason(
+                    this,
+                    "Your email address must be confirmed in order to access this resource"
+                )
+            );
         }
     }
 }
