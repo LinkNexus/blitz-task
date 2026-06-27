@@ -180,7 +180,7 @@ namespace BlitzTask.Backend.Features.Auth
             return Results.Ok(result.User.ToCurrentUser());
         }
 
-        private static async Task<IResult> GetCurrentUser(
+        public static async Task<IResult> GetCurrentUser(
             HttpContext httpContext,
             ApplicationDbContext context
         )
@@ -191,7 +191,7 @@ namespace BlitzTask.Backend.Features.Auth
             {
                 return Results.Json(
                     new ApiMessageResponse(
-                        "Unauthrized access, please login to access this resource"
+                        "Unauthorized access, please login to access this resource"
                     ),
                     statusCode: StatusCodes.Status401Unauthorized
                 );
@@ -246,7 +246,7 @@ namespace BlitzTask.Backend.Features.Auth
             );
         }
 
-        private static async Task<IResult> CreateAccount(
+        public static async Task<IResult> CreateAccount(
             CreateUserRequest request,
             HttpContext context,
             [FromServices] ApplicationDbContext dbContext,
@@ -282,7 +282,7 @@ namespace BlitzTask.Backend.Features.Auth
             return Results.Ok(user.ToCurrentUser());
         }
 
-        private static async Task<IResult> ConfirmEmail(
+        public static async Task<IResult> ConfirmEmail(
             ConfirmEmailRequest request,
             ApplicationDbContext dbContext
         )
@@ -323,7 +323,7 @@ namespace BlitzTask.Backend.Features.Auth
             return Results.Ok(new ApiMessageResponse("Your email has been successfully confirmed"));
         }
 
-        private static async Task<Ok<ApiMessageResponse>> ResendConfirmEmail(
+        public static async Task<Ok<ApiMessageResponse>> ResendConfirmEmail(
             HttpContext context,
             ApplicationDbContext dbContext,
             MailerService mailerService
@@ -346,13 +346,13 @@ namespace BlitzTask.Backend.Features.Auth
             );
         }
 
-        private static async Task<NoContent> Logout(HttpContext context)
+        public static async Task<NoContent> Logout(HttpContext context)
         {
             await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return TypedResults.NoContent();
         }
 
-        private static async Task<IResult> RequestPasswordReset(
+        public static async Task<IResult> RequestPasswordReset(
             RequestPasswordResetRequest request,
             ApplicationDbContext dbContext,
             HttpContext context,
@@ -428,7 +428,7 @@ namespace BlitzTask.Backend.Features.Auth
             );
         }
 
-        private static async Task<IResult> ResetPassword(
+        public static async Task<IResult> ResetPassword(
             ResetPasswordRequest request,
             ApplicationDbContext dbContext
         )
