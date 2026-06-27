@@ -13,19 +13,22 @@ namespace BlitzTask.Backend.Features.Attachments
         [Required(ErrorMessage = "UploadDirectory must be configured")]
         public required string UploadDirectory { get; init; }
 
-        public required long MaxFileSizeBytes { get; init; }
+        public required long MaxFileSizeInBytes { get; init; }
 
         public required Dictionary<string, string[]> AllowedFileTypes { get; init; }
 
         public required string[] AllowedDirectories { get; init; }
+
+        public IEnumerable<string> ValidImageContentTypes
+        {
+            get =>
+                AllowedFileTypes
+                    .Where(kvp => kvp.Key.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                    .Select(kvp => kvp.Key);
+        }
     }
 
-    public record FileUploadResult(
-        bool Success,
-        string? ErrorMessage,
-        Guid? FileId,
-        AttachmentMetadata? Metadata
-    );
+    public record FileUploadResult(bool Success, string? ErrorMessage, Attachment? Attachment);
 
     public record FileDownloadResult(Stream FileStream, string FileName, string ContentType);
 
@@ -34,7 +37,8 @@ namespace BlitzTask.Backend.Features.Attachments
         Task<FileUploadResult> UploadFileAsync(
             IFormFile file,
             string directory,
-            int UploadedById,
+            int uploadedById,
+            long? maxFileSizeBytes = null,
             CancellationToken cancellationToken = default
         );
 
@@ -81,6 +85,7 @@ namespace BlitzTask.Backend.Features.Attachments
             IFormFile file,
             string directory,
             int uploadedByUserId,
+            long? maxFileSizeBytes = null,
             CancellationToken cancellationToken = default
         )
         {
@@ -93,26 +98,29 @@ namespace BlitzTask.Backend.Features.Attachments
                         directory,
                         uploadedByUserId
                     );
-                    return new FileUploadResult(false, "Invalid directory specified", null, null);
+                    return new FileUploadResult(false, "Invalid directory specified", null);
                 }
 
                 if (file == null || file.Length == 0)
                 {
-                    return new FileUploadResult(false, "No file provided", null, null);
+                    return new FileUploadResult(false, "No file provided", null);
                 }
 
-                if (file.Length > _settings.Value.MaxFileSizeBytes)
+                long realMaxSizeBytes = maxFileSizeBytes is not null
+                    ? Math.Min(maxFileSizeBytes.Value, _settings.Value.MaxFileSizeInBytes)
+                    : _settings.Value.MaxFileSizeInBytes;
+
+                if (file.Length > realMaxSizeBytes)
                 {
                     _logger.LogWarning(
                         "File size {Size} exceeds limit {MaxSize} for user {UserId}",
                         file.Length,
-                        _settings.Value.MaxFileSizeBytes,
+                        realMaxSizeBytes,
                         uploadedByUserId
                     );
                     return new FileUploadResult(
                         false,
-                        $"File size exceeds maximum allowed size of {_settings.Value.MaxFileSizeBytes / 1024 / 1024} MB",
-                        null,
+                        $"File size exceeds maximum allowed size of {realMaxSizeBytes / 1024 / 1024} MB",
                         null
                     );
                 }
@@ -131,7 +139,6 @@ namespace BlitzTask.Backend.Features.Attachments
                     return new FileUploadResult(
                         false,
                         $"File type not allowed. Allowed types: images, PDFs, and common office documents",
-                        null,
                         null
                     );
                 }
@@ -156,7 +163,7 @@ namespace BlitzTask.Backend.Features.Attachments
                         fullTargetPath,
                         fullBasePath
                     );
-                    return new FileUploadResult(false, "Security violation detected", null, null);
+                    return new FileUploadResult(false, "Security violation detected", null);
                 }
 
                 // Create file entity
@@ -196,15 +203,7 @@ namespace BlitzTask.Backend.Features.Attachments
                     uploadedByUserId
                 );
 
-                var metadata = new AttachmentMetadata(
-                    fileEntity.Id,
-                    fileEntity.OriginalFilename,
-                    fileEntity.ContentType,
-                    fileEntity.SizeInBytes,
-                    fileEntity.CreatedAt
-                );
-
-                return new FileUploadResult(true, null, fileEntity.Id, metadata);
+                return new FileUploadResult(true, null, fileEntity);
             }
             catch (Exception ex)
             {
@@ -212,7 +211,6 @@ namespace BlitzTask.Backend.Features.Attachments
                 return new FileUploadResult(
                     false,
                     "An error occurred while uploading the file",
-                    null,
                     null
                 );
             }

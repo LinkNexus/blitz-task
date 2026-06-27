@@ -1,4 +1,4 @@
-using BlitzTask.Backend.Infrastructure.Data.Configurations;
+using BlitzTask.Backend.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

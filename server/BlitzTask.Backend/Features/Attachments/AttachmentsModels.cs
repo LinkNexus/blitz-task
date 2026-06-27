@@ -23,7 +23,7 @@ namespace BlitzTask.Backend.Features.Attachments
 
         public string GetFullPath(string baseDirectory)
         {
-            return Path.Combine(baseDirectory, StorageDirectory, StoredFilename);
+            return Path.Combine(baseDirectory, StorageDirectory, $"{StoredFilename}{Extension}");
         }
 
         public DateTime UpdatedAt { get; set; }
