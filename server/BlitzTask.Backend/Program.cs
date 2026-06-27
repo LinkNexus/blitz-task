@@ -1,7 +1,9 @@
 using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.Auth;
+using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Shared.Services;
+using BlitzTask.Backend.Infrastructure.Auth;
 using BlitzTask.Backend.Infrastructure.Auth;
 using BlitzTask.Backend.Infrastructure.Data;
 using FluentValidation;
@@ -80,6 +82,11 @@ public class Program
 
         builder.Services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN");
 
+        builder.Services.AddSingleton<
+            IAuthorizationMiddlewareResultHandler,
+            AuthorizationResultHandler
+        >();
+
         builder
             .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
@@ -121,7 +128,7 @@ public class Program
         app.UseAuthorization();
         app.UseAntiforgery();
 
-        app.MapAuthEndpoints().MapProjectsEndpoints();
+        app.MapAuthEndpoints().MapProjectsEndpoints().MapProjectMembersEndpoints();
 
         app.MapGet(
             "/api/csrf-token",
