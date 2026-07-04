@@ -81,7 +81,6 @@ namespace BlitzTask.Backend.Features.Projects
         public ICollection<ProjectInvitation> Invitations { get; set; } = [];
         public ICollection<ProjectColumn> Columns { get; set; } = [];
         public ICollection<ProjectTask> Tasks { get; set; } = [];
-        public ICollection<Attachment> Attachments { get; set; } = [];
     }
 
     public class ProjectParticipant : ICreateable
@@ -127,7 +126,7 @@ namespace BlitzTask.Backend.Features.Projects
         List<ProjectParticipantInfo> Participants,
         Guid? ImageId,
         List<ProjectInvitation> Invitations,
-        List<ProjectColumn> Columns
+        List<ProjectColumnDetails> Columns
     )
     {
         public List<ProjectPermission> UserPermissions { get; init; } = [];

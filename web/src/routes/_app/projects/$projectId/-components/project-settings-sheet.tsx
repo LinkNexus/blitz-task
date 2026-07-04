@@ -5,13 +5,16 @@ import {
   IconUsers,
 } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type z from "zod";
 import type { ProjectDetails } from "@/api";
 import {
+  deleteProjectMutation,
   getProjectQueryKey,
+  leaveProjectMutation,
   updateProjectMutation,
 } from "@/api/@tanstack/react-query.gen";
 import { DatePickerField } from "@/components/forms/fields/date-picker";
@@ -86,6 +89,7 @@ const FORM_ID = "project-settings-form";
 
 export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { user: currentUser } = useAccount();
   const [activeTab, setActiveTab] = useState("general");
 
@@ -106,7 +110,15 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
     onSuccess: async (updated: ProjectDetails) => {
       queryClient.setQueryData(
         getProjectQueryKey({ path: { projectId: Number(updated.id) } }),
-        updated,
+        (old: ProjectDetails): ProjectDetails => ({
+          ...old,
+          name: updated.name,
+          description: updated.description,
+          startDate: updated.startDate,
+          dueDate: updated.dueDate,
+          imageId: updated.imageId,
+          tags: updated.tags,
+        }),
       );
       toast.success("Project updated successfully");
       onOpenChange(false);
@@ -130,26 +142,44 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
     });
   };
 
-  const canDelete =
-    project.userPermissions?.includes("DeleteProject") ?? false;
+  const canDelete = project.userPermissions?.includes("DeleteProject") ?? false;
   const canEditProject =
     project.userPermissions?.includes("EditProject") ?? false;
   const isOwner = canDelete;
 
+  const deleteProject = useMutation({
+    ...deleteProjectMutation(),
+    onSuccess: () => {
+      queryClient.removeQueries({
+        queryKey: getProjectQueryKey({ path: { projectId: Number(project.id) } }),
+      });
+      navigate({ to: "/dashboard" });
+      toast.success("Project deleted");
+    },
+    onError: () => toast.error("Failed to delete project"),
+  });
+
+  const leaveProject = useMutation({
+    ...leaveProjectMutation(),
+    onSuccess: () => {
+      queryClient.removeQueries({
+        queryKey: getProjectQueryKey({ path: { projectId: Number(project.id) } }),
+      });
+      navigate({ to: "/dashboard" });
+      toast.success("You left the project");
+    },
+    onError: () => toast.error("Failed to leave project"),
+  });
+
   const handleArchive = () => {
-    // TODO: wire to POST /api/projects/{projectId}/archive when endpoint is ready
     toast.info("Project archiving coming soon");
   };
 
-  const handleLeave = () => {
-    // TODO: wire to DELETE /api/projects/{projectId}/members/me when endpoint is ready
-    toast.info("Leave project coming soon");
-  };
+  const handleLeave = () =>
+    leaveProject.mutate({ path: { projectId: Number(project.id) } });
 
-  const handleDelete = () => {
-    // TODO: wire to DELETE /api/projects/{projectId} when endpoint is ready
-    toast.info("Project deletion coming soon");
-  };
+  const handleDelete = () =>
+    deleteProject.mutate({ path: { projectId: Number(project.id) } });
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -379,8 +409,8 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
                           </AlertDialogTitle>
                           <AlertDialogDescription>
                             The project will be hidden from active views but all
-                            data will be preserved. You can restore it later from
-                            your archived projects.
+                            data will be preserved. You can restore it later
+                            from your archived projects.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -420,9 +450,9 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
                             Leave "{project.name}"?
                           </AlertDialogTitle>
                           <AlertDialogDescription>
-                            You will be removed from this project and lose access
-                            to all its data. A project manager will need to
-                            re-invite you to regain access.
+                            You will be removed from this project and lose
+                            access to all its data. A project manager will need
+                            to re-invite you to regain access.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -457,8 +487,8 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
                             Delete "{project.name}"?
                           </AlertDialogTitle>
                           <AlertDialogDescription>
-                            This action cannot be undone. All project data, tasks,
-                            and attachments will be permanently removed.
+                            This action cannot be undone. All project data,
+                            tasks, and attachments will be permanently removed.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

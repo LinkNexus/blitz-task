@@ -1,7 +1,9 @@
 using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.Auth;
+using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.Projects;
+using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Auth;
 using BlitzTask.Backend.Infrastructure.Auth;
@@ -128,7 +130,11 @@ public class Program
         app.UseAuthorization();
         app.UseAntiforgery();
 
-        app.MapAuthEndpoints().MapProjectsEndpoints().MapProjectMembersEndpoints();
+        app.MapAuthEndpoints()
+            .MapProjectsEndpoints()
+            .MapProjectMembersEndpoints()
+            .MapProjectColumnsEndpoints()
+            .MapProjectTasksEndpoints();
 
         app.MapGet(
             "/api/csrf-token",

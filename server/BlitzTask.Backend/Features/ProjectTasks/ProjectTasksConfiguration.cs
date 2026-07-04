@@ -31,10 +31,13 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .HasMany(pt => pt.Attachments)
                 .WithMany()
                 .UsingEntity<ProjectTaskAttachment>(
-                    r => r.HasOne<Attachment>().WithMany().HasForeignKey(pa => pa.AttachmentId),
-                    l => l.HasOne<ProjectTask>().WithMany().HasForeignKey(pa => pa.ProjectTaskId)
+                    j =>
+                    {
+                        j.HasKey(pa => new { pa.ProjectTaskId, pa.AttachmentId });
+                        j.HasOne<Attachment>().WithMany().HasForeignKey(pa => pa.AttachmentId).OnDelete(DeleteBehavior.Cascade);
+                        j.HasOne<ProjectTask>().WithMany().HasForeignKey(pa => pa.ProjectTaskId).OnDelete(DeleteBehavior.Cascade);
+                    }
                 );
-            ;
 
             builder.ConfigureAuditable();
         }

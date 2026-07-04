@@ -1,4 +1,3 @@
-using System.Net;
 using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.ProjectMembers;
@@ -46,6 +45,15 @@ namespace BlitzTask.Backend.Features.Projects
                 .Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity);
 
             group
+                .MapDelete("/{projectId:int}", DeleteProject)
+                .WithName("delete-project")
+                .AddEndpointFilter(
+                    new RequireProjectPermissionFilter(ProjectPermission.DeleteProject)
+                )
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces<ApiMessageResponse>(StatusCodes.Status404NotFound);
+
+            group
                 .MapGet("/{projectId:int}/attachments/{attachmentId:guid}", AccessAttachment)
                 .WithName("access-project-attachment")
                 .AddEndpointFilter(new RequireProjectPermissionFilter())
@@ -59,11 +67,17 @@ namespace BlitzTask.Backend.Features.Projects
         private static ProjectColumn[] CreateDefaultColumns()
         {
             var colNames = new string[] { "Backlog", "In Progress", "Review", "Done" };
+            var colorNames = new string[] { "#FF0000", "#00FF00", "#0000FF", "#FFFF00" };
             var columns = new ProjectColumn[colNames.Length];
 
             for (int i = 0; i < colNames.Length; ++i)
             {
-                columns[i] = new ProjectColumn { Name = colNames[i], Score = i * 1000 };
+                columns[i] = new ProjectColumn
+                {
+                    Name = colNames[i],
+                    Score = i * 1000,
+                    Color = colorNames[i],
+                };
             }
 
             return columns;
@@ -135,8 +149,15 @@ namespace BlitzTask.Backend.Features.Projects
         )
         {
             var user = context.GetUser();
-            var project = context.GetItem<Project>("Project").ToProjectDetails();
-            return Results.Json(project.WithPermissionsFor(user.Id));
+            var details = await dbContext
+                .Projects.Where(p => p.Id == projectId)
+                .SelectProjectDetails()
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (details is null)
+                return Results.NotFound(new ApiMessageResponse("Project not found."));
+
+            return Results.Json(details.WithPermissionsFor(user.Id));
         }
 
         public static async Task<IResult> UpdateProject(
@@ -148,7 +169,10 @@ namespace BlitzTask.Backend.Features.Projects
             CancellationToken cancellationToken
         )
         {
-            var project = context.GetItem<Project>("Project");
+            var project = await dbContext.Projects.FindAsync([projectId], cancellationToken);
+            if (project is null)
+                return Results.NotFound(new ApiMessageResponse("Project not found."));
+
             var user = context.GetUser();
             var imageId = project.ImageId;
 
@@ -161,9 +185,7 @@ namespace BlitzTask.Backend.Features.Projects
             if (request.Image is not null)
             {
                 if (project.ImageId.HasValue)
-                {
                     await fileService.DeleteFileAsync(project.ImageId.Value, cancellationToken);
-                }
 
                 var uploadRes = await fileService.UploadFileAsync(
                     request.Image,
@@ -174,17 +196,41 @@ namespace BlitzTask.Backend.Features.Projects
                 );
 
                 if (uploadRes.Success && uploadRes.Attachment is not null)
-                {
                     imageId = uploadRes.Attachment.Id;
-                }
             }
 
             project.ImageId = imageId;
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return Results.Json(
-                project.ToProjectDetails().WithPermissionsFor(context.GetUser().Id)
-            );
+            return Results.Json(project.ToProjectDetails().WithPermissionsFor(user.Id));
+        }
+
+        public static async Task<Results<NoContent, NotFound<ApiMessageResponse>>> DeleteProject(
+            int projectId,
+            ApplicationDbContext dbContext,
+            IFileService fileService,
+            CancellationToken cancellationToken
+        )
+        {
+            var project = await dbContext
+                .Projects.Where(p => p.Id == projectId)
+                .Include(p => p.Tasks)
+                    .ThenInclude(t => t.Attachments)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (project is null)
+                return TypedResults.NotFound(new ApiMessageResponse("Project not found"));
+
+            if (project.ImageId.HasValue)
+                await fileService.DeleteFileAsync(project.ImageId.Value, cancellationToken);
+
+            foreach (var task in project.Tasks.ToList())
+            foreach (var attachment in task.Attachments.ToList())
+                await fileService.DeleteFileAsync(attachment.Id, cancellationToken);
+
+            dbContext.Projects.Remove(project);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return TypedResults.NoContent();
         }
 
         public static async Task<
@@ -198,11 +244,24 @@ namespace BlitzTask.Backend.Features.Projects
             CancellationToken cancellationToken
         )
         {
-            var project = context.GetItem<Project>("Project");
+            var projectData = await dbContext
+                .Projects.Where(p => p.Id == projectId)
+                .Select(p => new
+                {
+                    p.ImageId,
+                    AttachmentIds = p.Tasks
+                        .SelectMany(t => t.Attachments)
+                        .Select(a => a.Id)
+                        .ToList(),
+                })
+                .FirstOrDefaultAsync(cancellationToken);
 
             if (
-                project.ImageId != attachmentId
-                && project.Attachments.All(a => a.Id != attachmentId)
+                projectData is null
+                || (
+                    projectData.ImageId != attachmentId
+                    && !projectData.AttachmentIds.Contains(attachmentId)
+                )
             )
             {
                 return TypedResults.NotFound(new ApiMessageResponse("Attachment not found"));

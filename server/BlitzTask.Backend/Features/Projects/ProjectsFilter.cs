@@ -29,25 +29,16 @@ namespace BlitzTask.Backend.Features.Projects
                 return Results.BadRequest(new ApiMessageResponse("Invalid project ID."));
             }
 
-            var result = await dbContext
-                .Projects.Where(p => p.Id == projectId)
-                .Include(p => p.Participants)
+            var participant = await dbContext
+                .ProjectParticipants.Where(pp => pp.ProjectId == projectId && pp.UserId == user.Id)
                 .FirstOrDefaultAsync();
 
-            if (result is null)
+            if (participant is null)
             {
                 return Results.NotFound(new ApiMessageResponse("Project not found."));
             }
 
-            var participant = result.Participants.FirstOrDefault(p => p.UserId == user.Id);
-
-            if (
-                participant is null
-                || !(
-                    permission.HasValue
-                    && ProjectPermissions.HasPermission(participant.Role, permission.Value)
-                )
-            )
+            if (permission.HasValue && !participant.Role.HasPermission(permission.Value))
             {
                 return Results.Json(
                     new ApiMessageResponse(
@@ -57,7 +48,7 @@ namespace BlitzTask.Backend.Features.Projects
                 );
             }
 
-            context.HttpContext.Items["Project"] = result;
+            context.HttpContext.Items["ProjectParticipant"] = participant;
             return await next(context);
         }
     }

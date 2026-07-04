@@ -2,6 +2,31 @@ import z from "zod";
 
 export const MAX_PROJECT_IMAGE_SIZE = 400 * 1024;
 
+export const TaskSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, "Task name is required")
+      .max(100, "Must be at most 100 characters"),
+    description: z.string().max(1000, "Must be at most 1000 characters"),
+    priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
+    tags: z.array(z.string().max(20, "Tag too long")).max(5, "Maximum 5 tags"),
+    startDate: z.iso.datetime().nullable(),
+    dueDate: z.iso.datetime().nullable(),
+    assigneeIds: z.array(z.number().int()),
+    newAttachments: z.array(z.instanceof(File)).max(5, "Maximum 5 attachments"),
+    removedAttachmentIds: z.array(z.string()),
+  })
+  .refine(
+    (data) => {
+      if (data.startDate && data.dueDate) {
+        return new Date(data.startDate) <= new Date(data.dueDate);
+      }
+      return true;
+    },
+    { error: "Start date cannot be after due date", path: ["startDate"] },
+  );
+
 export const ProjectSchema = z
   .object({
     name: z

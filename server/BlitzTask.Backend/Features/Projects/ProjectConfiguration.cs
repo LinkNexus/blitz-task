@@ -31,14 +31,6 @@ namespace BlitzTask.Backend.Features.Projects
                 .HasForeignKey(p => p.ImageId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            builder
-                .HasMany(p => p.Attachments)
-                .WithMany()
-                .UsingEntity<ProjectTaskAttachment>(
-                    r => r.HasOne<Attachment>().WithMany().HasForeignKey(pa => pa.AttachmentId),
-                    l => l.HasOne<Project>().WithMany().HasForeignKey(pa => pa.ProjectId)
-                );
-
             builder.ConfigureAuditable();
         }
     }

@@ -1,19 +1,22 @@
 using BlitzTask.Backend.Features.Projects;
+using BlitzTask.Backend.Infrastructure.Data;
 using BlitzTask.Backend.Infrastructure.Extensions;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlitzTask.Backend.Features.ProjectMembers
 {
     public class AddParticipantRequestValidator : AbstractValidator<AddParticipantRequest>
     {
-        public AddParticipantRequestValidator(IHttpContextAccessor httpContextAccessor)
+        public AddParticipantRequestValidator(
+            IHttpContextAccessor httpContextAccessor,
+            ApplicationDbContext dbContext
+        )
         {
-            var currentUser = httpContextAccessor.HttpContext!.GetUser();
-            var project = httpContextAccessor.HttpContext!.GetItem<Project>("Project");
-
-            var currentParticipant = project.Participants.FirstOrDefault(p =>
-                p.UserId == currentUser.Id
-            );
+            var httpContext = httpContextAccessor.HttpContext!;
+            var currentUser = httpContext.GetUser();
+            var currentParticipant = httpContext.GetProjectParticipant();
+            var projectId = currentParticipant.ProjectId;
 
             RuleFor(x => x.Email)
                 .NotEmpty()
@@ -32,9 +35,9 @@ namespace BlitzTask.Backend.Features.ProjectMembers
                 () =>
                 {
                     RuleFor(x => x.Role)
-                        .Must(role =>
+                        .Must(_ =>
                             ProjectPermissions.HasPermission(
-                                currentParticipant!.Role,
+                                currentParticipant.Role,
                                 ProjectPermission.ManageCollaborators
                             )
                         )
@@ -43,7 +46,11 @@ namespace BlitzTask.Backend.Features.ProjectMembers
             );
 
             RuleFor(x => x.Email)
-                .Must(email => !project.Participants.Any(p => p.User.Email == email))
+                .MustAsync(async (email, ct) =>
+                    !await dbContext.ProjectParticipants
+                        .Where(pp => pp.ProjectId == projectId && pp.User.Email == email)
+                        .AnyAsync(ct)
+                )
                 .WithMessage("User is already a participant in this project");
 
             RuleFor(x => x.Email)
@@ -57,12 +64,7 @@ namespace BlitzTask.Backend.Features.ProjectMembers
     {
         public UpdateParticipantRoleRequestValidator(IHttpContextAccessor httpContextAccessor)
         {
-            var currentUser = httpContextAccessor.HttpContext!.GetUser();
-            var project = httpContextAccessor.HttpContext!.GetItem<Project>("Project");
-
-            var currentParticipant = project.Participants.FirstOrDefault(p =>
-                p.UserId == currentUser.Id
-            );
+            var currentParticipant = httpContextAccessor.HttpContext!.GetProjectParticipant();
 
             RuleFor(x => x.Role)
                 .IsInEnum()
@@ -75,9 +77,9 @@ namespace BlitzTask.Backend.Features.ProjectMembers
                 () =>
                 {
                     RuleFor(x => x.Role)
-                        .Must(role =>
+                        .Must(_ =>
                             ProjectPermissions.HasPermission(
-                                currentParticipant!.Role,
+                                currentParticipant.Role,
                                 ProjectPermission.ManageCollaborators
                             )
                         )
