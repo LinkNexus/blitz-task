@@ -1,0 +1,111 @@
+import {
+  type CollisionDetection,
+  closestCenter,
+  closestCorners,
+  DndContext,
+  DragOverlay,
+  getFirstCollision,
+  KeyboardSensor,
+  PointerSensor,
+  pointerWithin,
+  rectIntersection,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { useCallback } from "react";
+import type { ProjectDetails } from "@/api";
+import { ProjectColumn } from "./column";
+import { useDragNDrop } from "./hooks";
+import { TaskCard } from "./task-card";
+
+export function KanbanBoard({ project }: { project: ProjectDetails }) {
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const {
+    activeTask,
+    effectiveColumns,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd,
+  } = useDragNDrop(project);
+
+  const sortedColumns = [...effectiveColumns].sort(
+    (a, b) => Number(a.score) - Number(b.score),
+  );
+
+  // Layered collision detection:
+  //   1. pointerWithin — what is the cursor literally inside?
+  //      a. If it hits a task → done, return that task.
+  //      b. If it hits a column → narrow to the closest task inside that column;
+  //         if the column is empty, return the column itself.
+  //   2. closestCenter fallback — cursor is in dead space (between columns, outside
+  //      the board). This prevents drag from getting "stuck" with no collision.
+  // const collisionDetection: CollisionDetection = useCallback(
+  //   (args) => {
+  //     const pointerHits = pointerWithin(args);
+  //
+  //     if (pointerHits.length > 0) {
+  //       // Prefer a task hit over a column hit
+  //       const taskHit = pointerHits.find((c) =>
+  //         String(c.id).startsWith("task-"),
+  //       );
+  //       if (taskHit) return [taskHit];
+  //
+  //       // Cursor is inside a column droppable but not over any task
+  //       const colHit = getFirstCollision(pointerHits, "id");
+  //       if (colHit != null) {
+  //         const colId = Number(String(colHit).replace("column-", ""));
+  //         const colTasks =
+  //           effectiveColumns.find((c) => Number(c.id) === colId)?.tasks ?? [];
+  //
+  //         if (colTasks.length > 0) {
+  //           // Find the closest task center within this column
+  //           const taskIds = new Set(colTasks.map((t) => `task-${t.id}`));
+  //           const inColumn = args.droppableContainers.filter((c) =>
+  //             taskIds.has(String(c.id)),
+  //           );
+  //           const closest = closestCenter({
+  //             ...args,
+  //             droppableContainers: inColumn,
+  //           });
+  //           if (closest.length > 0) return closest;
+  //         }
+  //
+  //         // Column is empty — return the column itself so a drop is still registered
+  //         return [{ id: colHit }];
+  //       }
+  //     }
+  //
+  //     // Pointer is not inside any droppable; use closest center so dragging in
+  //     // the gap between columns still resolves to something sensible
+  //     return closestCenter(args);
+  //   },
+  //   [effectiveColumns],
+  // );
+
+  return (
+    <DndContext
+      sensors={sensors}
+      // collisionDetection={collisionDetection}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px]">
+        {sortedColumns.map((column) => (
+          <ProjectColumn key={column.id} column={column} project={project} />
+        ))}
+      </div>
+
+      <DragOverlay>
+        {activeTask && <TaskCard task={activeTask} project={project} />}
+      </DragOverlay>
+    </DndContext>
+  );
+}

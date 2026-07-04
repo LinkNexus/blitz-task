@@ -1,4 +1,5 @@
 using BlitzTask.Backend.Features.Auth;
+using BlitzTask.Backend.Features.Projects;
 
 namespace BlitzTask.Backend.Infrastructure.Extensions
 {
@@ -6,6 +7,9 @@ namespace BlitzTask.Backend.Infrastructure.Extensions
     {
         public static User GetUser(this HttpContext context) =>
             GetItem<User>(context, "CurrentUser");
+
+        public static ProjectParticipant GetProjectParticipant(this HttpContext context) =>
+            GetItem<ProjectParticipant>(context, "ProjectParticipant");
 
         public static T GetItem<T>(this HttpContext context, string key)
         {

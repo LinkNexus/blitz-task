@@ -46,20 +46,33 @@ namespace BlitzTask.Backend.Features.ProjectTasks
     {
         public int ProjectTaskId { get; set; }
         public Guid AttachmentId { get; set; }
-        public int ProjectId { get; set; }
     }
 
     public record CreateProjectTaskRequest
     {
         public string Name { get; set; } = null!;
         public string Description { get; set; } = null!;
-        public float Score { get; set; }
         public ProjectTaskPriority Priority { get; set; }
         public List<string>? Tags { get; set; } = [];
         public DateTimeOffset? StartDate { get; set; }
         public DateTimeOffset? DueDate { get; set; }
         public List<int>? AssigneeIds { get; set; } = [];
         public List<IFormFile>? Attachments { get; set; } = [];
+    }
+
+    public record MoveProjectTaskRequest(int ColumnId, float Score);
+
+    public record UpdateProjectTaskRequest
+    {
+        public string Name { get; set; } = null!;
+        public string Description { get; set; } = null!;
+        public ProjectTaskPriority Priority { get; set; }
+        public List<string>? Tags { get; set; } = [];
+        public DateTimeOffset? StartDate { get; set; }
+        public DateTimeOffset? DueDate { get; set; }
+        public List<int>? AssigneeIds { get; set; } = [];
+        public List<IFormFile>? NewAttachments { get; set; }
+        public List<Guid>? RemovedAttachmentIds { get; set; }
     }
 
     public record ProjectTaskDetails(
@@ -74,6 +87,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         DateTime CreatedAt,
         DateTime UpdatedAt,
         List<int> AssigneeIds,
-        List<Guid> AttachmentIds
+        List<AttachmentMetadata> Attachments,
+        int ColumnId
     );
 }

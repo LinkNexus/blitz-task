@@ -37,11 +37,17 @@ export function DropzoneField<
 
   const isMulti = Array.isArray(field.value);
 
+  const handleDrop = (accepted: File[]) => {
+    if (isMulti) {
+      field.onChange([...(field.value as File[]), ...accepted]);
+    } else {
+      field.onChange(accepted[0] ?? null);
+    }
+  };
+
   const handleRemove = (fileToRemove: File) => {
     if (isMulti) {
-      field.onChange(
-        (field.value as File[]).filter((f) => f !== fileToRemove),
-      );
+      field.onChange((field.value as File[]).filter((f) => f !== fileToRemove));
     } else {
       field.onChange(null);
     }
@@ -63,12 +69,11 @@ export function DropzoneField<
 
   return (
     <Field data-invalid={fieldState.invalid}>
-      <FieldLabel htmlFor={id} {...labelProps} />
+      {labelProps.children && <FieldLabel htmlFor={id} {...labelProps} />}
       <Dropzone
         src={files}
-        onError={(err) => {
-          toast.error(`Error uploading file: ${err.message}`);
-        }}
+        onDrop={handleDrop}
+        onError={(err) => toast.error(`Error uploading file: ${err.message}`)}
         {...inputProps}
       >
         <DropzoneEmptyState />

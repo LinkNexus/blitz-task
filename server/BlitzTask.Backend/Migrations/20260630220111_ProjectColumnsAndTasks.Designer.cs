@@ -3,6 +3,7 @@ using System;
 using BlitzTask.Backend.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlitzTask.Backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260630220111_ProjectColumnsAndTasks")]
+    partial class ProjectColumnsAndTasks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
@@ -258,15 +261,20 @@ namespace BlitzTask.Backend.Migrations
 
             modelBuilder.Entity("BlitzTask.Backend.Features.ProjectTasks.ProjectTaskAttachment", b =>
                 {
-                    b.Property<int>("ProjectTaskId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<Guid>("AttachmentId")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("ProjectTaskId", "AttachmentId");
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("INTEGER");
 
-                    b.HasIndex("AttachmentId");
+                    b.Property<int>("ProjectTaskId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("AttachmentId", "ProjectId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("ProjectTaskId");
 
                     b.ToTable("ProjectTaskAttachment");
                 });
@@ -432,6 +440,12 @@ namespace BlitzTask.Backend.Migrations
                     b.HasOne("BlitzTask.Backend.Features.Attachments.Attachment", null)
                         .WithMany()
                         .HasForeignKey("AttachmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BlitzTask.Backend.Features.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

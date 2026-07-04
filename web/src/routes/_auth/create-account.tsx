@@ -27,8 +27,8 @@ export const CreateAccountSchema = PasswordSchema.extend({
     .min(2, "The name must have at least 2 characters")
     .max(255, "The name must have at most 255 characters")
     .regex(
-      /^[\w -]+$/,
-      "The name can only contain alphanumeric characters, spaces, dashes and underscores",
+      /^[\p{L}\p{N} '_-]+$/u,
+      "The name can only contain letters, numbers, spaces, apostrophes, dashes and underscores",
     ),
   email: z.email(),
 });

@@ -65,6 +65,13 @@ namespace BlitzTask.Backend.Features.ProjectMembers
                 )
                 .Produces<ApiMessageResponse>(StatusCodes.Status403Forbidden);
 
+            group
+                .MapDelete("/{projectId:int}/leave", LeaveProject)
+                .WithName("leave-project")
+                .AddEndpointFilter(new RequireProjectPermissionFilter())
+                .Produces(StatusCodes.Status204NoContent)
+                .Produces<ApiMessageResponse>(StatusCodes.Status400BadRequest);
+
             return app;
         }
 
@@ -83,7 +90,12 @@ namespace BlitzTask.Backend.Features.ProjectMembers
             CancellationToken cancellationToken
         )
         {
-            var project = context.GetItem<Project>("Project");
+            var projectName =
+                await dbContext
+                    .Projects.Where(p => p.Id == projectId)
+                    .Select(p => p.Name)
+                    .FirstOrDefaultAsync(cancellationToken)
+                ?? string.Empty;
             var invitation = await dbContext
                 .ProjectInvitations.Where(pi =>
                     pi.ProjectId == projectId && pi.GuestEmail == request.Email
@@ -125,12 +137,12 @@ namespace BlitzTask.Backend.Features.ProjectMembers
                 await mailerService.SendEmailAsync(
                     new(
                         [request.Email],
-                        $"Invitation to join ${project.Name} on BlitzTask",
+                        $"Invitation to join {projectName} on BlitzTask",
                         TemplateName: "ProjectInvitation",
                         TemplateModel: new ProjectInvitationModel
                         {
                             InviterName = context.GetUser().Name,
-                            ProjectName = project.Name,
+                            ProjectName = projectName,
                             Role = request.Role.ToString(),
                             InvitationLink = respondUrl,
                         }
@@ -160,9 +172,7 @@ namespace BlitzTask.Backend.Features.ProjectMembers
             CancellationToken cancellationToken
         )
         {
-            var user = context.GetUser();
-            var project = context.GetItem<Project>("Project");
-            var currentParticipant = project.Participants.FirstOrDefault(p => p.UserId == user.Id);
+            var currentParticipant = context.GetProjectParticipant();
             var invitation = await dbContext
                 .ProjectInvitations.Where(pi => pi.Id == invitationId && pi.ProjectId == projectId)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -175,7 +185,7 @@ namespace BlitzTask.Backend.Features.ProjectMembers
             if (
                 invitation.Role == ProjectRole.Collaborator
                 && !ProjectPermissions.HasPermission(
-                    currentParticipant!.Role,
+                    currentParticipant.Role,
                     ProjectPermission.ManageCollaborators
                 )
             )
@@ -301,7 +311,7 @@ namespace BlitzTask.Backend.Features.ProjectMembers
         )
         {
             var projectParticipant = await dbContext
-                .ProjectParticipants.Where(pp => pp.Id == participantId)
+                .ProjectParticipants.Where(pp => pp.Id == participantId && pp.ProjectId == projectId)
                 .Include(pp => pp.User)
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -341,7 +351,7 @@ namespace BlitzTask.Backend.Features.ProjectMembers
         )
         {
             var projectParticipant = await dbContext
-                .ProjectParticipants.Where(pp => pp.Id == participantId)
+                .ProjectParticipants.Where(pp => pp.Id == participantId && pp.ProjectId == projectId)
                 .FirstOrDefaultAsync(cancellationToken);
 
             var currentParticipant = await dbContext
@@ -381,6 +391,32 @@ namespace BlitzTask.Backend.Features.ProjectMembers
             }
 
             dbContext.ProjectParticipants.Remove(projectParticipant);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return TypedResults.NoContent();
+        }
+
+        public static async Task<
+            Results<NoContent, BadRequest<ApiMessageResponse>>
+        > LeaveProject(
+            int projectId,
+            ApplicationDbContext dbContext,
+            HttpContext context,
+            CancellationToken cancellationToken
+        )
+        {
+            var userId = context.GetUser().Id;
+            var participant = await dbContext
+                .ProjectParticipants.Where(pp =>
+                    pp.ProjectId == projectId && pp.UserId == userId
+                )
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (participant is null || participant.Role == ProjectRole.Owner)
+                return TypedResults.BadRequest(
+                    new ApiMessageResponse("The owner cannot leave the project")
+                );
+
+            dbContext.ProjectParticipants.Remove(participant);
             await dbContext.SaveChangesAsync(cancellationToken);
             return TypedResults.NoContent();
         }

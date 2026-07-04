@@ -1,3 +1,5 @@
+using BlitzTask.Backend.Features.Attachments;
+
 namespace BlitzTask.Backend.Features.ProjectTasks
 {
     public static class ProjectTasksModelsExtensions
@@ -16,7 +18,10 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 task.CreatedAt,
                 task.UpdatedAt,
                 [.. task.Assignees.Select(a => a.Id)],
-                [.. task.Attachments.Select(a => a.Id)]
+                [.. task.Attachments.Select(a => new AttachmentMetadata(
+                    a.Id, a.OriginalFilename, a.ContentType, a.SizeInBytes, a.CreatedAt
+                ))],
+                task.RelatedColumnId
             );
         }
     }
