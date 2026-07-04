@@ -1,3 +1,4 @@
+import { pointerIntersection } from "@dnd-kit/collision";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { IconCalendarDue, IconPaperclip } from "@tabler/icons-react";
 import { useMemo } from "react";
@@ -17,10 +18,11 @@ type Props = {
 
 export function TaskCard({ index, task, project }: Props) {
   const { ref, isDragging } = useSortable({
-    id: task.id,
+    id: `task:${task.id}`,
     index,
     type: "task",
     accept: "task",
+    collisionDetector: pointerIntersection,
   });
 
   const currentColumn = useMemo(

@@ -1,4 +1,5 @@
 import { CollisionPriority } from "@dnd-kit/abstract";
+import { pointerIntersection } from "@dnd-kit/collision";
 import { useDroppable } from "@dnd-kit/react";
 import { IconPlus } from "@tabler/icons-react";
 import { useMemo } from "react";
@@ -21,10 +22,10 @@ export function ProjectColumn({ column, project }: Props) {
   );
 
   const { ref, isDropTarget } = useDroppable({
-    id: column.id,
+    id: `column:${column.id}`,
     type: "column",
     accept: ["task", "column"],
-    // collisionPriority: CollisionPriority.Low,
+    collisionPriority: CollisionPriority.Low,
   });
 
   return (
