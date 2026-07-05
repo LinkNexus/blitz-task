@@ -1,15 +1,22 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { z } from "zod";
 import { getProjectOptions } from "@/api/@tanstack/react-query.gen";
 import { flashMessagesStore } from "@/lib/store";
-import { TaskSheet } from "./-components/task-sheet";
-import { KanbanBoard } from "./-components/kanban/board";
+import { KanbanBoard } from "./-components/kanban-view/board";
 import { ProjectHeader } from "./-components/project-header";
 import { ProjectPageSkeleton } from "./-components/project-page-skeleton";
+import { TableView } from "./-components/table-view/index";
+import { TaskSheet } from "./-components/task-sheet";
 import { KanbanToolbar } from "./-components/toolbar";
 
+const searchSchema = z.object({
+  view: z.enum(["board", "table"]).catch("board"),
+});
+
 export const Route = createFileRoute("/_app/projects/$projectId/")({
+  validateSearch: searchSchema,
   loader: async ({ params, context }) => {
     return await context.queryClient.ensureQueryData(
       getProjectOptions({
@@ -36,6 +43,7 @@ export const Route = createFileRoute("/_app/projects/$projectId/")({
 
 function SingleProjectPage() {
   const { projectId } = Route.useParams();
+  const { view } = Route.useSearch();
 
   const { data: project } = useSuspenseQuery(
     getProjectOptions({
@@ -48,11 +56,15 @@ function SingleProjectPage() {
       <TaskSheet project={project} />
       <ProjectHeader project={project} />
 
-      <KanbanToolbar project={project} />
+      <KanbanToolbar project={project} view={view} />
 
       <div className="flex-1 overflow-auto">
         <div className="p-4 sm:p-6">
-          <KanbanBoard project={project} />
+          {view === "table" ? (
+            <TableView project={project} />
+          ) : (
+            <KanbanBoard project={project} />
+          )}
         </div>
       </div>
     </div>

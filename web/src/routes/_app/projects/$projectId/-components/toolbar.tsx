@@ -3,10 +3,13 @@ import {
   IconArrowsSort,
   IconChevronDown,
   IconCirclePlus,
+  IconLayoutBoard,
   IconLayoutColumns,
   IconPlus,
   IconSearch,
+  IconTable,
 } from "@tabler/icons-react";
+import { useNavigate } from "@tanstack/react-router";
 import type { ProjectDetails } from "@/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +23,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
-export function KanbanToolbar({ project }: { project: ProjectDetails }) {
+type Props = {
+  project: ProjectDetails;
+  view: "board" | "table";
+};
+
+export function KanbanToolbar({ project, view }: Props) {
+  const navigate = useNavigate();
   return (
     <div className="border-b bg-background shrink-0">
       <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto">
@@ -149,6 +158,30 @@ export function KanbanToolbar({ project }: { project: ProjectDetails }) {
 
         {/* Right-side actions */}
         <div className="ml-auto flex items-center gap-2 shrink-0">
+          {/* View toggle */}
+          <div className="flex items-center rounded-md border bg-muted/40 p-0.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-7 w-7 p-0 ${view === "board" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => navigate({ search: { view: "board" } })}
+              title="Board view"
+            >
+              <IconLayoutBoard className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-7 w-7 p-0 ${view === "table" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => navigate({ search: { view: "table" } })}
+              title="Table view"
+            >
+              <IconTable className="size-3.5" />
+            </Button>
+          </div>
+
+          <Separator orientation="vertical" className="h-5" />
+
           <Button
             variant="outline"
             size="sm"
