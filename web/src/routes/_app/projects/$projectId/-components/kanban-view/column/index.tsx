@@ -2,29 +2,30 @@ import { CollisionPriority } from "@dnd-kit/abstract";
 import { pointerIntersection } from "@dnd-kit/collision";
 import { useDroppable } from "@dnd-kit/react";
 import { IconPlus } from "@tabler/icons-react";
-import { useMemo } from "react";
-import type { ProjectColumnDetails, ProjectDetails } from "@/api";
+import type {
+  ProjectColumnDetails,
+  ProjectDetails,
+  ProjectTaskDetails,
+} from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { colDndId } from "../../use-drag-n-drop";
 import { TaskCard } from "../task-card";
 import { ProjectColumnMenu } from "./menu";
 
 type Props = {
-  column: ProjectColumnDetails;
+  column: ProjectColumnDetails & { tasks: ProjectTaskDetails[] };
   project: ProjectDetails;
 };
 
 export function ProjectColumn({ column, project }: Props) {
-  const sortedTasks = useMemo(
-    () => [...column.tasks].sort((a, b) => Number(b.score) - Number(a.score)),
-    [column.tasks],
-  );
+  const tasks = column.tasks;
 
   const { ref, isDropTarget } = useDroppable({
-    id: `column:${column.id}`,
+    id: colDndId(column.id),
     type: "column",
-    accept: ["task", "column"],
+    accept: ["task"],
     collisionPriority: CollisionPriority.Low,
   });
 
@@ -41,7 +42,7 @@ export function ProjectColumn({ column, project }: Props) {
               variant="secondary"
               className="text-xs h-5 px-1.5 shrink-0 font-normal tabular-nums"
             >
-              {sortedTasks.length}
+              {tasks.length}
             </Badge>
           </div>
           <ProjectColumnMenu column={column} projectId={Number(project.id)} />
@@ -58,15 +59,28 @@ export function ProjectColumn({ column, project }: Props) {
             : "border-transparent hover:border-muted-foreground/20",
         )}
       >
-        {sortedTasks.map((task, idx) => (
-          <TaskCard index={idx} project={project} key={task.id} task={task} />
+        {tasks.map((task, idx) => (
+          <TaskCard
+            index={idx}
+            project={project}
+            key={task.id}
+            task={task}
+            columnId={column.id}
+          />
         ))}
 
-        {/* Empty state */}
-        {sortedTasks.length === 0 && !isDropTarget && (
+        {!isDropTarget && tasks.length === 0 && (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-xs text-muted-foreground/50 text-center">
               Drop tasks here
+            </p>
+          </div>
+        )}
+
+        {isDropTarget && tasks.length - 1 === 0 && (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-xs text-muted-foreground/50 text-center">
+              Release to drop task
             </p>
           </div>
         )}

@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { colDndId, sortablePlugins, taskDndId } from "../../use-drag-n-drop";
 import { getPriorityIcon, getPriorityPillClass } from "../lib";
 import { ProjectMenu } from "./menu";
 
@@ -14,15 +15,17 @@ type Props = {
   project: ProjectDetails;
   task: ProjectTaskDetails;
   index: number;
+  columnId: string | number;
 };
 
-export function TaskCard({ index, task, project }: Props) {
+export function TaskCard({ index, task, project, columnId }: Props) {
   const { ref, isDragging } = useSortable({
-    id: `task:${task.id}`,
+    id: taskDndId(task.id),
     index,
     type: "task",
     accept: "task",
-    collisionDetector: pointerIntersection,
+    group: colDndId(columnId),
+    plugins: sortablePlugins,
   });
 
   const currentColumn = useMemo(

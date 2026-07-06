@@ -10,6 +10,7 @@ import { ProjectPageSkeleton } from "./-components/project-page-skeleton";
 import { TableView } from "./-components/table-view/index";
 import { TaskSheet } from "./-components/task-sheet";
 import { KanbanToolbar } from "./-components/toolbar";
+import { useDragNDrop } from "./-components/use-drag-n-drop";
 
 const searchSchema = z.object({
   view: z.enum(["board", "table"]).catch("board"),
@@ -51,6 +52,8 @@ function SingleProjectPage() {
     }),
   );
 
+  const dndProps = useDragNDrop(project);
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <TaskSheet project={project} />
@@ -61,9 +64,9 @@ function SingleProjectPage() {
       <div className="flex-1 overflow-auto">
         <div className="p-4 sm:p-6">
           {view === "table" ? (
-            <TableView project={project} />
+            <TableView dndProps={dndProps} project={project} />
           ) : (
-            <KanbanBoard project={project} />
+            <KanbanBoard dndProps={dndProps} project={project} />
           )}
         </div>
       </div>

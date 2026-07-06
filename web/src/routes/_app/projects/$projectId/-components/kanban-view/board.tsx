@@ -1,21 +1,23 @@
 import { DragDropProvider } from "@dnd-kit/react";
 import type { ProjectDetails } from "@/api";
+import type { DndReturnValue } from "../use-drag-n-drop";
 import { ProjectColumn } from "./column";
-import { useDragNDrop } from "./hooks";
 
-export function KanbanBoard({ project }: { project: ProjectDetails }) {
-  const { effectiveColumns, handleDragStart, handleDragOver, handleDragEnd } =
-    useDragNDrop(project);
+type Props = {
+  project: ProjectDetails;
+  dndProps: DndReturnValue;
+};
 
-  const sortedColumns = [...effectiveColumns].sort(
+export function KanbanBoard({ project, dndProps }: Props) {
+  const sortedColumns = [...dndProps.effectiveColumns].sort(
     (a, b) => Number(a.score) - Number(b.score),
   );
 
   return (
     <DragDropProvider
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
+      onDragStart={dndProps.handleDragStart}
+      onDragOver={dndProps.handleDragOver}
+      onDragEnd={dndProps.handleDragEnd}
     >
       <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px]">
         {sortedColumns.map((column) => (
