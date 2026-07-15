@@ -1,5 +1,7 @@
 import { DragDropProvider } from "@dnd-kit/react";
+import { IconPlus } from "@tabler/icons-react";
 import type { ProjectDetails } from "@/api";
+import { requestColumnCreate } from "../column-dialog";
 import type { DndReturnValue } from "../use-drag-n-drop";
 import { ProjectColumn } from "./column";
 
@@ -9,9 +11,10 @@ type Props = {
 };
 
 export function KanbanBoard({ project, dndProps }: Props) {
-  const sortedColumns = [...dndProps.effectiveColumns].sort(
-    (a, b) => Number(a.score) - Number(b.score),
-  );
+  // effectiveColumns is already ordered by the dnd hook (score at rest, the
+  // optimistic order mid-drag) — don't re-sort here or it cancels the drag.
+  const columns = dndProps.effectiveColumns;
+  const maxScore = Math.max(0, ...columns.map((c) => Number(c.score)));
 
   return (
     <DragDropProvider
@@ -20,9 +23,23 @@ export function KanbanBoard({ project, dndProps }: Props) {
       onDragEnd={dndProps.handleDragEnd}
     >
       <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px]">
-        {sortedColumns.map((column) => (
-          <ProjectColumn key={column.id} column={column} project={project} />
+        {columns.map((column, index) => (
+          <ProjectColumn
+            key={column.id}
+            index={index}
+            column={column}
+            project={project}
+          />
         ))}
+
+        <button
+          type="button"
+          onClick={() => requestColumnCreate(maxScore + 1000)}
+          className="flex min-w-[272px] w-[272px] shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/60 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        >
+          <IconPlus className="size-4" />
+          Add column
+        </button>
       </div>
     </DragDropProvider>
   );

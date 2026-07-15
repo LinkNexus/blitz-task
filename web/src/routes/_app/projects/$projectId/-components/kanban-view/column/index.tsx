@@ -1,7 +1,7 @@
 import { CollisionPriority } from "@dnd-kit/abstract";
-import { pointerIntersection } from "@dnd-kit/collision";
 import { useDroppable } from "@dnd-kit/react";
-import { IconPlus } from "@tabler/icons-react";
+import { useSortable } from "@dnd-kit/react/sortable";
+import { IconGripVertical, IconPlus } from "@tabler/icons-react";
 import type {
   ProjectColumnDetails,
   ProjectDetails,
@@ -10,16 +10,17 @@ import type {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { colDndId } from "../../use-drag-n-drop";
+import { colDndId, colSortDndId, sortablePlugins } from "../../use-drag-n-drop";
 import { TaskCard } from "../task-card";
 import { ProjectColumnMenu } from "./menu";
 
 type Props = {
   column: ProjectColumnDetails & { tasks: ProjectTaskDetails[] };
   project: ProjectDetails;
+  index: number;
 };
 
-export function ProjectColumn({ column, project }: Props) {
+export function ProjectColumn({ column, project, index }: Props) {
   const tasks = column.tasks;
 
   const { ref, isDropTarget } = useDroppable({
@@ -29,14 +30,40 @@ export function ProjectColumn({ column, project }: Props) {
     collisionPriority: CollisionPriority.Low,
   });
 
+  const {
+    ref: sortRef,
+    handleRef,
+    isDragging,
+  } = useSortable({
+    id: colSortDndId(column.id),
+    index,
+    type: "column",
+    accept: "column",
+    plugins: sortablePlugins,
+  });
+
   return (
-    <div className="flex flex-col min-w-[272px] w-[272px] shrink-0">
-      {/* Column header */}
+    <div
+      ref={sortRef}
+      className={cn(
+        "flex flex-col min-w-[272px] w-[272px] shrink-0 transition-opacity",
+        isDragging && "opacity-50",
+      )}
+    >
+      {/* Column header (drag handle) */}
       <div className="mb-2 rounded-xl bg-muted/50 border border-border/50 overflow-hidden">
         {/* Color accent line */}
         <div className="h-1 w-full" style={{ backgroundColor: column.color }} />
         <div className="flex items-center justify-between px-3 py-2.5">
           <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              ref={handleRef}
+              className="shrink-0 -ml-1 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing touch-none"
+              aria-label="Reorder column"
+            >
+              <IconGripVertical className="size-4" />
+            </button>
             <h3 className="font-semibold text-sm truncate">{column.name}</h3>
             <Badge
               variant="secondary"
