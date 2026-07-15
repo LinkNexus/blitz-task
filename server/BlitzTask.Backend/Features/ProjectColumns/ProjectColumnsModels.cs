@@ -23,6 +23,8 @@ namespace BlitzTask.Backend.Features.ProjectColumns
 
     public record UpdateProjectColumnRequest(string Name, string Color);
 
+    public record MoveProjectColumnRequest(float Score);
+
     public record ProjectColumnDetails(
         int Id,
         string Name,

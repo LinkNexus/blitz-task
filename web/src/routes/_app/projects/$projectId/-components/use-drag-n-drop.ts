@@ -15,13 +15,18 @@ import type {
 } from "@/api";
 import {
   getProjectQueryKey,
+  moveProjectColumnMutation,
   moveProjectTaskMutation,
 } from "@/api/@tanstack/react-query.gen";
 
 export const colDndId = (id: ProjectColumnDetails["id"]) => `column:${id}`;
 export const taskDndId = (id: ProjectTaskDetails["id"]) => `task:${id}`;
-const parseColDndId = (dndId: string) => Number(dndId.split(":")[1]);
+// A column is both a task drop target (`colDndId`) and a reorderable item
+// (`colSortDndId`); the two need distinct ids so dnd-kit's registry keeps them
+// apart.
+export const colSortDndId = (id: ProjectColumnDetails["id"]) => `colsort:${id}`;
 const parseTaskDndId = (dndId: string) => Number(dndId.split(":")[1]);
+const parseColSortDndId = (dndId: string) => Number(dndId.split(":")[1]);
 
 /**
  * React drives the optimistic reordering during a drag (see `handleDragOver`),
@@ -43,7 +48,20 @@ export function scoreBetween(above?: number, below?: number): number {
   return (a + b) / 2;
 }
 
+// Columns render in ascending score order (leftmost/topmost = lowest), so the
+// neighbour semantics are flipped relative to tasks: `before` is the lower-score
+// column, `after` the higher one.
+export function columnScoreBetween(before?: number, after?: number): number {
+  const a = before ?? NaN;
+  const b = after ?? NaN;
+  if (Number.isNaN(a) && Number.isNaN(b)) return 1000;
+  if (Number.isNaN(a)) return b - 1000;
+  if (Number.isNaN(b)) return a + 1000;
+  return (a + b) / 2;
+}
+
 type TasksOrder = Record<string, string[]>;
+type ColumnsOrder = string[];
 
 export type DndReturnValue = {
   handleDragStart: (event: DragStartEvent) => void;
@@ -55,12 +73,16 @@ export type DndReturnValue = {
 export function useDragNDrop(project: ProjectDetails): DndReturnValue {
   const queryClient = useQueryClient();
   const orderRef = useRef<TasksOrder>(null);
+  const columnsRef = useRef<ColumnsOrder>(null);
   const [optimisticOrder, setOptimisticOrder] = useState<TasksOrder | null>(
     null,
   );
+  const [optimisticColumns, setOptimisticColumns] =
+    useState<ColumnsOrder | null>(null);
   const { columns } = project;
 
   const moveTaskMut = useMutation(moveProjectTaskMutation());
+  const moveColumnMut = useMutation(moveProjectColumnMutation());
 
   const tasksByIds = useMemo(
     () =>
@@ -87,6 +109,16 @@ export function useDragNDrop(project: ProjectDetails): DndReturnValue {
     [columns],
   );
 
+  // Base column order is derived purely from `score` (lowest first). During a
+  // column drag the optimistic order takes over; scores are rewritten on drop.
+  const baseColumnOrder = useMemo(
+    () =>
+      [...columns]
+        .sort((a, b) => Number(a.score) - Number(b.score))
+        .map((c) => colSortDndId(c.id)),
+    [columns],
+  );
+
   const rebuildColumnsFromOrder = useCallback(
     (order: TasksOrder, overrides?: Map<number, ProjectTaskDetails>) =>
       Object.entries(order).map(
@@ -101,10 +133,28 @@ export function useDragNDrop(project: ProjectDetails): DndReturnValue {
     [columns, tasksByIds],
   );
 
-  const effectiveColumns = useMemo(
-    () => rebuildColumnsFromOrder(optimisticOrder ?? tasksMap),
-    [optimisticOrder, tasksMap, rebuildColumnsFromOrder],
-  );
+  // Column order and task order are independent: a drag reorders one or the
+  // other, never both, so each optimistic layer falls back to its score-sorted
+  // base when idle.
+  const effectiveColumns = useMemo(() => {
+    const taskOrder = optimisticOrder ?? tasksMap;
+    const columnOrder = optimisticColumns ?? baseColumnOrder;
+    return columnOrder.map((sortId): ProjectColumnDetails => {
+      const col = columns.find((c) => colSortDndId(c.id) === sortId)!;
+      const taskIds = taskOrder[colDndId(col.id)] ?? [];
+      return {
+        ...col,
+        tasks: taskIds.map((taskId) => tasksByIds.get(parseTaskDndId(taskId))!),
+      };
+    });
+  }, [
+    optimisticOrder,
+    optimisticColumns,
+    tasksMap,
+    baseColumnOrder,
+    columns,
+    tasksByIds,
+  ]);
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
@@ -122,23 +172,35 @@ export function useDragNDrop(project: ProjectDetails): DndReturnValue {
         setOptimisticOrder(cloneOrder());
         orderRef.current = cloneOrder();
       }
+
+      if (source.type === "column") {
+        setOptimisticColumns([...baseColumnOrder]);
+        columnsRef.current = [...baseColumnOrder];
+      }
     },
-    [tasksMap],
+    [tasksMap, baseColumnOrder],
   );
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { source, target } = event.operation;
+    if (!source || !target) return;
 
-    if (!source || source.type !== "task" || !target) {
+    if (source.type === "task") {
+      const prev = orderRef.current;
+      if (!prev) return;
+      const next = move(prev, event);
+      orderRef.current = next;
+      setOptimisticOrder(next);
       return;
     }
 
-    const prev = orderRef.current;
-    if (!prev) return;
-
-    const next = move(prev, event);
-    orderRef.current = next;
-    setOptimisticOrder(next);
+    if (source.type === "column") {
+      const prev = columnsRef.current;
+      if (!prev) return;
+      const next = move(prev, event);
+      columnsRef.current = next;
+      setOptimisticColumns(next);
+    }
   }, []);
 
   const handleDragEnd = useCallback(
@@ -148,9 +210,76 @@ export function useDragNDrop(project: ProjectDetails): DndReturnValue {
       const cleanup = () => {
         setOptimisticOrder(null);
         orderRef.current = null;
+        setOptimisticColumns(null);
+        columnsRef.current = null;
       };
 
+      const queryKeyBase = getProjectQueryKey({
+        path: { projectId: Number(project.id) },
+      });
+
       if (!source || !target) return cleanup();
+
+      if (source.type === "column") {
+        const newColOrder = columnsRef.current;
+        if (!newColOrder) return cleanup();
+
+        const movedSortId = String(source.id);
+        const movedColId = parseColSortDndId(movedSortId);
+        const idx = newColOrder.indexOf(movedSortId);
+        if (idx === -1) return cleanup();
+
+        const getColScore = (sortId: string | undefined) => {
+          if (!sortId) return undefined;
+          return Number(
+            columns.find((c) => colSortDndId(c.id) === sortId)?.score,
+          );
+        };
+
+        const newScore = columnScoreBetween(
+          getColScore(newColOrder[idx - 1]),
+          getColScore(newColOrder[idx + 1]),
+        );
+
+        queryClient.setQueryData(
+          queryKeyBase,
+          (p: ProjectDetails | undefined) =>
+            p && {
+              ...p,
+              columns: p.columns.map((c) =>
+                Number(c.id) === movedColId ? { ...c, score: newScore } : c,
+              ),
+            },
+        );
+
+        moveColumnMut.mutate(
+          {
+            path: { projectId: Number(project.id), columnId: movedColId },
+            body: { score: newScore },
+          },
+          {
+            onSuccess: (updatedColumn) => {
+              queryClient.setQueryData(
+                queryKeyBase,
+                (p: ProjectDetails | undefined) =>
+                  p && {
+                    ...p,
+                    columns: p.columns.map((c) =>
+                      Number(c.id) === movedColId
+                        ? { ...c, score: updatedColumn.score }
+                        : c,
+                    ),
+                  },
+              );
+            },
+            onError: () => {
+              queryClient.invalidateQueries({ queryKey: queryKeyBase });
+            },
+            onSettled: cleanup,
+          },
+        );
+        return;
+      }
 
       if (source.type !== "task") return cleanup();
 
@@ -245,6 +374,7 @@ export function useDragNDrop(project: ProjectDetails): DndReturnValue {
     [
       columns,
       moveTaskMut,
+      moveColumnMut,
       project,
       queryClient,
       rebuildColumnsFromOrder,

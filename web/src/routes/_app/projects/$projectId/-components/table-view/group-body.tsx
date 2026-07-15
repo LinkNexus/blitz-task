@@ -1,38 +1,79 @@
 import { CollisionPriority } from "@dnd-kit/abstract";
 import { useDroppable } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { IconPlus } from "@tabler/icons-react";
+import { IconGripVertical, IconPlus } from "@tabler/icons-react";
 import { FlexRender, type Row } from "@tanstack/react-table";
+import { useCallback } from "react";
 import type { ProjectColumnDetails } from "@/api";
 import { Button } from "@/components/ui/button";
 import { TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { ProjectColumnMenu } from "../kanban-view/column/menu";
-import { colDndId, sortablePlugins, taskDndId } from "../use-drag-n-drop";
+import {
+  colDndId,
+  colSortDndId,
+  sortablePlugins,
+  taskDndId,
+} from "../use-drag-n-drop";
 import { columns, type features, type TaskRow } from "./columns";
 
 type Props = {
   column: ProjectColumnDetails;
   rows: Row<typeof features, TaskRow>[];
   projectId: number;
+  index: number;
 };
 
-export function GroupBody({ column, rows, projectId }: Props) {
-  const { ref, isDropTarget } = useDroppable({
+export function GroupBody({ column, rows, projectId, index }: Props) {
+  const { ref: dropRef, isDropTarget } = useDroppable({
     id: colDndId(column.id),
     type: "column",
     accept: ["task"],
     collisionPriority: CollisionPriority.Low,
   });
 
+  const {
+    ref: sortRef,
+    handleRef,
+    isDragging,
+  } = useSortable({
+    id: colSortDndId(column.id),
+    index,
+    type: "column",
+    accept: "column",
+    plugins: sortablePlugins,
+  });
+
+  // The <tbody> is both a task drop target and a reorderable column, so it needs
+  // both dnd-kit refs.
+  const setBodyRef = useCallback(
+    (el: HTMLTableSectionElement | null) => {
+      dropRef(el);
+      sortRef(el);
+    },
+    [dropRef, sortRef],
+  );
+
   return (
     <TableBody
-      ref={ref}
-      className={cn("transition-colors", isDropTarget && "bg-primary/5")}
+      ref={setBodyRef}
+      className={cn(
+        "transition-colors",
+        isDropTarget && "bg-primary/5",
+        isDragging && "opacity-50",
+      )}
     >
       <TableRow className="hover:bg-transparent border-b border-t first:border-t-0">
         <TableCell colSpan={columns.length} className="py-3">
           <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              ref={handleRef}
+              className="shrink-0 -ml-1 text-muted-foreground/30 hover:text-muted-foreground cursor-grab active:cursor-grabbing touch-none"
+              aria-label="Reorder column"
+            >
+              <IconGripVertical className="size-4" />
+            </button>
             <span
               className="flex size-6 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold text-white"
               style={{ backgroundColor: column.color }}

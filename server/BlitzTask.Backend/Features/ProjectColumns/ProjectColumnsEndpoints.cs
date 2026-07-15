@@ -42,6 +42,17 @@ namespace BlitzTask.Backend.Features.ProjectColumns
                 .Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity);
 
             group
+                .MapPatch("/{columnId:int}/move", MoveColumn)
+                .WithName("move-project-column")
+                .AddEndpointFilter(
+                    new RequireProjectPermissionFilter(ProjectPermission.ManageColumns)
+                )
+                .AddEndpointFilter(ValidationFilter<MoveProjectColumnRequest>.Body())
+                .Produces<ProjectColumnDetails>()
+                .Produces<ApiMessageResponse>(StatusCodes.Status404NotFound)
+                .Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity);
+
+            group
                 .MapDelete("/{columnId:int}", DeleteColumn)
                 .WithName("delete-project-column")
                 .AddEndpointFilter(
@@ -129,6 +140,39 @@ namespace BlitzTask.Backend.Features.ProjectColumns
             );
         }
 
+        public static async Task<
+            Results<Ok<ProjectColumnDetails>, NotFound<ApiMessageResponse>>
+        > MoveColumn(
+            int projectId,
+            int columnId,
+            MoveProjectColumnRequest request,
+            ApplicationDbContext dbContext,
+            CancellationToken cancellationToken
+        )
+        {
+            var column = await dbContext
+                .ProjectColumns.Where(c => c.Id == columnId && c.ProjectId == projectId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (column is null)
+                return TypedResults.NotFound(new ApiMessageResponse("Column not found"));
+
+            column.Score = request.Score;
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return TypedResults.Ok(
+                new ProjectColumnDetails(
+                    column.Id,
+                    column.Name,
+                    column.Score,
+                    column.Color,
+                    column.CreatedAt,
+                    column.UpdatedAt,
+                    []
+                )
+            );
+        }
+
         public static async Task<Results<NoContent, NotFound<ApiMessageResponse>>> DeleteColumn(
             int projectId,
             int columnId,
@@ -140,15 +184,15 @@ namespace BlitzTask.Backend.Features.ProjectColumns
             var column = await dbContext
                 .ProjectColumns.Where(c => c.Id == columnId && c.ProjectId == projectId)
                 .Include(c => c.Tasks)
-                .ThenInclude(t => t.Attachments)
+                    .ThenInclude(t => t.Attachments)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (column is null)
                 return TypedResults.NotFound(new ApiMessageResponse("Column not found"));
 
             foreach (var task in column.Tasks)
-                foreach (var attachment in task.Attachments)
-                    await fileService.DeleteFileAsync(attachment.Id, cancellationToken);
+            foreach (var attachment in task.Attachments)
+                await fileService.DeleteFileAsync(attachment.Id, cancellationToken);
 
             dbContext.ProjectColumns.Remove(column);
             await dbContext.SaveChangesAsync(cancellationToken);

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { requestColumnCreate } from "./column-dialog";
 
 type Props = {
   project: ProjectDetails;
@@ -30,6 +31,7 @@ type Props = {
 
 export function KanbanToolbar({ project, view }: Props) {
   const navigate = useNavigate();
+  const maxScore = Math.max(0, ...project.columns.map((c) => Number(c.score)));
   return (
     <div className="border-b bg-background shrink-0">
       <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto">
@@ -186,7 +188,7 @@ export function KanbanToolbar({ project, view }: Props) {
             variant="outline"
             size="sm"
             className="h-8 gap-1.5 text-xs"
-            onClick={() => console.log("new column")}
+            onClick={() => requestColumnCreate(maxScore + 1000)}
           >
             <IconCirclePlus className="size-3.5" />
             <span className="hidden sm:inline">New Column</span>

@@ -20,6 +20,16 @@ namespace BlitzTask.Backend.Features.ProjectColumns
         }
     }
 
+    public class MoveProjectColumnRequestValidator : AbstractValidator<MoveProjectColumnRequest>
+    {
+        public MoveProjectColumnRequestValidator()
+        {
+            RuleFor(x => x.Score)
+                .Must(x => !float.IsNaN(x) && !float.IsInfinity(x))
+                .WithMessage("Score must be a valid finite number.");
+        }
+    }
+
     public class ProjectColumnsValidator : AbstractValidator<CreateProjectColumnRequest>
     {
         public ProjectColumnsValidator()
