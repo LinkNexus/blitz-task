@@ -173,7 +173,15 @@ export function KanbanToolbar({ project, view }: Props) {
               variant="ghost"
               size="sm"
               className={`h-7 w-7 p-0 ${view === "table" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => navigate({ search: { view: "table" } })}
+              onClick={() =>
+                navigate({
+                  to: "/projects/$projectId",
+                  params: {
+                    projectId: project.id.toString(),
+                  },
+                  search: { view: "table" },
+                })
+              }
               title="Table view"
             >
               <IconTable className="size-3.5" />
