@@ -46,6 +46,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccount } from "@/hooks/use-current-user";
+import { invalidateProjectLists } from "@/lib/query-invalidation";
 import { cn, getInitials, imageFormats } from "@/lib/utils";
 import { MAX_PROJECT_IMAGE_SIZE, ProjectSchema } from "../-schemas";
 import { ProjectMembersSection } from "./project-members";
@@ -120,6 +121,8 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
           tags: updated.tags,
         }),
       );
+      // The name is denormalised into the sidebar list and every dashboard task row.
+      await invalidateProjectLists(queryClient);
       toast.success("Project updated successfully");
       onOpenChange(false);
     },
@@ -149,12 +152,14 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
 
   const deleteProject = useMutation({
     ...deleteProjectMutation(),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.removeQueries({
         queryKey: getProjectQueryKey({
           path: { projectId: Number(project.id) },
         }),
       });
+      // Without this the deleted project stays in the sidebar and clicking it 404s.
+      await invalidateProjectLists(queryClient);
       navigate({ to: "/dashboard" });
       toast.success("Project deleted");
     },
@@ -163,12 +168,14 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
 
   const leaveProject = useMutation({
     ...leaveProjectMutation(),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.removeQueries({
         queryKey: getProjectQueryKey({
           path: { projectId: Number(project.id) },
         }),
       });
+      // Membership is what puts a project in these lists, so leaving removes it too.
+      await invalidateProjectLists(queryClient);
       navigate({ to: "/dashboard" });
       toast.success("You left the project");
     },

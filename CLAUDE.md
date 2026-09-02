@@ -6,7 +6,7 @@ Guidance for Claude Code when working in this repository.
 
 **Blitz Task** — a self-hosted task/project manager (Kanban board + table view) intended to
 cover work, school, dev projects and daily life in one place. Single maintainer (Levy).
-Started 2026-06-17. Not yet deployed anywhere — see [ROADMAP.md](ROADMAP.md) Phase 2.
+Started 2026-06-17. Live in production since 2026-09-02 — see [ROADMAP.md](ROADMAP.md) Phase 2.
 
 Two halves, one deployable unit:
 
@@ -44,8 +44,15 @@ bunx biome check --write .
 Backend is xUnit (`dotnet test server/BlitzTask.Backend.Tests`). Frontend uses **bun's built-in
 runner** — `*.test.ts` colocated with the module under test, inside `-components/` directories
 so TanStack Router ignores them. Covered today: `toolbar-filters`, `grouping`,
-`scoreBetween`/`columnScoreBetween`, and the RBAC permission matrix. All of it is pure-function
-testing; there is no component/DOM test setup, so don't reach for one without adding it first.
+`scoreBetween`/`columnScoreBetween`, the dashboard's `task-buckets`, and on the backend the RBAC
+permission matrix plus the projections and handlers behind `GET /api/projects` and
+`GET /api/tasks`. All the frontend coverage is pure-function testing; there is no component/DOM
+test setup, so don't reach for one without adding it first.
+
+**Test handlers, not only projections, and do it against `TestsUtils.CreateSqliteDbContext()`.**
+Both EF traps below throw at request time and the in-memory provider evaluates past them, so a
+green projection test is no evidence the endpoint works — `GET /api/projects` shipped 500ing on
+every call for exactly that reason.
 
 ### Typechecking: use `tsc -b`, never `tsc --noEmit`
 
@@ -261,6 +268,11 @@ on the wrong branch.
   scope right after `builder.Build()`, so a fresh checkout or an empty volume brings itself up.
 - Email links are built from `context.Request.Scheme`/`Host`. Behind a reverse proxy without
   forwarded-header handling these come out wrong (see ROADMAP L14).
+- **The sidebar never unmounts.** It lives in the `_app` layout, so unlike a route component it
+  does not remount and refetch on navigation — React Query's default `staleTime: 0` heals the
+  dashboard but not the sidebar. Anything that changes which projects exist or what they are
+  called must call `invalidateProjectLists` (`web/src/lib/query-invalidation.ts`), or a deleted
+  project lingers in the sidebar until a full reload and clicking it 404s.
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,
