@@ -182,7 +182,22 @@ push/merge to main  ->  GitHub Actions: build multi-stage image
 by openapi-ts from `BlitzTask.Backend.json`, which the backend build emits — so the backend
 must build before the frontend. Reordering the stages breaks the build.
 
-Two failure modes worth knowing before debugging a "successful" deploy:
+**Traefik discovery is network-scoped.** The compose service must join the external
+`dokploy-network`; Dokploy's Traefik only watches that network, and the Domains-tab labels do
+nothing for a container outside it. With no matching router Traefik returns **404 on every
+path** — which looks like a broken SPA fallback rather than missing routing. Confirm the app
+itself is fine before touching application code:
+
+```bash
+docker run --rm --network container:<container> curlimages/curl:latest \
+  -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/login
+docker inspect -f '{{json .Config.Labels}}' <container> | tr ',' '\n' | grep -i traefik
+```
+
+A 200 from the first with no output from the second means the container is healthy and the
+problem is entirely upstream.
+
+Three failure modes worth knowing before debugging a "successful" deploy:
 
 - The webhook returns 200 for *accepting* the trigger, not for a successful pull. If the
   registry package is private and Dokploy has no credentials for it, the pull fails silently

@@ -1,10 +1,19 @@
-# For Dokploy, deploy this as a Compose-type application pointing at the GHCR image the
-# pipeline pushes — Dokploy's Domains tab injects the Traefik labels, so no ports/labels here.
-# Also usable locally: `docker compose up` after `docker build -t blitz-task:local .`
+# Deploy on Dokploy as a Compose-type application pointing at the GHCR image the pipeline
+# pushes. The service MUST join `dokploy-network`: Dokploy's Traefik only discovers containers
+# on that network, and a container outside it gets no router at all — which Traefik answers as
+# a 404 on every path, not a 502, so it reads like a broken app rather than missing routing.
+#
+# Labels are still injected by Dokploy's Domains tab (service `app`, port 8080) — but they only
+# take effect once the container is on the network above.
+#
+# For local use: `docker build -t blitz-task:local . && docker compose up`, after
+# `docker network create dokploy-network` (or just `docker run` the image directly).
 services:
   app:
     image: ghcr.io/linknexus/blitz-task:latest
     restart: unless-stopped
+    networks:
+      - dokploy-network
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"
@@ -23,6 +32,10 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+
+networks:
+  dokploy-network:
+    external: true
 
 volumes:
   blitz-data:
