@@ -235,6 +235,24 @@ Missing it does not throw at startup; `From` is silently `""` and every send fai
 which reads as "the app is broken" because the `EmailConfirmed` policy gates nearly every
 endpoint and no new account can get confirmed.
 
+## Git
+
+**Check the branch before committing.** `git rev-parse --abbrev-ref HEAD` — never carry the
+branch name over from earlier in a session, because a merge on the maintainer's side switches
+the working copy to `main` without any signal in the terminal.
+
+A versioned `pre-commit` hook enforces this. Each clone opts in once:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+It refuses commits on `main`/`master`, stays out of the way during merges, rebases,
+cherry-picks and reverts, and allows a deliberate override via
+`ALLOW_COMMIT_ON_MAIN=1 git commit ...`. Pushes to `origin/main` are blocked server-side too;
+the hook exists so the mistake is caught at commit time rather than after the work has piled up
+on the wrong branch.
+
 ## Known gotchas
 
 - `.gitignore` at `server/BlitzTask.Backend/.gitignore` ignores `wwwroot/*`, so `vite build`
