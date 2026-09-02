@@ -182,6 +182,12 @@ public class Program
             }
         );
 
+        // Explicit routes win over the fallback, so this stays JSON rather than index.html.
+        // Anonymous on purpose: the container probe runs before anyone can authenticate.
+        app.MapGet("/health", () => TypedResults.Ok(new { status = "healthy" }))
+            .AllowAnonymous()
+            .ExcludeFromDescription();
+
         app.MapFallbackToFile("index.html");
         app.Run();
     }
