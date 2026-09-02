@@ -34,13 +34,6 @@ RUN dotnet publish server/BlitzTask.Backend/BlitzTask.Backend.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-# The aspnet runtime image ships no wget/curl/nc, so a container healthcheck has nothing to
-# run and would fail forever — which reads downstream as an unhealthy backend and a 404 from
-# the proxy, not as a health problem.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
-
 # RazorLight resolves email templates against the working directory, so WORKDIR must stay
 # /app — the templates land at /app/Templates/Email via the csproj Content rule.
 COPY --from=publish /app/publish ./
