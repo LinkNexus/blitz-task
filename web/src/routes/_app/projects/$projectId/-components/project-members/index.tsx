@@ -1,20 +1,5 @@
-import { IconUserMinus, IconUsers } from "@tabler/icons-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { IconUsers } from "@tabler/icons-react";
 import type { CurrentUser, ProjectDetails } from "@/api";
-import { getProjectQueryKey } from "@/api/@tanstack/react-query.gen";
-import { client } from "@/api/client.gen";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { getInitials } from "@/lib/utils";
-import { RoleBadge } from "../../../-components/role-badge";
 import { AddProjectMemberForm } from "./add-member-form";
 import { ProjectMembersInvitations } from "./invitations";
 import { ProjectMembersList } from "./members-list";
@@ -36,16 +21,6 @@ export function ProjectMembersSection({ project, currentUser }: Props) {
 
   const canManageParticipants =
     project.userPermissions?.includes("ManageParticipants") ?? false;
-
-  const handleChangeRole = (_userId: number | string, _newRole: string) => {
-    // TODO: wire to PUT /api/projects/{projectId}/members/{userId}
-    toast.info("Member management coming soon");
-  };
-
-  const handleRemoveMember = (_userId: number | string) => {
-    // TODO: wire to DELETE /api/projects/{projectId}/members/{userId}
-    toast.info("Member management coming soon");
-  };
 
   return (
     <div className="space-y-4">

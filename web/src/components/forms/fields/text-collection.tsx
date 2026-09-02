@@ -28,9 +28,13 @@ const defaultItemsComponent: SelectedItemsComponentType = (
     {items.map((item) => (
       <Badge key={item} variant="secondary" className="flex items-center gap-1">
         <span>{item}</span>
-        <div onClick={() => removeItem(item)}>
+        <button
+          type="button"
+          aria-label={`Remove ${item}`}
+          onClick={() => removeItem(item)}
+        >
           <IconX className="h-3 w-3 cursor-pointer" />
-        </div>
+        </button>
       </Badge>
     ))}
   </div>

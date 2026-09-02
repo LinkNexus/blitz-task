@@ -27,6 +27,15 @@
     <PackageReference Include="SharpGrip.FluentValidation.AutoValidation.Endpoints" Version="2.0.0" />
   </ItemGroup>
 
+  <!-- RazorLight compiles these at runtime from the working directory (see Program.cs), so
+       they must ship as plain files. Take them away from the Razor SDK entirely: it compiles
+       .cshtml Content into the assembly and strips it from the publish output, which left
+       Templates/ missing in the container. -->
+  <ItemGroup>
+    <Content Remove="Templates\**\*.cshtml" />
+    <None Include="Templates\**\*.cshtml" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OpenApiDocumentsDirectory>.</OpenApiDocumentsDirectory>
   </PropertyGroup>

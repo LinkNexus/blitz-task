@@ -1,0 +1,14 @@
+**/bin
+**/obj
+**/node_modules
+**/dist
+web/src/api
+web/src/routeTree.gen.ts
+server/BlitzTask.Backend/wwwroot
+server/BlitzTask.Backend/Data
+server/BlitzTask.Backend/Uploads
+server/BlitzTask.Backend/BlitzTask.Backend.json
+.git
+.github
+**/.DS_Store
+**/*.md

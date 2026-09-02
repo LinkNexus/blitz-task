@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "api:gen": "openapi-ts"
+    "api:gen": "openapi-ts",
+    "test": "bun test"
   },
   "dependencies": {
     "@dnd-kit/helpers": "^0.5.0",
@@ -45,6 +46,7 @@
     "@rolldown/plugin-babel": "^0.2.3",
     "@tanstack/router-plugin": "^1.168.18",
     "@types/babel__core": "^7.20.5",
+    "@types/bun": "^1.4.0",
     "@types/node": "^25.9.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

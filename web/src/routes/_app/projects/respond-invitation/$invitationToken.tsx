@@ -1,10 +1,9 @@
 import { IconBuildingSkyscraper } from "@tabler/icons-react";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Navigate, redirect } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   getProjectInvitationOptions,
-  getProjectOptions,
   respondInvitationMutation,
 } from "@/api/@tanstack/react-query.gen";
 import { Button } from "@/components/ui/button";

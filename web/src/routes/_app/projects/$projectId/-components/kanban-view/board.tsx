@@ -29,6 +29,7 @@ export function KanbanBoard({ project, dndProps }: Props) {
             index={index}
             column={column}
             project={project}
+            dragDisabled={dndProps.dragDisabled}
           />
         ))}
 

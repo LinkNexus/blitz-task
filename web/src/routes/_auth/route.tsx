@@ -32,8 +32,10 @@ function AuthPagesLayout() {
             </CardContent>
           </Card>
           <FieldDescription className="px-6 text-center">
-            By continuing, you agree to our <a href="#">Terms of Service</a> and{" "}
-            <a href="#">Privacy Policy</a>.
+            {/* TODO: link these once the Terms / Privacy routes exist. */}
+            By continuing, you agree to our{" "}
+            <span className="underline">Terms of Service</span> and{" "}
+            <span className="underline">Privacy Policy</span>.
           </FieldDescription>
         </div>
       </div>

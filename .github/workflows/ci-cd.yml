@@ -1,0 +1,144 @@
+name: CI/CD
+
+# One workflow rather than two, deliberately: the deploy job can then use `needs:` to gate on
+# CI, which is guaranteed ordering. Splitting them would mean `workflow_run`, which fires
+# regardless of the first workflow's conclusion unless you re-check it by hand.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_NOLOGO: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+jobs:
+  backend:
+    name: Backend — build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore server/blitz-task-server.slnx
+
+      - name: Build
+        run: dotnet build server/blitz-task-server.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test server/BlitzTask.Backend.Tests -c Release --no-build --verbosity normal
+
+      # The frontend cannot typecheck without this: web/src/api/** is generated from it and is
+      # gitignored, so the frontend job has a hard dependency on a backend build.
+      - name: Upload OpenAPI document
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi
+          path: server/BlitzTask.Backend/BlitzTask.Backend.json
+          if-no-files-found: error
+
+  frontend:
+    name: Frontend — generate, typecheck & build
+    runs-on: ubuntu-latest
+    needs: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install
+        working-directory: web
+        run: bun install --frozen-lockfile
+
+      - name: Download OpenAPI document
+        uses: actions/download-artifact@v4
+        with:
+          name: openapi
+          path: server/BlitzTask.Backend/
+
+      - name: Generate API client
+        working-directory: web
+        run: bun run api:gen
+
+      # Build first: src/routeTree.gen.ts is gitignored and emitted by the TanStack Router
+      # vite plugin, so a checkout has no route tree until the build runs. Typechecking
+      # before this point fails on every route with `createFileRoute` collapsing to never.
+      # (`vite build` does no typechecking of its own, so nothing is being skipped here.)
+      - name: Build
+        working-directory: web
+        run: bun run build
+
+      # `tsc -b`, never `tsc --noEmit`: the root tsconfig is `"files": []` with project
+      # references, so the bare form compiles nothing and passes unconditionally.
+      - name: Typecheck
+        working-directory: web
+        run: bunx tsc -b
+
+      - name: Test
+        working-directory: web
+        run: bun test
+
+      - name: Lint & format check
+        run: bunx biome check .
+
+  deploy:
+    name: Build image → GHCR → Dokploy
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          # No long-lived registry PAT to rotate — the workflow's own token has packages:write.
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # metadata-action lowercases the repository name for us; ghcr.io rejects uppercase.
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # The bun install + vite build layer is the expensive one; without this every run
+          # rebuilds the whole SPA from scratch.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # A 200 here means Dokploy accepted the trigger, NOT that the pull succeeded. If the
+      # GHCR package is private and Dokploy has no credentials for it, the pull fails silently
+      # behind this green step — verify the running image digest after a first deploy.
+      # The `secrets` context is not available in `if:` expressions, so map it to env first.
+      - name: Trigger Dokploy redeploy
+        env:
+          DOKPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL }}
+        if: env.DOKPLOY_WEBHOOK_URL != ''
+        run: curl -fsS -X POST "$DOKPLOY_WEBHOOK_URL"

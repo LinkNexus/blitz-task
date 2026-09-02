@@ -65,7 +65,7 @@ function DangerRow({
   title: string;
   titleClassName?: string;
   description: string;
-  action: JSX.Element;
+  action: React.JSX.Element;
 }) {
   return (
     <div className="flex flex-col gap-3 border-b p-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
@@ -151,7 +151,9 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
     ...deleteProjectMutation(),
     onSuccess: () => {
       queryClient.removeQueries({
-        queryKey: getProjectQueryKey({ path: { projectId: Number(project.id) } }),
+        queryKey: getProjectQueryKey({
+          path: { projectId: Number(project.id) },
+        }),
       });
       navigate({ to: "/dashboard" });
       toast.success("Project deleted");
@@ -163,7 +165,9 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
     ...leaveProjectMutation(),
     onSuccess: () => {
       queryClient.removeQueries({
-        queryKey: getProjectQueryKey({ path: { projectId: Number(project.id) } }),
+        queryKey: getProjectQueryKey({
+          path: { projectId: Number(project.id) },
+        }),
       });
       navigate({ to: "/dashboard" });
       toast.success("You left the project");

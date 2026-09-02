@@ -7,16 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { requestColumnCreate } from "../column-dialog";
+import type { GroupByField } from "../toolbar-filters";
 import type { DndReturnValue } from "../use-drag-n-drop";
 import { columns, features, type TaskRow } from "./columns";
 import { GroupBody } from "./group-body";
+import { groupRows } from "./grouping";
+import { StaticGroupBody } from "./static-group-body";
 
 type Props = {
   project: ProjectDetails;
   dndProps: DndReturnValue;
+  groupBy: GroupByField;
 };
 
-export function TableView({ project, dndProps }: Props) {
+export function TableView({ project, dndProps, groupBy }: Props) {
   // Already ordered by the dnd hook (score at rest, optimistic order mid-drag);
   // re-sorting here would cancel an in-progress column drag.
   const sortedColumns = dndProps.effectiveColumns;
@@ -73,6 +77,14 @@ export function TableView({ project, dndProps }: Props) {
     }));
   }, [table, sortedColumns]);
 
+  const staticGroups = useMemo(
+    () =>
+      groupBy === "column"
+        ? null
+        : groupRows(table.getRowModel().rows, groupBy, project),
+    [table, groupBy, project],
+  );
+
   return (
     <DragDropProvider
       onDragStart={dndProps.handleDragStart}
@@ -105,26 +117,35 @@ export function TableView({ project, dndProps }: Props) {
               ))}
             </TableHeader>
 
-            {groupedRows.map(({ column, rows }, index) => (
-              <GroupBody
-                key={String(column.id)}
-                index={index}
-                column={column}
-                rows={rows}
-                projectId={Number(project.id)}
-              />
-            ))}
+            {staticGroups
+              ? staticGroups.map((group) => (
+                  <StaticGroupBody key={group.key} group={group} />
+                ))
+              : groupedRows.map(({ column, rows }, index) => (
+                  <GroupBody
+                    key={String(column.id)}
+                    index={index}
+                    column={column}
+                    rows={rows}
+                    projectId={Number(project.id)}
+                    dragDisabled={dndProps.dragDisabled}
+                  />
+                ))}
           </Table>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-2 h-8 justify-start gap-1.5 px-2 text-sm font-normal text-muted-foreground hover:text-foreground"
-            onClick={() => requestColumnCreate(maxColumnsScore + 1000)}
-          >
-            <IconPlus className="size-4" />
-            Add column
-          </Button>
+          {/* Adding a column only makes sense while the table is grouped by
+              column — the other groupings don't map onto columns at all. */}
+          {!staticGroups && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2 h-8 justify-start gap-1.5 px-2 text-sm font-normal text-muted-foreground hover:text-foreground"
+              onClick={() => requestColumnCreate(maxColumnsScore + 1000)}
+            >
+              <IconPlus className="size-4" />
+              Add column
+            </Button>
+          )}
         </div>
       </div>
     </DragDropProvider>

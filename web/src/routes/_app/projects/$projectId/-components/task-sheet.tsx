@@ -12,12 +12,6 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Controller, type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type z from "zod";
@@ -31,16 +25,20 @@ import {
   getProjectQueryKey,
   updateProjectTaskMutation,
 } from "@/api/@tanstack/react-query.gen";
-import { aspNetFormSerializer } from "@/lib/form-serializer";
 import { DatePickerField } from "@/components/forms/fields/date-picker";
 import { DropzoneField } from "@/components/forms/fields/dropzone";
 import { InputField } from "@/components/forms/fields/input";
-import { TextCollectionField } from "@/components/forms/fields/text-collection";
 import { MarkdownField } from "@/components/forms/fields/markdown";
-import { TextareaField } from "@/components/forms/fields/textarea";
+import { TextCollectionField } from "@/components/forms/fields/text-collection";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import {
   Select,
@@ -57,6 +55,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
+import { aspNetFormSerializer } from "@/lib/form-serializer";
 import { getInitials } from "@/lib/utils";
 import { TaskSchema } from "../-schemas";
 
@@ -160,11 +159,9 @@ function ExistingAttachmentItem({
               />
             )}
             {isVideo && (
-              <video
-                src={url}
-                controls
-                className="max-h-[70vh] w-full rounded"
-              />
+              <video src={url} controls className="max-h-[70vh] w-full rounded">
+                <track kind="captions" />
+              </video>
             )}
           </DialogContent>
         </Dialog>
@@ -369,7 +366,7 @@ export function TaskSheet({ project }: Props) {
             {/* Column selector — create mode only */}
             {!editingTask && (
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Column</label>
+                <span className="text-sm font-medium">Column</span>
                 <Select
                   value={String(columnId ?? defaultColumnId)}
                   onValueChange={(v) => setColumnId(Number(v))}
@@ -428,7 +425,8 @@ export function TaskSheet({ project }: Props) {
                   fieldState={fieldState}
                   labelProps={{ children: "Description" }}
                   inputProps={{
-                    placeholder: "What needs to be done? Markdown is supported.",
+                    placeholder:
+                      "What needs to be done? Markdown is supported.",
                     rows: 4,
                     className: "resize-none",
                   }}
@@ -493,7 +491,7 @@ export function TaskSheet({ project }: Props) {
               name="assigneeIds"
               render={({ field }) => (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Assignees</label>
+                  <span className="text-sm font-medium">Assignees</span>
                   <div className="flex flex-wrap gap-2">
                     {project.participants.map((p) => {
                       const isSelected = (field.value as number[]).includes(
@@ -547,7 +545,7 @@ export function TaskSheet({ project }: Props) {
 
             {/* Attachments */}
             <div className="space-y-3">
-              <label className="text-sm font-medium">Attachments</label>
+              <span className="text-sm font-medium">Attachments</span>
 
               {/* Existing attachments (edit mode) */}
               {existingAttachments.length > 0 && (

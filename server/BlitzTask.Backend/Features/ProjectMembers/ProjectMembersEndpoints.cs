@@ -28,7 +28,8 @@ namespace BlitzTask.Backend.Features.ProjectMembers
                 .AddEndpointFilter(
                     new RequireProjectPermissionFilter(ProjectPermission.ManageParticipants)
                 )
-                .AddEndpointFilter(ValidationFilter<AddParticipantRequest>.Body());
+                .AddEndpointFilter(ValidationFilter<AddParticipantRequest>.Body())
+                .Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity);
 
             group
                 .MapDelete(
@@ -55,7 +56,8 @@ namespace BlitzTask.Backend.Features.ProjectMembers
                 .AddEndpointFilter(
                     new RequireProjectPermissionFilter(ProjectPermission.ManageParticipants)
                 )
-                .AddEndpointFilter(ValidationFilter<UpdateParticipantRoleRequest>.Body());
+                .AddEndpointFilter(ValidationFilter<UpdateParticipantRoleRequest>.Body())
+                .Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity);
 
             group
                 .MapDelete("/{projectId:int}/remove-member/{participantId:int}", RemoveMember)
