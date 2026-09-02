@@ -42,7 +42,7 @@ export function ProjectMembersList({
         (old: ProjectDetails): ProjectDetails => ({
           ...old,
           participants: old.participants.map((pp) => {
-            if (pp.id == res.id) return res;
+            if (String(pp.id) === String(res.id)) return res;
             return pp;
           }),
         }),
@@ -52,7 +52,10 @@ export function ProjectMembersList({
     },
     onError: (err) => {
       toast.error("An error occured when changing the participant's role", {
-        description: err.message,
+        description:
+          "message" in err
+            ? err.message
+            : err.errors.map((e) => e.message).join(", "),
       });
     },
   });

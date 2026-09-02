@@ -26,7 +26,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                     new RequireProjectPermissionFilter(ProjectPermission.ManageTasks)
                 )
                 .AddEndpointFilter(ValidationFilter<CreateProjectTaskRequest>.Body())
-                .Produces<ProjectTaskDetails>(StatusCodes.Status201Created);
+                .Produces<ProjectTaskDetails>(StatusCodes.Status201Created)
+                .Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity);
 
             group
                 .MapGet("/{taskId:int}", GetTask)
@@ -43,7 +44,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 )
                 .AddEndpointFilter(ValidationFilter<UpdateProjectTaskRequest>.Body())
                 .Produces<ProjectTaskDetails>()
-                .Produces<ApiMessageResponse>(StatusCodes.Status404NotFound);
+                .Produces<ApiMessageResponse>(StatusCodes.Status404NotFound)
+                .Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity);
 
             group
                 .MapPatch("/{taskId:int}/move", MoveTask)
