@@ -65,8 +65,64 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .Produces(StatusCodes.Status204NoContent)
                 .Produces<ApiMessageResponse>(StatusCodes.Status404NotFound);
 
+            // Cross-project queries live outside the group above: there is no single projectId
+            // to run RequireProjectPermissionFilter against, so membership is enforced inside
+            // the query instead. The other group's `:int` constraint means the literal "tasks"
+            // can never bind as a projectId, so the two routes cannot collide.
+            var userTasks = app.MapGroup("/api/tasks")
+                .WithTags("Tasks")
+                .RequireAuthorization("EmailConfirmed");
+
+            userTasks
+                .MapGet("", ListUserTasks)
+                .WithName("list-user-tasks")
+                .Produces<List<UserTaskSummary>>();
+
             return app;
         }
+
+        public static async Task<Ok<List<UserTaskSummary>>> ListUserTasks(
+            ApplicationDbContext dbContext,
+            HttpContext context,
+            CancellationToken cancellationToken,
+            bool assignedToMe = false,
+            bool includeCompleted = false,
+            DateTimeOffset? dueBefore = null,
+            int? projectId = null,
+            int limit = 50
+        )
+        {
+            var user = context.GetUser();
+            var query = dbContext.ProjectTasks.AsQueryable();
+
+            if (projectId.HasValue)
+                query = query.Where(t => t.RelatedProjectId == projectId.Value);
+
+            if (assignedToMe)
+                query = query.Where(t => t.Assignees.Any(a => a.Id == user.Id));
+
+            if (!includeCompleted)
+                query = query.IncompleteTasks();
+
+            // Everything due-date-shaped runs in memory. SQLite cannot ORDER BY a DateTimeOffset
+            // (EF throws), and comparing one in a WHERE silently degrades to a text comparison
+            // that is correct only while every row carries the same UTC offset — which is true of
+            // today's data by luck, not by construction. Both operations therefore happen after
+            // materialisation, over the already-narrowed set of this user's matching tasks; the
+            // clamp below is what bounds the response, not the query. ROADMAP L50 removes this.
+            var rows = await query.SelectUserTaskSummariesFor(user.Id).ToListAsync(cancellationToken);
+
+            var tasks = rows.Where(t => !dueBefore.HasValue || (t.DueDate.HasValue && t.DueDate <= dueBefore.Value))
+                .InDashboardOrder()
+                .Take(Math.Clamp(limit, 1, MaxUserTaskPageSize))
+                .ToList();
+
+            return TypedResults.Ok(tasks);
+        }
+
+        // A dashboard widget shows a handful of rows; the cap exists so a malformed `limit`
+        // cannot turn this into a full table scan serialised over the wire.
+        private const int MaxUserTaskPageSize = 200;
 
         public static async Task<
             Results<JsonHttpResult<ProjectTaskDetails>, NotFound<ApiMessageResponse>>

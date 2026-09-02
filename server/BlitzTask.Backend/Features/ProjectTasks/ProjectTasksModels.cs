@@ -75,6 +75,30 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public List<Guid>? RemovedAttachmentIds { get; set; }
     }
 
+    /// <summary>
+    /// A task as seen from outside its project — the dashboard's "my tasks" list. Carries the
+    /// project and column it belongs to, because a cross-project list is meaningless without
+    /// them, and drops attachments and description-level detail, which a list never renders.
+    /// </summary>
+    public record UserTaskSummary(
+        int Id,
+        string Name,
+        string Description,
+        ProjectTaskPriority Priority,
+        List<string> Tags,
+        DateTimeOffset? StartDate,
+        DateTimeOffset? DueDate,
+        DateTime CreatedAt,
+        DateTime UpdatedAt,
+        List<int> AssigneeIds,
+        int ProjectId,
+        string ProjectName,
+        int ColumnId,
+        string ColumnName,
+        string ColumnColor,
+        bool IsCompleted
+    );
+
     public record ProjectTaskDetails(
         int Id,
         string Name,
