@@ -60,6 +60,13 @@ cd web && npx tsc -b
 `tsc -b`, `bun test` and `biome check` are all clean and all gate CI, so **any** error is a
 regression you introduced.
 
+**Typechecking requires a build first.** `src/routeTree.gen.ts` is gitignored and emitted by
+the TanStack Router vite plugin, so a fresh checkout has no route tree and `tsc -b` fails with
+~22 errors — every `createFileRoute` collapses to `never`, and the real cause is buried at the
+top as a single `Cannot find module './routeTree.gen'`. Run `bun run build` (or `bun run dev`)
+before typechecking. This bites in CI and in any clean clone; locally it hides, because a
+previous build leaves the file lying around.
+
 Biome has a scoped override in `biome.json` turning off a11y and a few suspicious rules for
 `web/src/components/ui/**`: those are vendored shadcn files that `shadcn add` overwrites, so
 fixing their lint findings would be lost on the next update. Formatting is still enforced there.

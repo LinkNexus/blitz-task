@@ -69,6 +69,14 @@ jobs:
         working-directory: web
         run: bun run api:gen
 
+      # Build first: src/routeTree.gen.ts is gitignored and emitted by the TanStack Router
+      # vite plugin, so a checkout has no route tree until the build runs. Typechecking
+      # before this point fails on every route with `createFileRoute` collapsing to never.
+      # (`vite build` does no typechecking of its own, so nothing is being skipped here.)
+      - name: Build
+        working-directory: web
+        run: bun run build
+
       # `tsc -b`, never `tsc --noEmit`: the root tsconfig is `"files": []` with project
       # references, so the bare form compiles nothing and passes unconditionally.
       - name: Typecheck
@@ -78,10 +86,6 @@ jobs:
       - name: Test
         working-directory: web
         run: bun test
-
-      - name: Build
-        working-directory: web
-        run: bun run build
 
       - name: Lint & format check
         run: bunx biome check .
