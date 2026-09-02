@@ -15,6 +15,34 @@ namespace BlitzTask.Backend.Features.Projects
             };
         }
 
+        /// <summary>
+        /// Projects the given user participates in, as list rows. Membership is the filter —
+        /// there is no separate permission check because a project you do not participate in
+        /// simply is not in the result.
+        /// </summary>
+        public static IQueryable<ProjectSummary> SelectProjectSummariesFor(
+            this IQueryable<Project> projects,
+            int userId
+        )
+        {
+            return projects
+                .Where(p => p.Participants.Any(pp => pp.UserId == userId))
+                .Select(p => new ProjectSummary(
+                    p.Id,
+                    p.Name,
+                    p.Description,
+                    p.StartDate,
+                    p.DueDate,
+                    p.Tags,
+                    p.ImageId,
+                    p.Participants.First(pp => pp.UserId == userId).Role,
+                    p.Participants.Count,
+                    p.Tasks.Count,
+                    p.CreatedAt,
+                    p.UpdatedAt
+                ));
+        }
+
         public static IQueryable<ProjectDetails> SelectProjectDetails(
             this IQueryable<Project> projects
         )

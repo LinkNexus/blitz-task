@@ -1,0 +1,50 @@
+#!/bin/sh
+# Refuse commits on a protected branch.
+#
+# Lives in .githooks/ rather than .git/hooks/ so it is versioned and shared; each clone opts
+# in once with:  git config core.hooksPath .githooks
+#
+# Escape hatches, in order of preference:
+#   ALLOW_COMMIT_ON_MAIN=1 git commit ...   -- deliberate, and says so
+#   git commit --no-verify ...              -- skips every hook, blunter
+
+PROTECTED="main master"
+
+# Detached HEAD (bisect, checking out a tag) has no branch to protect.
+branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null) || exit 0
+
+is_protected=0
+for p in $PROTECTED; do
+    [ "$branch" = "$p" ] && is_protected=1
+done
+[ "$is_protected" -eq 1 ] || exit 0
+
+# A merge, rebase, cherry-pick or revert legitimately commits onto main. Blocking those would
+# break `git merge` and leave the repo mid-operation, which is worse than the mistake this
+# hook exists to prevent.
+git_dir=$(git rev-parse --git-dir)
+for marker in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply; do
+    [ -e "$git_dir/$marker" ] && exit 0
+done
+
+[ -n "$ALLOW_COMMIT_ON_MAIN" ] && exit 0
+
+cat >&2 <<MSG
+
+  Refusing to commit directly on '$branch'.
+
+  Move the staged work to a branch and commit there:
+
+      git switch -c feature/<name>
+      git commit ...
+
+  If you already committed on '$branch' before this hook was installed, the
+  commits are recoverable without losing anything:
+
+      git branch feature/<name>          # keep them
+      git branch -f $branch origin/$branch   # rewind $branch to the remote
+
+  Deliberate exception:  ALLOW_COMMIT_ON_MAIN=1 git commit ...
+
+MSG
+exit 1
