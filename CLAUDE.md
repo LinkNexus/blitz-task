@@ -211,6 +211,30 @@ Three failure modes worth knowing before debugging a "successful" deploy:
   it from publish output, which leaves RazorLight with nothing to load at runtime. Don't
   "tidy" that back into a plain `Content` item.
 
+## Production configuration
+
+Everything below is set in Dokploy's Environment tab; `docker-compose.yml` declares the
+required ones with `:?` so a deploy fails loudly rather than starting half-configured.
+
+| Variable | Required | Notes |
+|---|---|---|
+| `RESEND_API_KEY` | yes | Read via `Environment.GetEnvironmentVariable` directly, not `IConfiguration` — it is the one setting that is not a config-section binding. |
+| `Resend__FromEmail` | yes | Binds to `ResendSettings.FromEmail`. Must be a domain verified in Resend. |
+| `Resend__FromName` | no | Defaults to `BlitzTask`. |
+| `ASPNETCORE_ENVIRONMENT` | set in Dockerfile | Anything other than `Development` selects `ResendMailerService` over SMTP. |
+| `ASPNETCORE_HTTP_PORTS` | set in Dockerfile | 8080; Traefik's `loadbalancer.server.port` must agree. |
+| `ConnectionStrings__DefaultConnection` | no | Defaults to `Data Source=Data/blitz-task.db`, which the volume covers. |
+
+`__` is ASP.NET's separator for nested configuration, so `Resend__FromEmail` binds to the
+`FromEmail` key of the `Resend` section.
+
+**Development vs production mail diverge completely.** Development binds a `Smtp` section (from
+`appsettings.Development.json`, expecting a local catcher on :1025); production binds a
+`Resend` section that exists in **no** appsettings file — it comes purely from the environment.
+Missing it does not throw at startup; `From` is silently `""` and every send fails at the API,
+which reads as "the app is broken" because the `EmailConfirmed` policy gates nearly every
+endpoint and no new account can get confirmed.
+
 ## Known gotchas
 
 - `.gitignore` at `server/BlitzTask.Backend/.gitignore` ignores `wwwroot/*`, so `vite build`

@@ -18,7 +18,13 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"
       # Production mail goes through Resend (Development uses local SMTP instead).
+      # All three are required: with no From address the Resend API rejects every send, and
+      # because the EmailConfirmed policy gates almost every endpoint, a new account can never
+      # be confirmed — the app looks broken rather than the mail looking broken.
+      # `__` is ASP.NET's separator for nested config, so these bind to the "Resend" section.
       RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY must be set}
+      Resend__FromEmail: ${RESEND_FROM_EMAIL:?RESEND_FROM_EMAIL must be set (a domain verified in Resend)}
+      Resend__FromName: ${RESEND_FROM_NAME:-BlitzTask}
     volumes:
       # Both paths are relative in appsettings.json and resolve against WORKDIR=/app.
       # Without these, every redeploy discards the database and all uploaded attachments.
