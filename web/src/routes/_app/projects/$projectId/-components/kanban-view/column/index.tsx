@@ -18,9 +18,10 @@ type Props = {
   column: ProjectColumnDetails & { tasks: ProjectTaskDetails[] };
   project: ProjectDetails;
   index: number;
+  dragDisabled: boolean;
 };
 
-export function ProjectColumn({ column, project, index }: Props) {
+export function ProjectColumn({ column, project, index, dragDisabled }: Props) {
   const tasks = column.tasks;
 
   const { ref, isDropTarget } = useDroppable({
@@ -93,6 +94,7 @@ export function ProjectColumn({ column, project, index }: Props) {
             key={task.id}
             task={task}
             columnId={column.id}
+            dragDisabled={dragDisabled}
           />
         ))}
 

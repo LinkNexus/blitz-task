@@ -18,6 +18,11 @@ import {
   moveProjectColumnMutation,
   moveProjectTaskMutation,
 } from "@/api/@tanstack/react-query.gen";
+import {
+  sortTasks,
+  type ToolbarState,
+  taskMatchesFilters,
+} from "./toolbar-filters";
 
 export const colDndId = (id: ProjectColumnDetails["id"]) => `column:${id}`;
 export const taskDndId = (id: ProjectTaskDetails["id"]) => `task:${id}`;
@@ -68,9 +73,18 @@ export type DndReturnValue = {
   handleDragOver: (event: DragOverEvent) => void;
   handleDragEnd: (event: DragEndEvent) => void;
   effectiveColumns: ProjectColumnDetails[];
+  /**
+   * Task drag is meaningless while a manual sort is active: the rendered order
+   * no longer follows `score`, so the neighbours a drop lands between would
+   * produce a score that doesn't match where the task visually went.
+   */
+  dragDisabled: boolean;
 };
 
-export function useDragNDrop(project: ProjectDetails): DndReturnValue {
+export function useDragNDrop(
+  project: ProjectDetails,
+  toolbarState: ToolbarState,
+): DndReturnValue {
   const queryClient = useQueryClient();
   const orderRef = useRef<TasksOrder>(null);
   const columnsRef = useRef<ColumnsOrder>(null);
@@ -98,15 +112,24 @@ export function useDragNDrop(project: ProjectDetails): DndReturnValue {
   // Base order is derived purely from `score` (highest first) so it always
   // matches how both views render tasks. During a drag the optimistic order
   // (from `move`) takes over; scores are only rewritten on drop.
+  //
+  // The toolbar's filters and sort are applied here rather than in the views so
+  // that the rendered task set, dnd-kit's sortable indices, the optimistic order
+  // and the neighbours used to compute a drop score are all derived from the
+  // same list — reconciling them separately per view would desync them.
   const tasksMap = useMemo(
     () =>
       columns.reduce((acc, col) => {
-        acc[colDndId(col.id)] = [...col.tasks]
-          .sort((a, b) => Number(b.score) - Number(a.score))
-          .map((t) => taskDndId(t.id));
+        const visible = col.tasks.filter((t) =>
+          taskMatchesFilters(t, toolbarState),
+        );
+        const ordered = toolbarState.sort
+          ? sortTasks(visible, toolbarState.sort)
+          : visible.sort((a, b) => Number(b.score) - Number(a.score));
+        acc[colDndId(col.id)] = ordered.map((t) => taskDndId(t.id));
         return acc;
       }, {} as TasksOrder),
-    [columns],
+    [columns, toolbarState],
   );
 
   // Base column order is derived purely from `score` (lowest first). During a
@@ -117,20 +140,6 @@ export function useDragNDrop(project: ProjectDetails): DndReturnValue {
         .sort((a, b) => Number(a.score) - Number(b.score))
         .map((c) => colSortDndId(c.id)),
     [columns],
-  );
-
-  const rebuildColumnsFromOrder = useCallback(
-    (order: TasksOrder, overrides?: Map<number, ProjectTaskDetails>) =>
-      Object.entries(order).map(
-        ([colId, tasksIds]): ProjectColumnDetails => ({
-          ...columns.find((c) => colDndId(c.id) === colId)!,
-          tasks: tasksIds.map((taskId) => {
-            const id = parseTaskDndId(taskId);
-            return overrides?.get(id) ?? tasksByIds.get(id)!;
-          }),
-        }),
-      ),
-    [columns, tasksByIds],
   );
 
   // Column order and task order are independent: a drag reorders one or the
@@ -325,12 +334,29 @@ export function useDragNDrop(project: ProjectDetails): DndReturnValue {
         columnId: Number(destinationCol.id),
         score: newScore,
       };
-      const overrides = new Map([[sourceId, movedTask]]);
 
-      queryClient.setQueryData(queryKey, {
-        ...project,
-        columns: rebuildColumnsFromOrder(newOrder, overrides),
-      });
+      // Move just the dragged task between columns rather than rebuilding every
+      // column from `newOrder`: that order only contains the tasks the toolbar
+      // filters leave visible, so rebuilding from it would drop the hidden ones
+      // out of the cache. Order within each column doesn't matter here — both
+      // views re-derive it from `score`.
+      queryClient.setQueryData(
+        queryKey,
+        (p: ProjectDetails | undefined) =>
+          p && {
+            ...p,
+            columns: p.columns.map((col) => ({
+              ...col,
+              tasks:
+                Number(col.id) === Number(destinationCol.id)
+                  ? [
+                      ...col.tasks.filter((t) => Number(t.id) !== sourceId),
+                      movedTask,
+                    ]
+                  : col.tasks.filter((t) => Number(t.id) !== sourceId),
+            })),
+          },
+      );
 
       moveTaskMut.mutate(
         {
@@ -371,15 +397,7 @@ export function useDragNDrop(project: ProjectDetails): DndReturnValue {
         },
       );
     },
-    [
-      columns,
-      moveTaskMut,
-      moveColumnMut,
-      project,
-      queryClient,
-      rebuildColumnsFromOrder,
-      tasksByIds,
-    ],
+    [columns, moveTaskMut, moveColumnMut, project, queryClient, tasksByIds],
   );
 
   return {
@@ -387,5 +405,6 @@ export function useDragNDrop(project: ProjectDetails): DndReturnValue {
     handleDragStart,
     handleDragOver,
     handleDragEnd,
+    dragDisabled: toolbarState.sort !== null,
   };
 }

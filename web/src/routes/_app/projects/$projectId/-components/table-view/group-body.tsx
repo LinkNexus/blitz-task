@@ -22,9 +22,16 @@ type Props = {
   rows: Row<typeof features, TaskRow>[];
   projectId: number;
   index: number;
+  dragDisabled: boolean;
 };
 
-export function GroupBody({ column, rows, projectId, index }: Props) {
+export function GroupBody({
+  column,
+  rows,
+  projectId,
+  index,
+  dragDisabled,
+}: Props) {
   const { ref: dropRef, isDropTarget } = useDroppable({
     id: colDndId(column.id),
     type: "column",
@@ -99,6 +106,7 @@ export function GroupBody({ column, rows, projectId, index }: Props) {
           index={idx}
           row={row}
           groupDndId={colDndId(column.id)}
+          dragDisabled={dragDisabled}
         />
       ))}
 
@@ -151,10 +159,12 @@ function DraggableRow({
   index,
   row,
   groupDndId,
+  dragDisabled,
 }: {
   index: number;
   row: Props["rows"][number];
   groupDndId: string;
+  dragDisabled: boolean;
 }) {
   const task = row.original;
 
@@ -167,6 +177,7 @@ function DraggableRow({
     // optimistic drags report the right group to dnd-kit.
     group: groupDndId,
     plugins: sortablePlugins,
+    disabled: dragDisabled,
   });
 
   return (

@@ -1,4 +1,3 @@
-import { pointerIntersection } from "@dnd-kit/collision";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { IconCalendarDue, IconPaperclip } from "@tabler/icons-react";
 import { useMemo } from "react";
@@ -16,9 +15,16 @@ type Props = {
   task: ProjectTaskDetails;
   index: number;
   columnId: string | number;
+  dragDisabled: boolean;
 };
 
-export function TaskCard({ index, task, project, columnId }: Props) {
+export function TaskCard({
+  index,
+  task,
+  project,
+  columnId,
+  dragDisabled,
+}: Props) {
   const { ref, isDragging } = useSortable({
     id: taskDndId(task.id),
     index,
@@ -26,6 +32,7 @@ export function TaskCard({ index, task, project, columnId }: Props) {
     accept: "task",
     group: colDndId(columnId),
     plugins: sortablePlugins,
+    disabled: dragDisabled,
   });
 
   const currentColumn = useMemo(
@@ -52,7 +59,8 @@ export function TaskCard({ index, task, project, columnId }: Props) {
       ref={ref}
       data-dragging={isDragging}
       className={cn(
-        "group select-none overflow-hidden cursor-grab active:cursor-grabbing",
+        "group select-none overflow-hidden",
+        dragDisabled ? "cursor-default" : "cursor-grab active:cursor-grabbing",
         "rounded-xl border bg-card",
         "transition-all duration-200",
         isDragging ? "shadow-xl" : "hover:border-primary/30 hover:shadow-md",
