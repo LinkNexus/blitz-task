@@ -115,6 +115,25 @@ namespace BlitzTask.Backend.Features.Projects
         DateTime JoinedAt
     );
 
+    /// <summary>
+    /// A list row. Deliberately narrower than <see cref="ProjectDetails"/>, which carries every
+    /// column, task, participant and invitation — fine for one project, far too much for a list.
+    /// </summary>
+    public record ProjectSummary(
+        int Id,
+        string Name,
+        string Description,
+        DateTimeOffset? StartDate,
+        DateTimeOffset? DueDate,
+        List<string> Tags,
+        Guid? ImageId,
+        ProjectRole Role,
+        int ParticipantsCount,
+        int TasksCount,
+        DateTime CreatedAt,
+        DateTime UpdatedAt
+    );
+
     public record ProjectDetails(
         int Id,
         string Name,

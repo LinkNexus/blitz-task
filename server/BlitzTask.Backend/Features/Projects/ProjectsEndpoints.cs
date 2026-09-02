@@ -28,6 +28,11 @@ namespace BlitzTask.Backend.Features.Projects
                 .Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity);
 
             group
+                .MapGet("", ListProjects)
+                .WithName("list-projects")
+                .Produces<List<ProjectSummary>>();
+
+            group
                 .MapGet("/{projectId:int}", GetProject)
                 .WithName("get-project")
                 .AddEndpointFilter(new RequireProjectPermissionFilter())
@@ -139,6 +144,24 @@ namespace BlitzTask.Backend.Features.Projects
                 project.ToProjectDetails().WithPermissionsFor(user.Id),
                 statusCode: StatusCodes.Status201Created
             );
+        }
+
+        public static async Task<Ok<List<ProjectSummary>>> ListProjects(
+            ApplicationDbContext dbContext,
+            HttpContext context,
+            CancellationToken cancellationToken
+        )
+        {
+            var user = context.GetUser();
+
+            // Most recently touched first: in a task app the project you were just working in
+            // is almost always the one you want next.
+            var projects = await dbContext
+                .Projects.SelectProjectSummariesFor(user.Id)
+                .OrderByDescending(p => p.UpdatedAt)
+                .ToListAsync(cancellationToken);
+
+            return TypedResults.Ok(projects);
         }
 
         public static async Task<IResult> GetProject(
