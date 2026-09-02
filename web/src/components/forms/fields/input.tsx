@@ -27,7 +27,12 @@ export function InputField<
   return (
     <Field data-invalid={fieldState.invalid} {...fieldProps}>
       <FieldLabel htmlFor={id} {...labelProps} />
-      <Input id={id} aria-invalid={fieldState.invalid} {...field} {...inputProps} />
+      <Input
+        id={id}
+        aria-invalid={fieldState.invalid}
+        {...field}
+        {...inputProps}
+      />
       {fieldState.invalid && withErrors && (
         <FieldError errors={[fieldState.error]} />
       )}

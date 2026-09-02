@@ -150,9 +150,7 @@ export const DropzoneEmptyState = ({
   if (src?.length) return null;
   if (children) return <>{children}</>;
 
-  const extensions = accept
-    ? [...new Set(Object.values(accept).flat())]
-    : [];
+  const extensions = accept ? [...new Set(Object.values(accept).flat())] : [];
 
   let sizeHint = "";
   if (minSize && maxSize) {

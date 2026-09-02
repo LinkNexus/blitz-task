@@ -27,7 +27,12 @@ export function TextareaField<
   return (
     <Field data-invalid={fieldState.invalid} {...fieldProps}>
       <FieldLabel htmlFor={id} {...labelProps} />
-      <Textarea id={id} aria-invalid={fieldState.invalid} {...field} {...inputProps} />
+      <Textarea
+        id={id}
+        aria-invalid={fieldState.invalid}
+        {...field}
+        {...inputProps}
+      />
       {fieldState.invalid && withErrors && (
         <FieldError errors={[fieldState.error]} />
       )}

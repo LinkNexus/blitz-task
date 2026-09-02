@@ -14,8 +14,6 @@ import {
   getProjectQueryKey,
   updateProjectColumnMutation,
 } from "@/api/@tanstack/react-query.gen";
-import { requestColumnCreate } from "../../column-dialog";
-import { columnScoreBetween } from "../../use-drag-n-drop";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +45,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { requestColumnCreate } from "../../column-dialog";
+import { columnScoreBetween } from "../../use-drag-n-drop";
 
 type Props = {
   column: ProjectColumnDetails;
@@ -65,14 +65,17 @@ export function ProjectColumnMenu({ column, projectId }: Props) {
   const updateColumn = useMutation({
     ...updateProjectColumnMutation(),
     onSuccess: (updated) => {
-      queryClient.setQueryData(queryKey, (old: ProjectDetails): ProjectDetails => ({
-        ...old,
-        columns: old.columns.map((c) =>
-          Number(c.id) === Number(column.id)
-            ? { ...c, name: updated.name, color: updated.color }
-            : c,
-        ),
-      }));
+      queryClient.setQueryData(
+        queryKey,
+        (old: ProjectDetails): ProjectDetails => ({
+          ...old,
+          columns: old.columns.map((c) =>
+            Number(c.id) === Number(column.id)
+              ? { ...c, name: updated.name, color: updated.color }
+              : c,
+          ),
+        }),
+      );
       toast.success("Column updated");
       setEditOpen(false);
     },
@@ -82,10 +85,15 @@ export function ProjectColumnMenu({ column, projectId }: Props) {
   const deleteColumn = useMutation({
     ...deleteProjectColumnMutation(),
     onSuccess: () => {
-      queryClient.setQueryData(queryKey, (old: ProjectDetails): ProjectDetails => ({
-        ...old,
-        columns: old.columns.filter((c) => Number(c.id) !== Number(column.id)),
-      }));
+      queryClient.setQueryData(
+        queryKey,
+        (old: ProjectDetails): ProjectDetails => ({
+          ...old,
+          columns: old.columns.filter(
+            (c) => Number(c.id) !== Number(column.id),
+          ),
+        }),
+      );
       toast.success("Column deleted");
       setDeleteOpen(false);
     },

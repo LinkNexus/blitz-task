@@ -14,8 +14,8 @@ export function EmailVerificationBanner() {
             You must verify your email address before using effectively the
             application. Check the verfication email we sent you when you signed
             up. If you can't find it, click{" "}
-            <a
-              href="#"
+            <button
+              type="button"
               className="font-bold underline underline-offset-2"
               onClick={async (e) => {
                 e.preventDefault();
@@ -28,7 +28,7 @@ export function EmailVerificationBanner() {
               }}
             >
               here
-            </a>{" "}
+            </button>{" "}
             to resend the verification email.
           </span>
         </AlertDescription>

@@ -30,7 +30,7 @@ export type TaskRow = ProjectTaskDetails & {
 export const features = tableFeatures({
   rowSortingFeature,
   tableMeta: metaHelper<{ project: ProjectDetails }>(),
-  columnMeta: metaHelper<{}>(),
+  columnMeta: metaHelper<Record<string, never>>(),
 });
 
 const columnHelper = createColumnHelper<typeof features, TaskRow>();
@@ -189,6 +189,8 @@ export const columns = columnHelper.columns([
     id: "actions",
     header: "",
     cell: (info) => (
+      // biome-ignore lint/a11y/noStaticElementInteractions: not interactive — it only stops the row's click from firing when the menu inside is used.
+      // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard users reach the menu button directly; this wrapper is mouse-only propagation control.
       <div
         className="opacity-0 group-hover/row:opacity-100 transition-opacity"
         onClick={(e) => e.stopPropagation()}

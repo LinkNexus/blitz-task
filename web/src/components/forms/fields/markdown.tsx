@@ -34,7 +34,10 @@ export function MarkdownField<
     <Field data-invalid={fieldState.invalid} {...fieldProps}>
       {labelProps.children && <FieldLabel htmlFor={id} {...labelProps} />}
       <Tabs defaultValue="write" className="gap-0">
-        <TabsList variant="line" className="border-b rounded-none px-0 w-full justify-start h-8 mb-0">
+        <TabsList
+          variant="line"
+          className="border-b rounded-none px-0 w-full justify-start h-8 mb-0"
+        >
           <TabsTrigger value="write" className="text-xs px-3">
             Write
           </TabsTrigger>
