@@ -103,7 +103,7 @@ public class ValidationFilterTests
             .Body()
             .InvokeAsync(filterContext.Object, next);
 
-        var valueResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
+        var valueResult = Assert.IsType<IValueHttpResult>(result, exactMatch: false);
         var errors = Assert.IsType<ValidationErrors>(valueResult.Value);
         Assert.Equal("body", errors.On);
         Assert.NotEmpty(errors.Errors);
@@ -149,8 +149,10 @@ public class ValidationFilterTests
 
         var valueResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
         var errors = Assert.IsType<ValidationErrors>(valueResult.Value);
+        // The filter camel-cases property names so the paths match the JSON the SPA consumes
+        // (see ValidationFilter.cs) — they are not FluentValidation's PascalCase names.
         var paths = errors.Errors.Select(e => e.Path).ToList();
-        Assert.Contains("Email", paths);
-        Assert.Contains("Password", paths);
+        Assert.Contains("email", paths);
+        Assert.Contains("password", paths);
     }
 }
