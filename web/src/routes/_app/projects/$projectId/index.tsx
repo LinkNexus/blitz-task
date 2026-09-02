@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { z } from "zod";
 import { getProjectOptions } from "@/api/@tanstack/react-query.gen";
 import { flashMessagesStore } from "@/lib/store";
+import { ColumnDialog } from "./-components/column-dialog";
 import { KanbanBoard } from "./-components/kanban-view/board";
 import { ProjectHeader } from "./-components/project-header";
 import { ProjectPageSkeleton } from "./-components/project-page-skeleton";
@@ -57,6 +58,7 @@ function SingleProjectPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <TaskSheet project={project} />
+      <ColumnDialog project={project} />
       <ProjectHeader project={project} />
 
       <KanbanToolbar project={project} view={view} />

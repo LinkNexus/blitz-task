@@ -14,6 +14,8 @@ import {
   getProjectQueryKey,
   updateProjectColumnMutation,
 } from "@/api/@tanstack/react-query.gen";
+import { requestColumnCreate } from "../../column-dialog";
+import { columnScoreBetween } from "../../use-drag-n-drop";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -96,6 +98,32 @@ export function ProjectColumnMenu({ column, projectId }: Props) {
     setEditOpen(true);
   };
 
+  // Compute a score that inserts a new column just before/after this one, using
+  // the current (score-ordered) neighbours from the cache.
+  const handleAddColumn = (side: "before" | "after") => {
+    const project = queryClient.getQueryData<ProjectDetails>(queryKey);
+    const ordered = [...(project?.columns ?? [])].sort(
+      (a, b) => Number(a.score) - Number(b.score),
+    );
+    const idx = ordered.findIndex((c) => Number(c.id) === Number(column.id));
+    const self = Number(column.score);
+    const neighbor =
+      side === "before"
+        ? idx > 0
+          ? Number(ordered[idx - 1].score)
+          : undefined
+        : idx >= 0 && idx < ordered.length - 1
+          ? Number(ordered[idx + 1].score)
+          : undefined;
+
+    const score =
+      side === "before"
+        ? columnScoreBetween(neighbor, self)
+        : columnScoreBetween(self, neighbor);
+
+    requestColumnCreate(score);
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -116,15 +144,11 @@ export function ProjectColumnMenu({ column, projectId }: Props) {
               Add column
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
-              <DropdownMenuItem
-                onSelect={() => console.log("Add column before", column.id)}
-              >
+              <DropdownMenuItem onSelect={() => handleAddColumn("before")}>
                 <IconColumnInsertLeft className="size-4" />
                 Before this
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => console.log("Add column after", column.id)}
-              >
+              <DropdownMenuItem onSelect={() => handleAddColumn("after")}>
                 <IconColumnInsertRight className="size-4" />
                 After this
               </DropdownMenuItem>

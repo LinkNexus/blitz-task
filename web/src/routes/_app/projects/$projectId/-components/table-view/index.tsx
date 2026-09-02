@@ -1,9 +1,12 @@
 import { DragDropProvider } from "@dnd-kit/react";
+import { IconPlus } from "@tabler/icons-react";
 import { type Row, useTable } from "@tanstack/react-table";
 import { useMemo } from "react";
 import type { ProjectDetails } from "@/api";
+import { Button } from "@/components/ui/button";
 import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { requestColumnCreate } from "../column-dialog";
 import type { DndReturnValue } from "../use-drag-n-drop";
 import { columns, features, type TaskRow } from "./columns";
 import { GroupBody } from "./group-body";
@@ -14,13 +17,9 @@ type Props = {
 };
 
 export function TableView({ project, dndProps }: Props) {
-  const sortedColumns = useMemo(
-    () =>
-      [...dndProps.effectiveColumns].sort(
-        (a, b) => Number(a.score) - Number(b.score),
-      ),
-    [dndProps.effectiveColumns],
-  );
+  // Already ordered by the dnd hook (score at rest, optimistic order mid-drag);
+  // re-sorting here would cancel an in-progress column drag.
+  const sortedColumns = dndProps.effectiveColumns;
 
   const maxColumnsScore = useMemo(
     () => Math.max(0, ...project.columns.map((c) => Number(c.score))),
@@ -106,15 +105,26 @@ export function TableView({ project, dndProps }: Props) {
               ))}
             </TableHeader>
 
-            {groupedRows.map(({ column, rows }) => (
+            {groupedRows.map(({ column, rows }, index) => (
               <GroupBody
                 key={String(column.id)}
+                index={index}
                 column={column}
                 rows={rows}
                 projectId={Number(project.id)}
               />
             ))}
           </Table>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2 h-8 justify-start gap-1.5 px-2 text-sm font-normal text-muted-foreground hover:text-foreground"
+            onClick={() => requestColumnCreate(maxColumnsScore + 1000)}
+          >
+            <IconPlus className="size-4" />
+            Add column
+          </Button>
         </div>
       </div>
     </DragDropProvider>
