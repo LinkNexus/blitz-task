@@ -6,9 +6,10 @@ using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Auth;
-using BlitzTask.Backend.Infrastructure.Auth;
 using BlitzTask.Backend.Infrastructure.Data;
 using FluentValidation;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -37,9 +38,27 @@ public class Program
                 .IgnoreCycles;
         });
 
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
+            options.UseSqlite(connectionString)
         );
+
+        // Data Protection keys sign the auth cookie and the antiforgery token. The default
+        // store is a container-local path, so a redeploy would silently log every user out and
+        // start rejecting their CSRF tokens — keep the keys next to the database, on the same
+        // persistent volume. SetApplicationName pins the purpose string across restarts.
+        var dataDirectory =
+            Path.GetDirectoryName(
+                Path.GetFullPath(new SqliteConnectionStringBuilder(connectionString).DataSource)
+            ) ?? Path.GetFullPath("Data");
+        var keysDirectory = Path.Combine(dataDirectory, "DataProtection-Keys");
+        Directory.CreateDirectory(keysDirectory);
+
+        builder
+            .Services.AddDataProtection()
+            .PersistKeysToFileSystem(new DirectoryInfo(keysDirectory))
+            .SetApplicationName("BlitzTask");
 
         builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
         builder.Services.AddFluentValidationAutoValidation();
@@ -118,6 +137,23 @@ public class Program
         });
 
         var app = builder.Build();
+
+        // A fresh deploy starts against an empty volume, so bring the schema up before
+        // serving traffic. The data directory itself is created above, when the key ring is
+        // configured — SQLite will not create it for us.
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            dbContext.Database.Migrate();
+
+            var uploadDirectory = app
+                .Services.GetRequiredService<
+                    Microsoft.Extensions.Options.IOptions<FileUploadSettings>
+                >()
+                .Value.UploadDirectory;
+            Directory.CreateDirectory(Path.GetFullPath(uploadDirectory));
+        }
 
         if (app.Environment.IsDevelopment())
         {

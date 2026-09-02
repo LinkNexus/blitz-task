@@ -1,0 +1,29 @@
+# For Dokploy, deploy this as a Compose-type application pointing at the GHCR image the
+# pipeline pushes — Dokploy's Domains tab injects the Traefik labels, so no ports/labels here.
+# Also usable locally: `docker compose up` after `docker build -t blitz-task:local .`
+services:
+  app:
+    image: ghcr.io/linknexus/blitz-task:latest
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      # Production mail goes through Resend (Development uses local SMTP instead).
+      RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY must be set}
+    volumes:
+      # Both paths are relative in appsettings.json and resolve against WORKDIR=/app.
+      # Without these, every redeploy discards the database and all uploaded attachments.
+      - blitz-data:/app/Data
+      - blitz-uploads:/app/Uploads
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -qO- http://localhost:8080/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  blitz-data:
+  blitz-uploads:
