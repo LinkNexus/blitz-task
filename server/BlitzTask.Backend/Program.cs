@@ -7,12 +7,14 @@ using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Auth;
 using BlitzTask.Backend.Infrastructure.Data;
+using System.IO.Compression;
 using FluentValidation;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using RazorLight;
 using Resend;
@@ -101,6 +103,35 @@ public class Program
             .ValidateOnStart();
         builder.Services.AddScoped<IFileService, LocalFileService>();
 
+        // The SPA bundle is served uncompressed otherwise — the largest route chunk alone is
+        // ~600KB raw against ~180KB gzipped. Static files get no compression from
+        // UseStaticFiles on its own.
+        builder.Services.AddResponseCompression(options =>
+        {
+            options.EnableForHttps = true;
+            options.Providers.Add<BrotliCompressionProvider>();
+            options.Providers.Add<GzipCompressionProvider>();
+            options.MimeTypes =
+            [
+                .. ResponseCompressionDefaults.MimeTypes,
+                "application/javascript",
+                "text/javascript",
+                "image/svg+xml",
+                "application/manifest+json",
+            ];
+        });
+
+        // Measured on the largest route chunk (600KB raw): brotli Optimal 176KB/4ms beats both
+        // gzip Optimal (185KB/6ms) and brotli Fastest (200KB/3ms) — smaller *and* faster than
+        // gzip, so it is simply the better default. SmallestSize reaches 149KB but costs 560ms
+        // per request, which is unaffordable without a compressed-response cache.
+        builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+            options.Level = CompressionLevel.Optimal
+        );
+        builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+            options.Level = CompressionLevel.Optimal
+        );
+
         builder.Services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN");
 
         builder.Services.AddSingleton<
@@ -161,6 +192,7 @@ public class Program
             app.UseDeveloperExceptionPage();
         }
 
+        app.UseResponseCompression();
         app.UseStaticFiles();
         app.UseAuthentication();
         app.UseAuthorization();
@@ -181,6 +213,12 @@ public class Program
                 return TypedResults.NoContent();
             }
         );
+
+        // Explicit routes win over the fallback, so this stays JSON rather than index.html.
+        // Anonymous on purpose: the container probe runs before anyone can authenticate.
+        app.MapGet("/health", () => TypedResults.Ok(new { status = "healthy" }))
+            .AllowAnonymous()
+            .ExcludeFromDescription();
 
         app.MapFallbackToFile("index.html");
         app.Run();

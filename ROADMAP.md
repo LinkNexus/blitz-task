@@ -142,7 +142,7 @@ until the app has enough real data in it to be worth summarizing.
 | L46 | **Mobile-responsive board** | The Kanban board assumes a wide viewport and pointer-based drag. Touch drag and a narrow-screen layout are a real piece of work, not a media query. |
 | L47 | **Theming** | `next-themes` and the shadcn CSS variables are already in place; per-project accent colors and a proper dark-mode audit are what's left. |
 | L48 | **Onboarding** | First-run experience: a sample project, an empty-state that teaches instead of sitting blank. |
-| L49 | **Performance pass** | The `$projectId` route bundle is already ~600KB (the largest chunk by a wide margin). Route-level code splitting is on, so this is mostly about what that one route pulls in. Also virtualize long task lists. |
+| L49 | **Performance pass** | Response compression is done (brotli/gzip via `UseResponseCompression`, measured 600KB → 176KB on the largest chunk). What's left: the `$projectId` route chunk is still ~600KB raw — by far the largest — so the win now is in what that one route pulls in, not in more compression. Also worth precompressing assets at build time rather than per request: they are immutable (hashed filenames) yet get recompressed on every hit, and build-time brotli `SmallestSize` reaches 149KB, which is unaffordable at request time (560ms). Needs content-negotiating static file middleware, which ASP.NET has no built-in for. Also virtualize long task lists. |
 
 ---
 
