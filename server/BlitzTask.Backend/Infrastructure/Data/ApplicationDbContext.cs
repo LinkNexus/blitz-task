@@ -21,6 +21,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ProjectColumn> ProjectColumns => Set<ProjectColumn>();
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
 
+    /// <summary>
+    /// Applied as a convention rather than per property so that any DateTimeOffset added later
+    /// is stored correctly by default — the failure mode it prevents is invisible until a query
+    /// happens to sort or compare the new column. See <see cref="UtcDateTimeOffsetConverter"/>.
+    /// </summary>
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+        configurationBuilder.Properties<DateTimeOffset>().HaveConversion<UtcDateTimeOffsetConverter>();
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

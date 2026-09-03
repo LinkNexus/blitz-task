@@ -1,3 +1,27 @@
+### EF/SQLite traps that only fail at request time
+
+These throw when the query runs, not when it compiles, and the in-memory provider evaluates
+past them — so **a projection test can pass while the endpoint 500s on every call**. Test
+handlers, and test them against `TestsUtils.CreateSqliteDbContext()`.
+
+- **Order before you project, never after.** `.SelectProjectSummariesFor(id).OrderByDescending(p => p.UpdatedAt)`
+  asks EF to sort by a member of a constructed record and is untranslatable; move the
+  `OrderBy` onto the entity queryable ahead of the `Select`. This shipped broken in L13 and
+  went unnoticed until the dashboard became the first caller.
+- **`DateTimeOffset` is stored as UTC `DateTime` — keep it that way.**
+  `UtcDateTimeOffsetConverter` is applied by convention in `ApplicationDbContext.ConfigureConventions`
+  to *every* `DateTimeOffset`. Remove it and SQLite goes back to storing
+  `2026-07-02 22:00:00+00:00`, where `ORDER BY` throws `NotSupportedException` outright and a
+  `WHERE` comparison silently degrades to a text comparison that is only right while every row
+  shares an offset. The offset itself is never used — every date is an instant and the SPA
+  renders in local time — so nothing is lost by collapsing it.
+
+**`dotnet build` migrates your local dev database.** `Microsoft.Extensions.ApiDescription.Server`
+starts the app to emit `BlitzTask.Backend.json`, and `Program.cs` runs `Database.Migrate()` on
+startup, so building applies any pending migration to `Data/blitz-task.db` — including
+data-rewriting ones. You will see `No migrations were applied` (or not) in the build output.
+Back the file up before building with a destructive migration pending.
+
 # CLAUDE.md
 
 Guidance for Claude Code when working in this repository.

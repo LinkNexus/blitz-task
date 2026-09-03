@@ -76,18 +76,15 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         /// claim on today; priority then separates the undated tail, which is otherwise an
         /// arbitrary pile.
         /// <para>
-        /// Deliberately over <see cref="IEnumerable{T}"/> rather than <see cref="IQueryable{T}"/>:
-        /// SQLite cannot ORDER BY a DateTimeOffset at all — EF throws
-        /// <see cref="NotSupportedException"/> rather than returning wrong rows — so this has to
-        /// run after materialisation. Storing due dates as UTC DateTime would push it back into
-        /// SQL; see ROADMAP L50.
+        /// Applied to the entity queryable, before the projection — sorting an already-projected
+        /// record asks EF to ORDER BY a member of a constructed object, which it cannot
+        /// translate. The due-date keys only work in SQL at all because
+        /// <see cref="Infrastructure.Data.UtcDateTimeOffsetConverter"/> stores them as UTC.
         /// </para>
         /// </summary>
-        public static IEnumerable<UserTaskSummary> InDashboardOrder(
-            this IEnumerable<UserTaskSummary> tasks
-        ) =>
+        public static IQueryable<ProjectTask> InDashboardOrder(this IQueryable<ProjectTask> tasks) =>
             tasks
-                .OrderBy(t => t.DueDate is null)
+                .OrderBy(t => t.DueDate == null)
                 .ThenBy(t => t.DueDate)
                 .ThenByDescending(t => t.Priority)
                 .ThenByDescending(t => t.UpdatedAt);

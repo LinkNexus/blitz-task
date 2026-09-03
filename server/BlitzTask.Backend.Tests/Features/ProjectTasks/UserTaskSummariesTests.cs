@@ -153,46 +153,85 @@ public class UserTaskSummariesTests
         await UserTasksTestData.SeedTaskAsync(dbContext, project, todo, "Later", now.AddDays(7));
         await UserTasksTestData.SeedTaskAsync(dbContext, project, todo, "Soon", now.AddDays(1));
 
-        var ordered = (await dbContext.ProjectTasks.SelectUserTaskSummariesFor(alice.Id).ToListAsync())
-            .InDashboardOrder();
+        var ordered = await dbContext
+            .ProjectTasks.InDashboardOrder()
+            .SelectUserTaskSummariesFor(alice.Id)
+            .ToListAsync();
 
         Assert.Equal(["Soon", "Later", "Undated"], ordered.Select(t => t.Name));
     }
 
     [Fact]
-    public void InDashboardOrder_BreaksTiesOnPriority_ThenRecency()
-    {
-        var older = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        var newer = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        UserTaskSummary Row(string name, ProjectTaskPriority priority, DateTime updatedAt) =>
-            new(0, name, "", priority, [], null, null, older, updatedAt, [], 1, "P", 1, "C", "#fff", false);
-
-        var ordered = new[]
-        {
-            Row("low/new", ProjectTaskPriority.LOW, newer),
-            Row("urgent/old", ProjectTaskPriority.URGENT, older),
-            Row("urgent/new", ProjectTaskPriority.URGENT, newer),
-        }.InDashboardOrder();
-
-        Assert.Equal(["urgent/new", "urgent/old", "low/new"], ordered.Select(t => t.Name));
-    }
-
-    [Fact]
-    public async Task SelectUserTaskSummariesFor_OrdersByDueDateOnlyInMemory()
+    public async Task InDashboardOrder_BreaksTiesOnPriority_ThenRecency()
     {
         using var dbContext = TestsUtils.CreateSqliteDbContext();
         var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var (project, todo, _) = await UserTasksTestData.SeedProjectAsync(dbContext, "Alpha", alice.Id);
 
-        // Guards the reason InDashboardOrder is an IEnumerable extension: pushing the same sort
-        // into SQL does not degrade, it throws outright. If a future EF/SQLite version starts
-        // translating this, the ordering can move back into the query — see ROADMAP L50.
-        await Assert.ThrowsAsync<NotSupportedException>(() =>
-            dbContext
-                .ProjectTasks.OrderBy(t => t.DueDate)
-                .SelectUserTaskSummariesFor(alice.Id)
-                .ToListAsync()
+        var due = DateTimeOffset.UtcNow.AddDays(1);
+        await UserTasksTestData.SeedTaskAsync(dbContext, project, todo, "low", due, ProjectTaskPriority.LOW);
+        await UserTasksTestData.SeedTaskAsync(dbContext, project, todo, "urgent", due, ProjectTaskPriority.URGENT);
+        await UserTasksTestData.SeedTaskAsync(dbContext, project, todo, "high", due, ProjectTaskPriority.HIGH);
+
+        var ordered = await dbContext
+            .ProjectTasks.InDashboardOrder()
+            .SelectUserTaskSummariesFor(alice.Id)
+            .ToListAsync();
+
+        Assert.Equal(["urgent", "high", "low"], ordered.Select(t => t.Name));
+    }
+
+    [Fact]
+    public async Task DueDates_SortAndCompareInSql_ThanksToTheUtcConverter()
+    {
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var (project, todo, _) = await UserTasksTestData.SeedProjectAsync(dbContext, "Alpha", alice.Id);
+
+        // 23:00 on the 1st at +02:00 is 21:00 UTC, so it precedes 22:00 UTC on the same day —
+        // even though the offset-bearing *text* sorts the other way. This is the case that made
+        // a bare DateTimeOffset unsafe: before UtcDateTimeOffsetConverter, ORDER BY threw
+        // outright and the WHERE below compared strings.
+        await UserTasksTestData.SeedTaskAsync(
+            dbContext, project, todo, "Berlin evening",
+            new DateTimeOffset(2026, 7, 1, 23, 0, 0, TimeSpan.FromHours(2))
         );
+        await UserTasksTestData.SeedTaskAsync(
+            dbContext, project, todo, "UTC evening",
+            new DateTimeOffset(2026, 7, 1, 22, 0, 0, TimeSpan.Zero)
+        );
+
+        var ordered = await dbContext
+            .ProjectTasks.InDashboardOrder()
+            .SelectUserTaskSummariesFor(alice.Id)
+            .ToListAsync();
+        Assert.Equal(["Berlin evening", "UTC evening"], ordered.Select(t => t.Name));
+
+        var cutoff = new DateTimeOffset(2026, 7, 1, 21, 30, 0, TimeSpan.Zero);
+        var early = await dbContext
+            .ProjectTasks.Where(t => t.DueDate != null && t.DueDate <= cutoff)
+            .SelectUserTaskSummariesFor(alice.Id)
+            .ToListAsync();
+        Assert.Equal(["Berlin evening"], early.Select(t => t.Name));
+    }
+
+    [Fact]
+    public async Task DueDate_RoundTripsAsTheSameInstant()
+    {
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var (project, todo, _) = await UserTasksTestData.SeedProjectAsync(dbContext, "Alpha", alice.Id);
+
+        var due = new DateTimeOffset(2026, 7, 1, 23, 0, 0, TimeSpan.FromHours(2));
+        await UserTasksTestData.SeedTaskAsync(dbContext, project, todo, "Offset", due);
+        dbContext.ChangeTracker.Clear();
+
+        var summary = await dbContext.ProjectTasks.SelectUserTaskSummariesFor(alice.Id).SingleAsync();
+
+        // The offset is collapsed on the way in, so it comes back as UTC — the same instant,
+        // not the same wall-clock text. Anything else means the converter lost or shifted time.
+        Assert.Equal(due.UtcDateTime, summary.DueDate!.Value.UtcDateTime);
+        Assert.Equal(TimeSpan.Zero, summary.DueDate!.Value.Offset);
     }
 
     [Fact]
