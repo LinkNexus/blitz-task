@@ -101,21 +101,21 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             if (assignedToMe)
                 query = query.Where(t => t.Assignees.Any(a => a.Id == user.Id));
 
+            if (dueBefore.HasValue)
+                query = query.Where(t => t.DueDate != null && t.DueDate <= dueBefore.Value);
+
             if (!includeCompleted)
                 query = query.IncompleteTasks();
 
-            // Everything due-date-shaped runs in memory. SQLite cannot ORDER BY a DateTimeOffset
-            // (EF throws), and comparing one in a WHERE silently degrades to a text comparison
-            // that is correct only while every row carries the same UTC offset — which is true of
-            // today's data by luck, not by construction. Both operations therefore happen after
-            // materialisation, over the already-narrowed set of this user's matching tasks; the
-            // clamp below is what bounds the response, not the query. ROADMAP L50 removes this.
-            var rows = await query.SelectUserTaskSummariesFor(user.Id).ToListAsync(cancellationToken);
-
-            var tasks = rows.Where(t => !dueBefore.HasValue || (t.DueDate.HasValue && t.DueDate <= dueBefore.Value))
+            // Filtering, ordering and the limit all run in SQL. That is only true because
+            // UtcDateTimeOffsetConverter normalises due dates to UTC on the way in — against a
+            // bare DateTimeOffset, SQLite cannot ORDER BY at all and the WHERE above would be a
+            // text comparison that is right only while every row shares an offset.
+            var tasks = await query
                 .InDashboardOrder()
+                .SelectUserTaskSummariesFor(user.Id)
                 .Take(Math.Clamp(limit, 1, MaxUserTaskPageSize))
-                .ToList();
+                .ToListAsync(cancellationToken);
 
             return TypedResults.Ok(tasks);
         }
