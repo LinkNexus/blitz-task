@@ -120,13 +120,15 @@ for *"buy milk"*.
 **Goal:** The `/ask-ai` entry already sitting in `sidebar-config.ts`, made real.
 
 Worth being disciplined here: the value is in *reducing capture friction*, not in a chatbot.
-Natural-language capture (L41) is the feature that earns its place; the rest are speculative
-until the app has enough real data in it to be worth summarizing.
+Natural-language capture (L41) and the MCP server (L42.5) are the two that earn their place —
+both remove the step where you stop what you are doing and go type into a form. The rest are
+speculative until the app has enough real data in it to be worth summarizing.
 
 | # | Task | Notes |
 |---|------|-------|
 | L41 | **Natural-language task capture** | *"remind me to email the professor next Tuesday"* → a task with a parsed due date, project guess and priority. Pairs directly with L24's quick capture and is the highest-value AI surface by a wide margin. |
 | L42 | **Ask-AI over your own tasks** | Sidebar route `/ask-ai` doesn't exist. "What's overdue?", "What did I do last week?" — answered against the user's own data. Depends on L16. |
+| L42.5 | **Ship an MCP server so AI agents can drive the app** | The one *outbound* item in this phase: the rest of Phase 6 puts AI inside Blitz Task, this exposes Blitz Task to whatever agent you're already coding with, so working on a dev project can create, move and close its tasks without leaving the editor. Four things to settle before writing tools. **(1) Auth is the blocking design decision.** Everything today is cookie auth with `SameSite=Strict` plus an antiforgery header — a browser shape an MCP client cannot and should not imitate. It needs scoped personal access tokens, and `UserToken`/`UserTokenType` (`EmailConfirmation`, `PasswordReset`, `SecurityStamp`) is the place to add an `ApiToken` variant rather than growing a second parallel credential system. The token still has to satisfy the `EmailConfirmed` policy that gates nearly every endpoint, and should carry a scope — an agent token that is a full account takeover is not worth shipping. **(2) In-process, not a third deployable.** This repo is deliberately "two halves, one deployable unit"; a separate Node MCP server would add a second auth surface and a second thing for Dokploy to run. The C# SDK (`ModelContextProtocol`) can host it inside the existing app behind `/mcp`, leaving the deploy topology alone. Note the transport split: local clients speak stdio, a hosted server needs streamable HTTP. **(3) Reuse the RBAC, do not bypass it.** Tools must go through `ProjectPermissions`/`RequireProjectPermissionFilter` on the token owner's per-project role, exactly as the SPA does. The tempting shortcut — a "service account" that skips the filter — quietly grants every agent Owner on every project. **(4) `/move` is unusable by an agent as it stands.** `MoveProjectTaskRequest(int ColumnId, float Score)` takes an *absolute float*, and the arithmetic that produces one (`scoreBetween`) lives only in the frontend. Asking a model to invent a float between two neighbours it cannot see is a bug generator. The endpoint needs a position-based variant — append / before task X / after task X — computing the score server-side, which also kills the duplication risk between the two clients. Read access is largely done: L16's `GET /api/tasks` is the cross-project primitive. Keep the tool surface coarse (a handful of intent-shaped tools beats mirroring 20 endpoints) and leave destructive operations out of the first cut. |
 | L43 | **Summarization** | Project status digests, standup notes from the L31 activity log. |
 | L44 | **Smart suggestions** | Priority and due-date suggestions from historical patterns. Deliberately last — needs real usage data to be anything other than noise. |
 
@@ -156,7 +158,7 @@ Phase 2  Deployable MVP           ████████░░  11/13  <- curr
 Phase 3  Personal task management ░░░░░░░░░░   0/6
 Phase 4  Collaboration            ░░░░░░░░░░   0/5
 Phase 5  Power features           ░░░░░░░░░░   0/6
-Phase 6  AI assistance            ░░░░░░░░░░   0/4
+Phase 6  AI assistance            ░░░░░░░░░░   0/5
 Phase 7  Reach & polish           ░░░░░░░░░░   0/7
 ```
 
