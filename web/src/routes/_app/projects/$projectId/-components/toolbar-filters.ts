@@ -1,6 +1,11 @@
 import type { ProjectTaskDetails, ProjectTaskPriority } from "@/api";
+import { type DueBucket, dueBucketOf } from "@/lib/due-dates";
 
-export type DueBucket = "overdue" | "today" | "week";
+// Re-exported because the dashboard needs the same buckets, so the definition moved to
+// @/lib/due-dates — but the toolbar, the table grouping and this module's tests have always
+// imported it from here, and there is nothing to gain from churning those import paths.
+export { type DueBucket, dueBucketOf };
+
 export type SortField = "priority" | "dueDate" | "createdAt" | "score" | "name";
 export type GroupByField = "column" | "priority" | "assignee" | "dueDate";
 
@@ -36,28 +41,6 @@ export const PRIORITY_ORDER: ProjectTaskPriority[] = [
   "MEDIUM",
   "LOW",
 ];
-
-function startOfDay(date: Date): Date {
-  const copy = new Date(date);
-  copy.setHours(0, 0, 0, 0);
-  return copy;
-}
-
-/** Bucket of a task's due date relative to today, or null if it's further out / unset. */
-export function dueBucketOf(
-  task: Pick<ProjectTaskDetails, "dueDate">,
-): DueBucket | null {
-  if (!task.dueDate) return null;
-  const diffDays = Math.round(
-    (startOfDay(new Date(task.dueDate)).getTime() -
-      startOfDay(new Date()).getTime()) /
-      86_400_000,
-  );
-  if (diffDays < 0) return "overdue";
-  if (diffDays === 0) return "today";
-  if (diffDays <= 7) return "week";
-  return null;
-}
 
 export function taskMatchesFilters(
   task: ProjectTaskDetails,

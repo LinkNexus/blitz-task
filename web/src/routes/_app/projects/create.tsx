@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { useAccount } from "@/hooks/use-current-user";
+import { invalidateProjectLists } from "@/lib/query-invalidation";
 import { Route as DashboardRoute } from "../dashboard";
 import { ProjectSchema } from "./$projectId/-schemas";
 
@@ -51,6 +52,9 @@ function CreateProjectPage() {
         }),
         project,
       );
+
+      // The sidebar's project list never unmounts, so it will not pick this up on its own.
+      await invalidateProjectLists(queryClient);
 
       await navigate({
         to: "/projects/$projectId",

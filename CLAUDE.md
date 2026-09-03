@@ -6,7 +6,7 @@ Guidance for Claude Code when working in this repository.
 
 **Blitz Task** — a self-hosted task/project manager (Kanban board + table view) intended to
 cover work, school, dev projects and daily life in one place. Single maintainer (Levy).
-Started 2026-06-17. Not yet deployed anywhere — see [ROADMAP.md](ROADMAP.md) Phase 2.
+Started 2026-06-17. Live in production since 2026-09-02 — see [ROADMAP.md](ROADMAP.md) Phase 2.
 
 Two halves, one deployable unit:
 
@@ -44,8 +44,15 @@ bunx biome check --write .
 Backend is xUnit (`dotnet test server/BlitzTask.Backend.Tests`). Frontend uses **bun's built-in
 runner** — `*.test.ts` colocated with the module under test, inside `-components/` directories
 so TanStack Router ignores them. Covered today: `toolbar-filters`, `grouping`,
-`scoreBetween`/`columnScoreBetween`, and the RBAC permission matrix. All of it is pure-function
-testing; there is no component/DOM test setup, so don't reach for one without adding it first.
+`scoreBetween`/`columnScoreBetween`, the dashboard's `task-buckets`, and on the backend the RBAC
+permission matrix plus the projections and handlers behind `GET /api/projects` and
+`GET /api/tasks`. All the frontend coverage is pure-function testing; there is no component/DOM
+test setup, so don't reach for one without adding it first.
+
+**Test handlers, not only projections, and do it against `TestsUtils.CreateSqliteDbContext()`.**
+Both EF traps below throw at request time and the in-memory provider evaluates past them, so a
+green projection test is no evidence the endpoint works — `GET /api/projects` shipped 500ing on
+every call for exactly that reason.
 
 ### Typechecking: use `tsc -b`, never `tsc --noEmit`
 
@@ -257,14 +264,34 @@ on the wrong branch.
 
 - `.gitignore` at `server/BlitzTask.Backend/.gitignore` ignores `wwwroot/*`, so `vite build`
   output never dirties the tree.
-- Migrations are **not** applied at startup — there's no `Database.Migrate()` anywhere. A
-  fresh checkout needs `dotnet ef database update`.
+- Migrations **are** applied at startup — `Program.cs` runs `dbContext.Database.Migrate()` in a
+  scope right after `builder.Build()`, so a fresh checkout or an empty volume brings itself up.
 - Email links are built from `context.Request.Scheme`/`Host`. Behind a reverse proxy without
   forwarded-header handling these come out wrong (see ROADMAP L14).
-- `GET /api/projects` (list) **does not exist** — only `GET /api/projects/{id}`. The sidebar
-  has no project list as a direct result.
+- **The sidebar never unmounts.** It lives in the `_app` layout, so unlike a route component it
+  does not remount and refetch on navigation — React Query's default `staleTime: 0` heals the
+  dashboard but not the sidebar. Anything that changes which projects exist or what they are
+  called must call `invalidateProjectLists` (`web/src/lib/query-invalidation.ts`), or a deleted
+  project lingers in the sidebar until a full reload and clicking it 404s.
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,
   so the generated client's error union omits the validation case and frontend code that reads
   `error.errors` cannot typecheck.
+
+### Two EF/SQLite traps that only fail at request time
+
+Both throw when the query runs, not when it compiles, and the in-memory provider evaluates
+past both — so **a projection test can pass while the endpoint 500s on every call**. Test
+handlers, and test them against `TestsUtils.CreateSqliteDbContext()`.
+
+- **Order before you project, never after.** `.SelectProjectSummariesFor(id).OrderByDescending(p => p.UpdatedAt)`
+  asks EF to sort by a member of a constructed record and is untranslatable; move the
+  `OrderBy` onto the entity queryable ahead of the `Select`. This shipped broken in L13 and
+  went unnoticed until the dashboard became the first caller.
+- **SQLite cannot `ORDER BY` a `DateTimeOffset`.** EF throws `NotSupportedException` outright.
+  Worse, *comparing* one in a `WHERE` doesn't throw — it degrades to a text comparison over
+  `2026-07-02 22:00:00+00:00`-style strings, which is only correct while every row carries the
+  same offset. `GET /api/tasks` therefore filters and sorts by due date **in memory**
+  (`InDashboardOrder`), deliberately. ROADMAP L50 tracks fixing the storage type; until then,
+  don't move due-date logic into a query.

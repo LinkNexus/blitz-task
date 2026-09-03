@@ -156,9 +156,14 @@ namespace BlitzTask.Backend.Features.Projects
 
             // Most recently touched first: in a task app the project you were just working in
             // is almost always the one you want next.
+            //
+            // Ordered *before* the projection, not after. Sorting an already-projected
+            // ProjectSummary asks EF to ORDER BY a member of a constructed record, which it
+            // cannot translate — and it throws at request time rather than falling back, so the
+            // endpoint 500s on every call.
             var projects = await dbContext
-                .Projects.SelectProjectSummariesFor(user.Id)
-                .OrderByDescending(p => p.UpdatedAt)
+                .Projects.OrderByDescending(p => p.UpdatedAt)
+                .SelectProjectSummariesFor(user.Id)
                 .ToListAsync(cancellationToken);
 
             return TypedResults.Ok(projects);
