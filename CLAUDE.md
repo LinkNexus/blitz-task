@@ -160,6 +160,13 @@ Conventions in `web/src/routes/`:
 - Data loading is `useSuspenseQuery` + route `loader` calling
   `context.queryClient.ensureQueryData(...)`, using the generated
   `*Options`/`*Mutation`/`*QueryKey` helpers from `@/api/@tanstack/react-query.gen`.
+- **A route component is not remounted when only its params change.** Navigating
+  `/projects/1` → `/projects/2` reuses the same React instance, so every `useState` and every
+  `useForm` `defaultValues` below it carries over from the previous record — silently, since
+  the data itself updates correctly. `$projectId` sets `remountDeps: ({ params }) => params.projectId`
+  for exactly this; any future route keyed by an entity id needs the same. The symptom is
+  never an error: it is an edit form showing the record you opened first, or a filter from one
+  project emptying another.
 
 ### The project board (the most intricate part)
 

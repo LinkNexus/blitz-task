@@ -26,6 +26,14 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_app/projects/$projectId/")({
   validateSearch: searchSchema,
+  // A different project is a different page, so give it a fresh component instance. Only the
+  // param changes when you navigate between two projects, and React keeps the same instance
+  // alive, so every piece of state below this point silently carries over: the settings sheet's
+  // form reads `defaultValues` once and would keep showing the project you opened first, and
+  // `toolbarState` would apply one project's filters to another — worst of all its
+  // `assigneeIds` hold user ids from the previous project, which match nobody here and empty
+  // the board with no visible reason why.
+  remountDeps: ({ params }) => params.projectId,
   loader: async ({ params, context }) => {
     return await context.queryClient.ensureQueryData(
       getProjectOptions({
