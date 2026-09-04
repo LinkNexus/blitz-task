@@ -28,6 +28,10 @@ services:
       # The public origin, used to build the links inside those emails. Required rather than
       # derived from the request: the reminder sweep runs on a timer and has no request to
       # derive anything from, so an unset value means reminder mail with links to nowhere.
+      # Shown in every email footer. Optional, and intentionally without a default — an address
+      # baked in here would be published with the repository, and a fork would inherit it. When
+      # it is empty the footer omits the line.
+      App__SupportEmail: ${APP_SUPPORT_EMAIL:-}
       App__BaseUrl: ${APP_BASE_URL:?APP_BASE_URL must be set (this instance's public origin, e.g. https://tasks.example.com)}
     volumes:
       # Both paths are relative in appsettings.json and resolve against WORKDIR=/app.

@@ -31,6 +31,7 @@ public class TaskReminderJobTests
                 .UseFileSystemProject(Path.Combine(AppContext.BaseDirectory, "Templates", "Email"))
                 .UseMemoryCachingProvider()
                 .Build(),
+            Options.Create(new AppSettings { SupportEmail = "help@example.test" }),
             NullLogger.Instance
         )
     {
@@ -132,6 +133,9 @@ public class TaskReminderJobTests
         Assert.Equal(owner.Email, to);
         Assert.Contains("Ship it", html);
         Assert.Contains("Alpha", html);
+        // Proves the shared _Layout rendered and the viewBag reached it.
+        Assert.Contains("Blitz Task", html);
+        Assert.Contains("help@example.test", html);
     }
 
     [Fact]

@@ -220,6 +220,17 @@ fails the build — while `dotnet ef migrations add` needs a successful build. B
 with `dotnet build server/BlitzTask.Backend -p:OpenApiGenerateDocuments=false`, then
 `dotnet ef migrations add <Name> --project server/BlitzTask.Backend --no-build`.
 
+Email templates share `Templates/Email/_Layout.cshtml` (`Layout = "_Layout";` at the top of
+each). The layout carries the palette, converted from the app's oklch theme tokens to hex
+because no mail client understands oklch. Brand name and support address reach it through the
+**viewBag**, which `MailerService` populates from `AppSettings` — they are page chrome, so
+threading them into four unrelated feature models would couple each one to the layout.
+
+`EmailTemplatesTests` renders all four against their real models. That matters more than it
+looks: RazorLight compiles `.cshtml` at *runtime*, so a broken template is invisible to the C#
+build and fails only at send time — inside a background job whose handler logs the exception
+and moves on.
+
 Tests that render an email template need `PreserveCompilationContext` (already set in both
 csprojs): RazorLight compiles `.cshtml` at runtime and otherwise fails with "Can't load
 metadata reference from the entry assembly". The backend's `Templates/Email` is copied into the
@@ -291,6 +302,8 @@ required ones with `:?` so a deploy fails loudly rather than starting half-confi
 | `Resend__FromEmail` | yes | Binds to `ResendSettings.FromEmail`. Must be a domain verified in Resend. |
 | `Resend__FromName` | no | Defaults to `BlitzTask`. |
 | `App__BaseUrl` | yes | This instance's public origin, e.g. `https://tasks.example.com`. Every emailed link is built from it. **Required, not derived**: the reminder sweep is a background job with no HTTP request to read a scheme and host from, so without this it throws rather than send a relative link. Inside a request it also wins over `X-Forwarded-Proto`, which is what L14 could not make reliable. |
+| `App__SupportEmail` | no | Address shown in every email footer. No default on purpose — a hardcoded one would be published with the repo and inherited by forks. Unset means the footer omits the line. |
+| `App__Name` | no | Product name in email. Defaults to `Blitz Task`. |
 | `ASPNETCORE_ENVIRONMENT` | set in Dockerfile | Anything other than `Development` selects `ResendMailerService` over SMTP. |
 | `ASPNETCORE_HTTP_PORTS` | set in Dockerfile | 8080; Traefik's `loadbalancer.server.port` must agree. |
 | `ConnectionStrings__DefaultConnection` | no | Defaults to `Data Source=Data/blitz-task.db`, which the volume covers. |

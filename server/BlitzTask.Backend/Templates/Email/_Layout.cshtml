@@ -1,0 +1,109 @@
+@{
+    var appName = (string)ViewBag.AppName;
+    var supportEmail = ViewBag.SupportEmail as string;
+}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>@appName</title>
+    <style>
+        /* Palette lifted from the app's own theme (web/src/index.css), converted from oklch to
+           hex because no mail client understands oklch. Kept in one place so all four emails
+           stay consistent with each other and with the product. */
+        body {
+            margin: 0;
+            padding: 24px 12px;
+            background-color: #F0EBE8;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #1A1A1A;
+            -webkit-font-smoothing: antialiased;
+        }
+        .card {
+            max-width: 560px;
+            margin: 0 auto;
+            background-color: #FAF7F5;
+            border: 1px solid #F5E8D2;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .accent-bar { height: 4px; background-color: #9B2C2C; }
+        .inner { padding: 32px; }
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: #9B2C2C;
+            margin: 0 0 24px;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 650;
+            letter-spacing: -0.01em;
+            margin: 0 0 16px;
+            color: #1A1A1A;
+        }
+        p { margin: 0 0 16px; }
+        .muted { color: #57534E; font-size: 14px; }
+        .button {
+            display: inline-block;
+            background-color: #9B2C2C;
+            color: #FFFFFF !important;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            padding: 12px 24px;
+            border-radius: 6px;
+        }
+        .button-row { margin: 24px 0; }
+        /* Long tokenised URLs must wrap, or they blow out the card on a phone. */
+        .code-block {
+            background-color: #F0EBE8;
+            border: 1px solid #F5E8D2;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px;
+            color: #57534E;
+            word-break: break-all;
+            margin: 0 0 16px;
+        }
+        .badge {
+            display: inline-block;
+            background-color: #FEF3C7;
+            color: #7F1D1D;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+        .footer {
+            border-top: 1px solid #F5E8D2;
+            padding: 20px 32px;
+            font-size: 13px;
+            color: #57534E;
+        }
+        .footer a { color: #9B2C2C; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="accent-bar"></div>
+        <div class="inner">
+            <p class="logo">@appName</p>
+            @RenderBody()
+        </div>
+        <div class="footer">
+            @if (!string.IsNullOrWhiteSpace(supportEmail))
+            {
+                <p style="margin:0 0 4px;">
+                    Need help? Reach us at <a href="mailto:@supportEmail">@supportEmail</a>.
+                </p>
+            }
+            <p style="margin:0;">&copy; @DateTime.UtcNow.Year @appName</p>
+        </div>
+    </div>
+</body>
+</html>

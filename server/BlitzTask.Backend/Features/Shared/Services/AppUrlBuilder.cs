@@ -12,6 +12,17 @@ namespace BlitzTask.Backend.Features.Shared.Services
         /// reliable stand-in.
         /// </summary>
         public string? BaseUrl { get; set; }
+
+        /// <summary>Product name as it appears in email. Set through <c>App__Name</c>.</summary>
+        public string Name { get; set; } = "Blitz Task";
+
+        /// <summary>
+        /// Address shown in every email footer, from <c>App__SupportEmail</c>. Deliberately has
+        /// no default: hardcoding one would publish a real person's address in a public
+        /// repository, and a fork inheriting it would point its users at the wrong maintainer.
+        /// When unset the footer simply omits the line.
+        /// </summary>
+        public string? SupportEmail { get; set; }
     }
 
     /// <summary>

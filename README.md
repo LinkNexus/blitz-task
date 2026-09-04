@@ -56,6 +56,7 @@ for TLS.
 | `RESEND_API_KEY` | **yes** | Email delivery. Read directly from the environment, not from a config section. |
 | `Resend__FromEmail` | **yes** | Must be a domain verified in Resend. |
 | `Resend__FromName` | no | Defaults to `BlitzTask`. |
+| `App__SupportEmail` | no | Address shown in email footers. Unset means the line is omitted. |
 | `App__BaseUrl` | **yes** | Public origin, e.g. `https://tasks.example.com`. Emailed links are built from it, and reminders are sent by a background job with no request to infer it from. |
 | `ConnectionStrings__DefaultConnection` | no | Defaults to `Data Source=Data/blitz-task.db`. |
 
