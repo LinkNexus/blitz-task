@@ -297,8 +297,17 @@ on the wrong branch.
   output never dirties the tree.
 - Migrations **are** applied at startup — `Program.cs` runs `dbContext.Database.Migrate()` in a
   scope right after `builder.Build()`, so a fresh checkout or an empty volume brings itself up.
-- Email links are built from `context.Request.Scheme`/`Host`. Behind a reverse proxy without
-  forwarded-header handling these come out wrong (see ROADMAP L14).
+- Email links are built from the incoming request via `context.BuildAppUrl(path)` — the server
+  has no configured base URL to name itself from. That is only correct because
+  `app.UseForwardedHeaders()` runs **first** in the pipeline and rewrites `Scheme`/`Host` from
+  Traefik's headers. `ForwardedHeadersSetup` clears `KnownNetworks`/`KnownProxies` because the
+  default trust list is loopback only and Traefik arrives over a Docker network; without that
+  the headers are parsed and then silently dropped. Safe only while the container publishes no
+  port of its own — expose it directly and this becomes a spoofing vector.
+- **Don't add `UseHttpsRedirection`.** Kestrel listens on plain HTTP 8080 and Traefik already
+  redirects at the edge, so it would be a no-op for real traffic — except for the container
+  healthcheck, which curls `http://localhost:8080/health` with no forwarded headers and would
+  start receiving a redirect instead of a 200.
 - **The sidebar never unmounts.** It lives in the `_app` layout, so unlike a route component it
   does not remount and refetch on navigation — React Query's default `staleTime: 0` heals the
   dashboard but not the sidebar. Anything that changes which projects exist or what they are

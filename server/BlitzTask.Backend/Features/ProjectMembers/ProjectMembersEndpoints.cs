@@ -134,7 +134,7 @@ namespace BlitzTask.Backend.Features.ProjectMembers
             {
                 var encodedToken = WebUtility.UrlEncode(invitation.Token.ToString());
                 var respondUrl =
-                    $"{context.Request.Scheme}://{context.Request.Host}/projects/respond-invitation/{encodedToken}";
+                    context.BuildAppUrl($"/projects/respond-invitation/{encodedToken}");
 
                 await mailerService.SendEmailAsync(
                     new(
