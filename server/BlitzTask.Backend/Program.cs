@@ -8,6 +8,7 @@ using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Auth;
 using BlitzTask.Backend.Infrastructure.Data;
 using BlitzTask.Backend.Infrastructure.Extensions;
+using BlitzTask.Backend.Infrastructure.Scheduling;
 using System.IO.Compression;
 using FluentValidation;
 using Microsoft.AspNetCore.DataProtection;
@@ -133,6 +134,11 @@ public class Program
         builder.Services.Configure<GzipCompressionProviderOptions>(options =>
             options.Level = CompressionLevel.Optimal
         );
+
+        // Jobs are scoped because they depend on ApplicationDbContext; the runner is a
+        // singleton and builds a scope per tick.
+        builder.Services.AddScoped<IScheduledJob, ExpiredTokenCleanupJob>();
+        builder.Services.AddHostedService<ScheduledJobRunner>();
 
         builder.Services.Configure<ForwardedHeadersOptions>(ForwardedHeadersSetup.Configure);
 
