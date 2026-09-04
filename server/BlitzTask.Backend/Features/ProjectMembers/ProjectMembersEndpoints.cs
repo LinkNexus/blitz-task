@@ -88,6 +88,7 @@ namespace BlitzTask.Backend.Features.ProjectMembers
             AddParticipantRequest request,
             ApplicationDbContext dbContext,
             MailerService mailerService,
+            AppUrlBuilder urlBuilder,
             HttpContext context,
             CancellationToken cancellationToken
         )
@@ -134,7 +135,7 @@ namespace BlitzTask.Backend.Features.ProjectMembers
             {
                 var encodedToken = WebUtility.UrlEncode(invitation.Token.ToString());
                 var respondUrl =
-                    context.BuildAppUrl($"/projects/respond-invitation/{encodedToken}");
+                    urlBuilder.Build($"/projects/respond-invitation/{encodedToken}");
 
                 await mailerService.SendEmailAsync(
                     new(

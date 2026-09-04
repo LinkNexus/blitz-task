@@ -4,7 +4,9 @@ using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Data;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging.Abstractions;
 using RazorLight;
 
@@ -29,6 +31,7 @@ public class TaskReminderJobTests
                 .UseFileSystemProject(Path.Combine(AppContext.BaseDirectory, "Templates", "Email"))
                 .UseMemoryCachingProvider()
                 .Build(),
+            Options.Create(new AppSettings { SupportEmail = "help@example.test" }),
             NullLogger.Instance
         )
     {
@@ -101,8 +104,16 @@ public class TaskReminderJobTests
     private static async Task<RecordingMailer> RunAsync(ApplicationDbContext dbContext)
     {
         var mailer = new RecordingMailer();
-        await new TaskReminderJob(dbContext, mailer, NullLogger<TaskReminderJob>.Instance)
-            .RunAsync(CancellationToken.None);
+        var urlBuilder = new AppUrlBuilder(
+            Options.Create(new AppSettings { BaseUrl = "https://blitz.example.com" }),
+            new HttpContextAccessor()
+        );
+        await new TaskReminderJob(
+            dbContext,
+            mailer,
+            urlBuilder,
+            NullLogger<TaskReminderJob>.Instance
+        ).RunAsync(CancellationToken.None);
         return mailer;
     }
 
@@ -122,6 +133,9 @@ public class TaskReminderJobTests
         Assert.Equal(owner.Email, to);
         Assert.Contains("Ship it", html);
         Assert.Contains("Alpha", html);
+        // Proves the shared _Layout rendered and the viewBag reached it.
+        Assert.Contains("Blitz Task", html);
+        Assert.Contains("help@example.test", html);
     }
 
     [Fact]

@@ -15,7 +15,11 @@ namespace BlitzTask.Backend.Features.Shared.Services
         object? TemplateModel = null
     );
 
-    public abstract class MailerService(RazorLightEngine razorEngine, ILogger logger)
+    public abstract class MailerService(
+        RazorLightEngine razorEngine,
+        IOptions<AppSettings> appSettings,
+        ILogger logger
+    )
     {
         public async Task SendEmailAsync(EmailMessage message)
         {
@@ -35,9 +39,18 @@ namespace BlitzTask.Backend.Features.Shared.Services
                     : htmlBody;
             try
             {
+                // Brand name and support address reach the shared _Layout through the viewBag
+                // rather than through every template's model: they are page chrome, and
+                // threading them into four unrelated records would couple each feature's email
+                // model to the layout's needs.
+                dynamic viewBag = new System.Dynamic.ExpandoObject();
+                viewBag.AppName = appSettings.Value.Name;
+                viewBag.SupportEmail = appSettings.Value.SupportEmail;
+
                 htmlBody = await razorEngine.CompileRenderAsync(
                     message.TemplateName,
-                    message.TemplateModel
+                    message.TemplateModel,
+                    (System.Dynamic.ExpandoObject)viewBag
                 );
             }
             catch (Exception ex)
@@ -79,8 +92,9 @@ namespace BlitzTask.Backend.Features.Shared.Services
     public class SmtpMailerService(
         IOptions<SmtpSettings> settings,
         RazorLightEngine razorEngine,
+        IOptions<AppSettings> appSettings,
         ILogger<SmtpMailerService> logger
-    ) : MailerService(razorEngine, logger)
+    ) : MailerService(razorEngine, appSettings, logger)
     {
         private readonly SmtpSettings _settings = settings.Value;
 
@@ -132,8 +146,9 @@ namespace BlitzTask.Backend.Features.Shared.Services
         IResend resend,
         IOptions<ResendSettings> settings,
         RazorLightEngine razorEngine,
+        IOptions<AppSettings> appSettings,
         ILogger<ResendMailerService> logger
-    ) : MailerService(razorEngine, logger)
+    ) : MailerService(razorEngine, appSettings, logger)
     {
         private readonly ResendSettings _settings = settings.Value;
 

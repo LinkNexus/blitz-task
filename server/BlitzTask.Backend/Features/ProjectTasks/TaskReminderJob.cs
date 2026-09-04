@@ -12,6 +12,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
     public class TaskReminderJob(
         ApplicationDbContext dbContext,
         MailerService mailerService,
+        AppUrlBuilder urlBuilder,
         ILogger<TaskReminderJob> logger
     ) : IScheduledJob
     {
@@ -65,7 +66,10 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                                 TaskName: item.TaskName,
                                 ProjectName: item.ProjectName,
                                 DueDateText: item.DueDate!.Value.UtcDateTime.ToString("f") + " UTC",
-                                TaskLink: $"/projects/{item.ProjectId}"
+                                // Absolute: there is no request here to resolve a
+                                // relative href against, and a mail client will not
+                                // invent one either.
+                                TaskLink: urlBuilder.Build($"/projects/{item.ProjectId}")
                             )
                         )
                     );
