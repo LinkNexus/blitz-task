@@ -195,6 +195,19 @@ Conventions in `web/src/routes/`:
 - Table `groupBy` other than `"column"` renders `StaticGroupBody` with **no** dnd: a drag
   encodes "move to column X at score Y", which says nothing about priority/assignee/due date.
 
+### Background jobs
+
+`Infrastructure/Scheduling/` holds `ScheduledJobRunner` (a `BackgroundService` ticking once a
+minute) and the `IScheduledJob` interface. To add recurring work, implement `IScheduledJob` in
+the vertical slice that owns the domain — not in `Infrastructure/` — and register it
+**scoped** (`AddScoped<IScheduledJob, YourJob>()`); the runner is a singleton and builds a DI
+scope per tick, which is what lets a job take `ApplicationDbContext`.
+
+Jobs must be idempotent and catch up on their own. The container is replaced on every deploy,
+so a job cannot assume it ran on schedule or at all: query the database for outstanding work
+rather than tracking progress in memory, and mark work done durably so a crash mid-run cannot
+repeat a side effect like sending mail twice.
+
 ## Conventions
 
 - **Comments explain WHY, not what.** The existing comments in `use-drag-n-drop.ts` and the
