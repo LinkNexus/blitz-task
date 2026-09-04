@@ -138,6 +138,7 @@ public class Program
         // Jobs are scoped because they depend on ApplicationDbContext; the runner is a
         // singleton and builds a scope per tick.
         builder.Services.AddScoped<IScheduledJob, ExpiredTokenCleanupJob>();
+        builder.Services.AddScoped<IScheduledJob, TaskReminderJob>();
         builder.Services.AddHostedService<ScheduledJobRunner>();
 
         builder.Services.Configure<ForwardedHeadersOptions>(ForwardedHeadersSetup.Configure);
@@ -218,7 +219,8 @@ public class Program
             .MapProjectsEndpoints()
             .MapProjectMembersEndpoints()
             .MapProjectColumnsEndpoints()
-            .MapProjectTasksEndpoints();
+            .MapProjectTasksEndpoints()
+            .MapTaskRemindersEndpoints();
 
         app.MapGet(
             "/api/csrf-token",

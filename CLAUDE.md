@@ -208,6 +208,18 @@ so a job cannot assume it ran on schedule or at all: query the database for outs
 rather than tracking progress in memory, and mark work done durably so a crash mid-run cannot
 repeat a side effect like sending mail twice.
 
+**Adding an entity is a chicken-and-egg with the build.** `dotnet build` starts the app to emit
+the OpenAPI document, and the app migrates on startup, so a model change with no migration
+fails the build — while `dotnet ef migrations add` needs a successful build. Break the cycle
+with `dotnet build server/BlitzTask.Backend -p:OpenApiGenerateDocuments=false`, then
+`dotnet ef migrations add <Name> --project server/BlitzTask.Backend --no-build`.
+
+Tests that render an email template need `PreserveCompilationContext` (already set in both
+csprojs): RazorLight compiles `.cshtml` at runtime and otherwise fails with "Can't load
+metadata reference from the entry assembly". The backend's `Templates/Email` is copied into the
+test output, so a test double that overrides only `SendEmailInternalAsync` still renders the
+real template — which is how the templates get compile coverage at all.
+
 ## Conventions
 
 - **Comments explain WHY, not what.** The existing comments in `use-drag-n-drop.ts` and the

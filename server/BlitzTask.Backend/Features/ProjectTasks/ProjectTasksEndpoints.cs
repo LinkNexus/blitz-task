@@ -248,6 +248,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .ProjectTasks.Where(t => t.Id == taskId && t.RelatedProjectId == projectId)
                 .Include(t => t.Assignees)
                 .Include(t => t.Attachments)
+                .Include(t => t.Reminders)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (task is null)
@@ -259,6 +260,22 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             task.Tags = request.Tags ?? [];
             task.StartDate = request.StartDate;
             task.DueDate = request.DueDate;
+
+            // TaskReminder.RemindAt is derived from the due date, so moving the deadline has to
+            // move the reminders with it — this is the one place a due date ever changes, and
+            // forgetting it here is what turns a stored firing time into a stale one. Reminders
+            // are kept rather than deleted when a due date is cleared: the job will not fire
+            // them (it requires a due date), and setting a deadline again restores them.
+            if (task.DueDate is not null)
+            {
+                foreach (var reminder in task.Reminders)
+                {
+                    reminder.RemindAt = TaskReminder.ResolveRemindAt(
+                        task.DueDate.Value,
+                        reminder.MinutesBeforeDue
+                    );
+                }
+            }
 
             if (request.AssigneeIds is not null)
             {

@@ -36,6 +36,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public ProjectColumn RelatedColumn { get; set; } = null!;
         public Project RelatedProject { get; set; } = null!;
         public ICollection<Attachment> Attachments { get; set; } = [];
+        public ICollection<TaskReminder> Reminders { get; set; } = [];
 
         public static int MaxTagsCount => 5;
         public static int MaxTagsLength => 20;
