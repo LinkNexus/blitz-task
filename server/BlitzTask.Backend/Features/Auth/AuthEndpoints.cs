@@ -205,7 +205,8 @@ namespace BlitzTask.Backend.Features.Auth
             UserToken? token,
             [FromServices] ApplicationDbContext dbContext,
             HttpContext context,
-            [FromServices] MailerService mailerService
+            [FromServices] MailerService mailerService,
+            [FromServices] AppUrlBuilder urlBuilder
         )
         {
             var tokenValue = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
@@ -230,7 +231,7 @@ namespace BlitzTask.Backend.Features.Auth
 
             var encodedToken = WebUtility.UrlEncode(token.Value);
             var confirmationLink =
-                context.BuildAppUrl($"/confirm-email?token={encodedToken}&userId={user.Id}");
+                urlBuilder.Build($"/confirm-email?token={encodedToken}&userId={user.Id}");
 
             await mailerService.SendEmailAsync(
                 new EmailMessage(
@@ -250,7 +251,8 @@ namespace BlitzTask.Backend.Features.Auth
             CreateUserRequest request,
             HttpContext context,
             [FromServices] ApplicationDbContext dbContext,
-            [FromServices] MailerService mailerService
+            [FromServices] MailerService mailerService,
+            [FromServices] AppUrlBuilder urlBuilder
         )
         {
             var user = new User
@@ -276,7 +278,7 @@ namespace BlitzTask.Backend.Features.Auth
                 );
             }
 
-            await SendVerificationEmail(user, null, dbContext, context, mailerService);
+            await SendVerificationEmail(user, null, dbContext, context, mailerService, urlBuilder);
             await LoginUser(null, user, false, dbContext, context);
 
             return Results.Ok(user.ToCurrentUser());
@@ -326,7 +328,8 @@ namespace BlitzTask.Backend.Features.Auth
         public static async Task<Ok<ApiMessageResponse>> ResendConfirmEmail(
             HttpContext context,
             ApplicationDbContext dbContext,
-            MailerService mailerService
+            MailerService mailerService,
+            AppUrlBuilder urlBuilder
         )
         {
             var user = context.GetUser();
@@ -337,7 +340,7 @@ namespace BlitzTask.Backend.Features.Auth
             if (user.EmailConfirmed)
                 return TypedResults.Ok(new ApiMessageResponse("Your email is already confirmed"));
 
-            await SendVerificationEmail(user, token, dbContext, context, mailerService);
+            await SendVerificationEmail(user, token, dbContext, context, mailerService, urlBuilder);
 
             return TypedResults.Ok(
                 new ApiMessageResponse(
@@ -356,7 +359,8 @@ namespace BlitzTask.Backend.Features.Auth
             RequestPasswordResetRequest request,
             ApplicationDbContext dbContext,
             HttpContext context,
-            [FromServices] MailerService mailerService
+            [FromServices] MailerService mailerService,
+            [FromServices] AppUrlBuilder urlBuilder
         )
         {
             var result = await dbContext
@@ -376,7 +380,8 @@ namespace BlitzTask.Backend.Features.Auth
                     result.PasswordResetToken,
                     dbContext,
                     context,
-                    mailerService
+                    mailerService,
+                    urlBuilder
                 );
 
             return Results.NoContent();
@@ -387,7 +392,8 @@ namespace BlitzTask.Backend.Features.Auth
             UserToken? token,
             ApplicationDbContext dbContext,
             HttpContext context,
-            MailerService mailerService
+            MailerService mailerService,
+            AppUrlBuilder urlBuilder
         )
         {
             var tokenValue = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
@@ -412,7 +418,7 @@ namespace BlitzTask.Backend.Features.Auth
 
             var encodedToken = WebUtility.UrlEncode(token.Value);
             var resetLink =
-                context.BuildAppUrl($"/reset-password?token={encodedToken}&userId={user.Id}");
+                urlBuilder.Build($"/reset-password?token={encodedToken}&userId={user.Id}");
 
             await mailerService.SendEmailAsync(
                 new EmailMessage(

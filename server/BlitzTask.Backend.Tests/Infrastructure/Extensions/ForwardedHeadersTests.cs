@@ -1,4 +1,6 @@
+using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Extensions;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -77,9 +79,16 @@ public class ForwardedHeadersTests
             c.Request.Headers["X-Forwarded-Host"] = "blitz.example.com";
         });
 
+        // With no App__BaseUrl configured the origin comes off the request, which is the
+        // development path — and the one that depends on this middleware having run.
+        var urlBuilder = new AppUrlBuilder(
+            Options.Create(new AppSettings()),
+            new HttpContextAccessor { HttpContext = context }
+        );
+
         Assert.Equal(
             "https://blitz.example.com/confirm-email?token=abc&userId=1",
-            context.BuildAppUrl("/confirm-email?token=abc&userId=1")
+            urlBuilder.Build("/confirm-email?token=abc&userId=1")
         );
     }
 
@@ -107,16 +116,4 @@ public class ForwardedHeadersTests
         Assert.Equal("localhost:8080", context.Request.Host.Value);
     }
 
-    [Fact]
-    public void BuildAppUrl_ComposesSchemeHostAndPath()
-    {
-        var context = new DefaultHttpContext();
-        context.Request.Scheme = "https";
-        context.Request.Host = new HostString("blitz.example.com");
-
-        Assert.Equal(
-            "https://blitz.example.com/projects/respond-invitation/tok",
-            context.BuildAppUrl("/projects/respond-invitation/tok")
-        );
-    }
 }

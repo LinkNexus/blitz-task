@@ -4,7 +4,9 @@ using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Data;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging.Abstractions;
 using RazorLight;
 
@@ -101,8 +103,16 @@ public class TaskReminderJobTests
     private static async Task<RecordingMailer> RunAsync(ApplicationDbContext dbContext)
     {
         var mailer = new RecordingMailer();
-        await new TaskReminderJob(dbContext, mailer, NullLogger<TaskReminderJob>.Instance)
-            .RunAsync(CancellationToken.None);
+        var urlBuilder = new AppUrlBuilder(
+            Options.Create(new AppSettings { BaseUrl = "https://blitz.example.com" }),
+            new HttpContextAccessor()
+        );
+        await new TaskReminderJob(
+            dbContext,
+            mailer,
+            urlBuilder,
+            NullLogger<TaskReminderJob>.Instance
+        ).RunAsync(CancellationToken.None);
         return mailer;
     }
 

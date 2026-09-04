@@ -290,6 +290,7 @@ required ones with `:?` so a deploy fails loudly rather than starting half-confi
 | `RESEND_API_KEY` | yes | Read via `Environment.GetEnvironmentVariable` directly, not `IConfiguration` — it is the one setting that is not a config-section binding. |
 | `Resend__FromEmail` | yes | Binds to `ResendSettings.FromEmail`. Must be a domain verified in Resend. |
 | `Resend__FromName` | no | Defaults to `BlitzTask`. |
+| `App__BaseUrl` | yes | This instance's public origin, e.g. `https://tasks.example.com`. Every emailed link is built from it. **Required, not derived**: the reminder sweep is a background job with no HTTP request to read a scheme and host from, so without this it throws rather than send a relative link. Inside a request it also wins over `X-Forwarded-Proto`, which is what L14 could not make reliable. |
 | `ASPNETCORE_ENVIRONMENT` | set in Dockerfile | Anything other than `Development` selects `ResendMailerService` over SMTP. |
 | `ASPNETCORE_HTTP_PORTS` | set in Dockerfile | 8080; Traefik's `loadbalancer.server.port` must agree. |
 | `ConnectionStrings__DefaultConnection` | no | Defaults to `Data Source=Data/blitz-task.db`, which the volume covers. |

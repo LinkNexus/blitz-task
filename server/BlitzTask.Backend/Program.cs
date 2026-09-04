@@ -138,6 +138,11 @@ public class Program
 
         // Jobs are scoped because they depend on ApplicationDbContext; the runner is a
         // singleton and builds a scope per tick.
+        builder.Services.Configure<AppSettings>(
+            builder.Configuration.GetSection(AppSettings.SectionName)
+        );
+        builder.Services.AddScoped<AppUrlBuilder>();
+
         builder.Services.AddScoped<IScheduledJob, ExpiredTokenCleanupJob>();
         builder.Services.AddScoped<IScheduledJob, TaskReminderJob>();
         builder.Services.AddHostedService<ScheduledJobRunner>();
