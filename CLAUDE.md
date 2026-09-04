@@ -119,9 +119,15 @@ C# model and regenerate rather than patching the generated file.
 
 **Endpoint changes need a full backend restart.** `dotnet run` does not pick up newly
 registered routes. A request to a route that exists in source but not in the running process
-returns **405, not 404** — it falls through to `MapFallbackToFile("index.html")`, whose
-catch-all only accepts GET/HEAD. A surprising 405 on a PATCH/POST almost always means "stale
-backend", not "wrong verb".
+now returns a **JSON 404** (`No API route matches /api/…`), so a 404 on an endpoint you can
+see in the source almost always means "stale backend", not "wrong path".
+
+That 404 is deliberate — `app.MapFallback("/api/{**path}", …)` sits ahead of
+`MapFallbackToFile("index.html")`. Without it an unmatched API call returns **200 and
+index.html**, and the typed client hands a component an HTML *string* where it expected an
+array; the crash then surfaces as `x.map is not a function` somewhere far from the cause. It
+bit twice before being fixed. It also removes the old 405-instead-of-404 on POST/PATCH, which
+came from the file fallback only accepting GET and HEAD.
 
 ## Architecture notes
 
