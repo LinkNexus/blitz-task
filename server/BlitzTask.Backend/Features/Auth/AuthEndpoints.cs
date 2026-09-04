@@ -230,7 +230,7 @@ namespace BlitzTask.Backend.Features.Auth
 
             var encodedToken = WebUtility.UrlEncode(token.Value);
             var confirmationLink =
-                $"{context.Request.Scheme}://{context.Request.Host}/confirm-email?token={encodedToken}&userId={user.Id}";
+                context.BuildAppUrl($"/confirm-email?token={encodedToken}&userId={user.Id}");
 
             await mailerService.SendEmailAsync(
                 new EmailMessage(
@@ -412,7 +412,7 @@ namespace BlitzTask.Backend.Features.Auth
 
             var encodedToken = WebUtility.UrlEncode(token.Value);
             var resetLink =
-                $"{context.Request.Scheme}://{context.Request.Host}/reset-password?token={encodedToken}&userId={user.Id}";
+                context.BuildAppUrl($"/reset-password?token={encodedToken}&userId={user.Id}");
 
             await mailerService.SendEmailAsync(
                 new EmailMessage(

@@ -7,6 +7,7 @@ using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Auth;
 using BlitzTask.Backend.Infrastructure.Data;
+using BlitzTask.Backend.Infrastructure.Extensions;
 using System.IO.Compression;
 using FluentValidation;
 using Microsoft.AspNetCore.DataProtection;
@@ -14,6 +15,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using RazorLight;
@@ -132,6 +134,8 @@ public class Program
             options.Level = CompressionLevel.Optimal
         );
 
+        builder.Services.Configure<ForwardedHeadersOptions>(ForwardedHeadersSetup.Configure);
+
         builder.Services.AddAntiforgery(options => options.HeaderName = "X-XSRF-TOKEN");
 
         builder.Services.AddSingleton<
@@ -185,6 +189,12 @@ public class Program
                 .Value.UploadDirectory;
             Directory.CreateDirectory(Path.GetFullPath(uploadDirectory));
         }
+
+        // First in the pipeline, deliberately: it rewrites Scheme, Host and RemoteIpAddress
+        // from the proxy's headers, and anything that runs before it sees the raw values.
+        // Behind Traefik that means http:// and the container's own address — which is how
+        // confirmation and invitation emails came to carry http:// links (ROADMAP L14).
+        app.UseForwardedHeaders();
 
         if (app.Environment.IsDevelopment())
         {
