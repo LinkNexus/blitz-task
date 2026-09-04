@@ -58,6 +58,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { aspNetFormSerializer } from "@/lib/form-serializer";
 import { getInitials } from "@/lib/utils";
 import { TaskSchema } from "../-schemas";
+import { TaskReminders } from "./task-reminders";
 
 type FormValues = z.infer<typeof TaskSchema>;
 
@@ -542,6 +543,17 @@ export function TaskSheet({ project }: Props) {
                 />
               )}
             />
+
+            {/* Reminders. Only for a saved task — a reminder needs a task id — and saved
+                immediately rather than with the form, since they are per-user data that the
+                task's own PUT knows nothing about. */}
+            {editingTask && (
+              <TaskReminders
+                projectId={Number(project.id)}
+                taskId={Number(editingTask.id)}
+                hasDueDate={!!form.watch("dueDate")}
+              />
+            )}
 
             {/* Attachments */}
             <div className="space-y-3">

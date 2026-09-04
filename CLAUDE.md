@@ -119,9 +119,15 @@ C# model and regenerate rather than patching the generated file.
 
 **Endpoint changes need a full backend restart.** `dotnet run` does not pick up newly
 registered routes. A request to a route that exists in source but not in the running process
-returns **405, not 404** — it falls through to `MapFallbackToFile("index.html")`, whose
-catch-all only accepts GET/HEAD. A surprising 405 on a PATCH/POST almost always means "stale
-backend", not "wrong verb".
+now returns a **JSON 404** (`No API route matches /api/…`), so a 404 on an endpoint you can
+see in the source almost always means "stale backend", not "wrong path".
+
+That 404 is deliberate — `app.MapFallback("/api/{**path}", …)` sits ahead of
+`MapFallbackToFile("index.html")`. Without it an unmatched API call returns **200 and
+index.html**, and the typed client hands a component an HTML *string* where it expected an
+array; the crash then surfaces as `x.map is not a function` somewhere far from the cause. It
+bit twice before being fixed. It also removes the old 405-instead-of-404 on POST/PATCH, which
+came from the file fallback only accepting GET and HEAD.
 
 ## Architecture notes
 
@@ -207,6 +213,18 @@ Jobs must be idempotent and catch up on their own. The container is replaced on 
 so a job cannot assume it ran on schedule or at all: query the database for outstanding work
 rather than tracking progress in memory, and mark work done durably so a crash mid-run cannot
 repeat a side effect like sending mail twice.
+
+**Adding an entity is a chicken-and-egg with the build.** `dotnet build` starts the app to emit
+the OpenAPI document, and the app migrates on startup, so a model change with no migration
+fails the build — while `dotnet ef migrations add` needs a successful build. Break the cycle
+with `dotnet build server/BlitzTask.Backend -p:OpenApiGenerateDocuments=false`, then
+`dotnet ef migrations add <Name> --project server/BlitzTask.Backend --no-build`.
+
+Tests that render an email template need `PreserveCompilationContext` (already set in both
+csprojs): RazorLight compiles `.cshtml` at runtime and otherwise fails with "Can't load
+metadata reference from the entry assembly". The backend's `Templates/Email` is copied into the
+test output, so a test double that overrides only `SendEmailInternalAsync` still renders the
+real template — which is how the templates get compile coverage at all.
 
 ## Conventions
 

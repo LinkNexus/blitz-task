@@ -5,6 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <!-- RazorLight compiles .cshtml at runtime and needs the dependency context to resolve
+         metadata references. The backend sets this for the same reason; without it any test
+         that renders a real email template fails with "Can't load metadata reference from the
+         entry assembly". -->
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <ItemGroup>

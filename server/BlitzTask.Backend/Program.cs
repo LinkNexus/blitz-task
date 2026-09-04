@@ -4,6 +4,7 @@ using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.ProjectTasks;
+using BlitzTask.Backend.Features.Shared.Models;
 using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Auth;
 using BlitzTask.Backend.Infrastructure.Data;
@@ -138,6 +139,7 @@ public class Program
         // Jobs are scoped because they depend on ApplicationDbContext; the runner is a
         // singleton and builds a scope per tick.
         builder.Services.AddScoped<IScheduledJob, ExpiredTokenCleanupJob>();
+        builder.Services.AddScoped<IScheduledJob, TaskReminderJob>();
         builder.Services.AddHostedService<ScheduledJobRunner>();
 
         builder.Services.Configure<ForwardedHeadersOptions>(ForwardedHeadersSetup.Configure);
@@ -218,7 +220,8 @@ public class Program
             .MapProjectsEndpoints()
             .MapProjectMembersEndpoints()
             .MapProjectColumnsEndpoints()
-            .MapProjectTasksEndpoints();
+            .MapProjectTasksEndpoints()
+            .MapTaskRemindersEndpoints();
 
         app.MapGet(
             "/api/csrf-token",
@@ -234,6 +237,20 @@ public class Program
         // Anonymous on purpose: the container probe runs before anyone can authenticate.
         app.MapGet("/health", () => TypedResults.Ok(new { status = "healthy" }))
             .AllowAnonymous()
+            .ExcludeFromDescription();
+
+        // Unmatched /api paths must not fall through to the SPA. Without this an API call to
+        // a route the running process does not have — the everyday consequence of a stale
+        // `dotnet run`, since new endpoints need a restart — returns 200 and index.html, and
+        // the typed client hands a component an HTML *string* where it expected an array. The
+        // failure then surfaces as "x.map is not a function" somewhere far from the cause.
+        // Returning JSON 404 also fixes the old 405-instead-of-404 on POST/PATCH, which came
+        // from the file fallback only accepting GET and HEAD.
+        app.MapFallback(
+                "/api/{**path}",
+                (string path) =>
+                    TypedResults.NotFound(new ApiMessageResponse($"No API route matches /api/{path}"))
+            )
             .ExcludeFromDescription();
 
         app.MapFallbackToFile("index.html");

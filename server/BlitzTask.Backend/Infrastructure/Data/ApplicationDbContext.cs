@@ -20,6 +20,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ProjectInvitation> ProjectInvitations => Set<ProjectInvitation>();
     public DbSet<ProjectColumn> ProjectColumns => Set<ProjectColumn>();
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
+    public DbSet<TaskReminder> TaskReminders => Set<TaskReminder>();
 
     /// <summary>
     /// Applied as a convention rather than per property so that any DateTimeOffset added later
