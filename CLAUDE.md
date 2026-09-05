@@ -16,11 +16,17 @@ handlers, and test them against `TestsUtils.CreateSqliteDbContext()`.
   shares an offset. The offset itself is never used — every date is an instant and the SPA
   renders in local time — so nothing is lost by collapsing it.
 
-**`dotnet build` migrates your local dev database.** `Microsoft.Extensions.ApiDescription.Server`
-starts the app to emit `BlitzTask.Backend.json`, and `Program.cs` runs `Database.Migrate()` on
-startup, so building applies any pending migration to `Data/blitz-task.db` — including
-data-rewriting ones. You will see `No migrations were applied` (or not) in the build output.
-Back the file up before building with a destructive migration pending.
+**`dotnet build` starts the app, but no longer with side effects.**
+`Microsoft.Extensions.ApiDescription.Server` runs `GetDocument.Insider`, which loads this
+assembly and genuinely *starts the host* to read the API surface. Migrations and the job
+scheduler are therefore both gated on `DesignTime.IsDocumentGeneration` — before that gate,
+an ordinary build migrated whichever database you were pointed at and ticked the scheduler,
+which was caught sending a real reminder from a build (ROADMAP L24.6).
+
+One consequence: a model change with no migration **no longer fails the build**. The
+`PendingModelChangesWarning` came from `Database.Migrate()`, which the build now skips, so you
+find out at `dotnet run` instead. That also removes the old chicken-and-egg where adding an
+entity broke the build while `dotnet ef migrations add` needed a working build.
 
 # CLAUDE.md
 
@@ -213,12 +219,6 @@ Jobs must be idempotent and catch up on their own. The container is replaced on 
 so a job cannot assume it ran on schedule or at all: query the database for outstanding work
 rather than tracking progress in memory, and mark work done durably so a crash mid-run cannot
 repeat a side effect like sending mail twice.
-
-**Adding an entity is a chicken-and-egg with the build.** `dotnet build` starts the app to emit
-the OpenAPI document, and the app migrates on startup, so a model change with no migration
-fails the build — while `dotnet ef migrations add` needs a successful build. Break the cycle
-with `dotnet build server/BlitzTask.Backend -p:OpenApiGenerateDocuments=false`, then
-`dotnet ef migrations add <Name> --project server/BlitzTask.Backend --no-build`.
 
 Email templates share `Templates/Email/_Layout.cshtml` (`Layout = "_Layout";` at the top of
 each). The layout carries the palette, converted from the app's oklch theme tokens to hex

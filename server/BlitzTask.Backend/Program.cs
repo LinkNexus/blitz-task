@@ -7,6 +7,7 @@ using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Models;
 using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Auth;
+using BlitzTask.Backend.Infrastructure;
 using BlitzTask.Backend.Infrastructure.Data;
 using BlitzTask.Backend.Infrastructure.Extensions;
 using BlitzTask.Backend.Infrastructure.Scheduling;
@@ -145,7 +146,11 @@ public class Program
 
         builder.Services.AddScoped<IScheduledJob, ExpiredTokenCleanupJob>();
         builder.Services.AddScoped<IScheduledJob, TaskReminderJob>();
-        builder.Services.AddHostedService<ScheduledJobRunner>();
+
+        // Not during document generation: `dotnet build` starts the host to read the API
+        // surface, and a runner registered here would tick and send real mail from a build.
+        if (!DesignTime.IsDocumentGeneration)
+            builder.Services.AddHostedService<ScheduledJobRunner>();
 
         builder.Services.Configure<ForwardedHeadersOptions>(ForwardedHeadersSetup.Configure);
 
@@ -189,6 +194,10 @@ public class Program
         // A fresh deploy starts against an empty volume, so bring the schema up before
         // serving traffic. The data directory itself is created above, when the key ring is
         // configured — SQLite will not create it for us.
+        //
+        // Skipped during document generation for the same reason as the scheduler: a build
+        // should not migrate the database it happens to be pointed at.
+        if (!DesignTime.IsDocumentGeneration)
         using (var scope = app.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
