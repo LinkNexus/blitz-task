@@ -6,7 +6,7 @@ import {
 } from "@tabler/icons-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { DashboardCounts } from "./task-buckets";
+import type { DashboardCounts } from "@/routes/_app/-components/task-buckets";
 
 type Tile = {
   key: keyof DashboardCounts | "projects";

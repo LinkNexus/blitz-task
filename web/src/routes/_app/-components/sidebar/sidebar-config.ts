@@ -1,9 +1,11 @@
 import {
   IconCalendar,
+  IconCalendarDue,
   IconHome,
   IconInbox,
   IconRobot,
   IconSearch,
+  IconSun,
   IconTrash,
 } from "@tabler/icons-react";
 
@@ -29,6 +31,22 @@ export const navigationConfig: NavItem[] = [
     icon: IconHome,
     type: "main",
     description: "Overview of your tasks",
+  },
+  {
+    id: "today",
+    title: "Today",
+    href: "/today",
+    icon: IconSun,
+    type: "main",
+    description: "Late and due today",
+  },
+  {
+    id: "upcoming",
+    title: "Upcoming",
+    href: "/upcoming",
+    icon: IconCalendarDue,
+    type: "main",
+    description: "The next two weeks",
   },
   {
     id: "inbox",
