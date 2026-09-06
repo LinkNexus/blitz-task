@@ -8,10 +8,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { useAccount } from "@/hooks/use-current-user";
 import { flashMessagesStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { EmailVerificationBanner } from "./-components/email-verification-banner";
 import { AppSidebar } from "./-components/sidebar/app-sidebar";
 
 const authErrorsInterceptor = async (
@@ -56,7 +54,11 @@ const authErrorsInterceptor = async (
         },
       });
 
-      return null;
+      // Flash the toast *and* hand the error back. Returning null used to swallow it, but the
+      // client coerces a falsy interceptor result to `{}` and — every generated query sets
+      // `throwOnError` — throws that instead: a loader rejecting with a message-less empty
+      // object, which surfaces as a blank error screen with the real cause nowhere in sight.
+      return error;
     }
   }
 
@@ -75,6 +77,15 @@ export const Route = createFileRoute("/_app")({
       });
     }
 
+    // Every endpoint under this layout is gated by the backend's "EmailConfirmed" policy, so a
+    // freshly registered account cannot load a single route here: /dashboard's loader 403s
+    // before the page ever renders, and the failure reads as a crash rather than as "confirm
+    // your email". Send unconfirmed users to the one page that works instead — a banner over a
+    // route that cannot load its own data is not a state worth rendering.
+    if (!context.user.emailConfirmed && location.pathname !== "/verify-email") {
+      throw redirect({ to: "/verify-email" });
+    }
+
     if (!client.interceptors.error.exists(authErrorsInterceptor)) {
       client.interceptors.error.use(authErrorsInterceptor);
     }
@@ -83,7 +94,6 @@ export const Route = createFileRoute("/_app")({
 
 function RouteComponent() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { user } = useAccount();
 
   return (
     <SidebarProvider
@@ -110,7 +120,6 @@ function RouteComponent() {
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="min-h-screen">
             <div className="max-w-4xl mx-auto py-8 px-4">
-              {!user.emailConfirmed && <EmailVerificationBanner />}
               <Outlet />
             </div>
           </div>

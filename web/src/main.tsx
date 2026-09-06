@@ -25,6 +25,12 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: false,
+      // React Query's default `staleTime: 0` means every mount refetches, so each navigation
+      // back to a page re-requests everything it reads — cached data renders instantly, but the
+      // network traffic is the same as a cold load. Half a minute of trust is safe here because
+      // every mutation invalidates what it touched (see lib/query-invalidation.ts); the window
+      // only ever hides a *collaborator's* change, and only until the next refocus.
+      staleTime: 30_000,
     },
   },
 });

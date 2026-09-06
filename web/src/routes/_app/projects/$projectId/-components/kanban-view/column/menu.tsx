@@ -45,6 +45,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { invalidateUserTasks } from "@/lib/query-invalidation";
 import { requestColumnCreate } from "../../column-dialog";
 import { columnScoreBetween } from "../../use-drag-n-drop";
 
@@ -94,6 +95,8 @@ export function ProjectColumnMenu({ column, projectId }: Props) {
           ),
         }),
       );
+      // The column takes its tasks with it, and those tasks are on the dashboard too.
+      invalidateUserTasks(queryClient);
       toast.success("Column deleted");
       setDeleteOpen(false);
     },

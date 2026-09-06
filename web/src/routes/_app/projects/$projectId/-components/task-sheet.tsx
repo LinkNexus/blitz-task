@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 import { aspNetFormSerializer } from "@/lib/form-serializer";
+import { invalidateUserTasks } from "@/lib/query-invalidation";
 import { getInitials } from "@/lib/utils";
 import { TaskSchema } from "../-schemas";
 import { TaskReminders } from "./task-reminders";
@@ -255,6 +256,9 @@ export function TaskSheet({ project }: Props) {
           ),
         }),
       );
+      // The dashboard reads the same task through a different endpoint, which no setQueryData
+      // above ever touches.
+      invalidateUserTasks(queryClient);
       toast.success("Task created");
       setOpen(false);
     },
@@ -276,6 +280,7 @@ export function TaskSheet({ project }: Props) {
           })),
         }),
       );
+      invalidateUserTasks(queryClient);
       toast.success("Task updated");
       setOpen(false);
     },

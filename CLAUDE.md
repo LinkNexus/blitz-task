@@ -354,10 +354,27 @@ on the wrong branch.
   healthcheck, which curls `http://localhost:8080/health` with no forwarded headers and would
   start receiving a redirect instead of a 200.
 - **The sidebar never unmounts.** It lives in the `_app` layout, so unlike a route component it
-  does not remount and refetch on navigation — React Query's default `staleTime: 0` heals the
-  dashboard but not the sidebar. Anything that changes which projects exist or what they are
-  called must call `invalidateProjectLists` (`web/src/lib/query-invalidation.ts`), or a deleted
-  project lingers in the sidebar until a full reload and clicking it 404s.
+  does not remount and refetch on navigation. Anything that changes which projects exist or what
+  they are called must call `invalidateProjectLists` (`web/src/lib/query-invalidation.ts`), or a
+  deleted project lingers in the sidebar until a full reload and clicking it 404s.
+- **Cache freshness is invalidation, not `staleTime`.** The QueryClient sets `staleTime: 30_000`
+  (`main.tsx`), so a remount no longer refetches everything a page reads — which is what used to
+  paper over missing invalidation. Task mutations write their result into the *project* query
+  with `setQueryData`, and the dashboard reads the same rows through `GET /api/tasks`, a
+  different key that no `setQueryData` touches: creating, editing, moving a task or deleting a
+  column must call `invalidateUserTasks`, or the dashboard shows a stale list for 30 seconds.
+- **An error interceptor must return the error, not swallow it.** The client coerces a falsy
+  interceptor result to `{}` (`finalError = finalError || {}`) and every generated query sets
+  `throwOnError`, so returning `null` doesn't suppress the failure — it throws an empty object
+  instead. What the user sees is a blank error screen from a loader that rejected with nothing
+  in it, and the real status is nowhere. Flash the toast *and* `return error`.
+- **An unconfirmed account cannot load any `_app` route.** The `EmailConfirmed` policy gates
+  every endpoint under this layout, so a freshly registered user sent to `/dashboard` 403s in the
+  loader before the page renders. `_app`'s `beforeLoad` redirects them to `/verify-email`, which
+  fetches nothing; `NavProjects` skips its query for the same reason, since the shell still
+  renders there and a doomed request costs a "Forbidden Access" toast. A new route that loads
+  data needs no guard of its own — but it does inherit this one, so don't put anything an
+  unconfirmed user is supposed to reach under `_app`.
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,

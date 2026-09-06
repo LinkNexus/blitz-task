@@ -18,6 +18,7 @@ import {
   moveProjectColumnMutation,
   moveProjectTaskMutation,
 } from "@/api/@tanstack/react-query.gen";
+import { invalidateUserTasks } from "@/lib/query-invalidation";
 import {
   sortTasks,
   type ToolbarState,
@@ -387,6 +388,11 @@ export function useDragNDrop(
                   })),
                 },
             );
+
+            // A drop can cross the last column, which is the only definition of "done" this
+            // app has — so the dashboard's open-task list changes even though the drag never
+            // touched its query.
+            invalidateUserTasks(queryClient);
           },
           onError: () => {
             queryClient.invalidateQueries({ queryKey });
