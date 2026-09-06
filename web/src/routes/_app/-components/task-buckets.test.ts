@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import type { UserTaskSummary } from "@/api";
-import { countTasks, dueSectionOf, groupByDueSection } from "./task-buckets";
+import {
+  countTasks,
+  dueSectionOf,
+  groupByDueSection,
+  todaySections,
+  upcomingSections,
+} from "./task-buckets";
 
 function daysOut(days: number): string {
   const date = new Date();
@@ -91,5 +97,86 @@ describe("countTasks", () => {
       week: 0,
       open: 0,
     });
+  });
+});
+
+describe("todaySections", () => {
+  test("keeps what is late or due today and drops the rest", () => {
+    const sections = todaySections([
+      task("late", daysOut(-2)),
+      task("now", daysOut(0)),
+      task("soon", daysOut(3)),
+      task("someday", daysOut(40)),
+      task("undated", null),
+    ]);
+
+    expect(sections.map((s) => s.key)).toEqual(["overdue", "today"]);
+    expect(sections.flatMap((s) => s.tasks.map((t) => t.name))).toEqual([
+      "late",
+      "now",
+    ]);
+  });
+
+  test("is empty when nothing is due", () => {
+    expect(todaySections([task("soon", daysOut(3))])).toEqual([]);
+  });
+});
+
+describe("upcomingSections", () => {
+  test("leaves overdue, due-today and undated work to the Today view", () => {
+    // The two screens would otherwise disagree about what is urgent; /upcoming links to the
+    // count instead of repeating the rows.
+    const sections = upcomingSections([
+      task("late", daysOut(-1)),
+      task("now", daysOut(0)),
+      task("undated", null),
+    ]);
+
+    expect(sections).toEqual([]);
+  });
+
+  test("gives each day its own section, soonest first", () => {
+    const sections = upcomingSections([
+      task("in three", daysOut(3)),
+      task("tomorrow", daysOut(1)),
+    ]);
+
+    expect(sections.map((s) => s.tasks.map((t) => t.name))).toEqual([
+      ["tomorrow"],
+      ["in three"],
+    ]);
+    expect(sections[0].label).toBe("Tomorrow");
+  });
+
+  test("groups tasks that share a day", () => {
+    const sections = upcomingSections([
+      task("first", daysOut(2)),
+      task("second", daysOut(2)),
+    ]);
+
+    expect(sections).toHaveLength(1);
+    expect(sections[0].tasks.map((t) => t.name)).toEqual(["first", "second"]);
+  });
+
+  test("collects everything past the horizon into one trailing section", () => {
+    const sections = upcomingSections(
+      [
+        task("inside", daysOut(2)),
+        task("outside", daysOut(20)),
+        task("far", daysOut(90)),
+      ],
+      14,
+    );
+
+    const last = sections[sections.length - 1];
+    expect(last.key).toBe("later");
+    expect(last.label).toBe("Beyond 14 days");
+    expect(last.tasks.map((t) => t.name)).toEqual(["outside", "far"]);
+  });
+
+  test("honours a shorter horizon", () => {
+    const sections = upcomingSections([task("in five", daysOut(5))], 3);
+
+    expect(sections.map((s) => s.key)).toEqual(["later"]);
   });
 });

@@ -83,7 +83,7 @@ for *"buy milk"*.
 | L25 | **Recurring tasks** | Daily/weekly/monthly repeats for the life-admin use case. Depends on L24.5. The schema is easy; **the "virtual or materialized" question is the one that decides everything downstream** and should be answered before any code. *Materialized* (completing an instance writes the next row) keeps every existing query, the board and the score ordering working untouched, but a yearly task is invisible until its one row exists, and editing "the series" means finding and rewriting rows. *Virtual* (a `RecurrenceRule` on the task, instances computed on read) makes "show me next month" trivial — which L28's calendar wants — but every read path, including L16's `/api/tasks`, then has to materialise instances that have no id, no score and no column, which breaks drag-and-drop and completion. The pragmatic middle: store the rule, materialise the *next* instance only, and let the calendar project further ahead read-only. Completion semantics need the same care — completing an instance must not retroactively edit history. |
 | L25.5 | ✅ **Reminders** | "Tell me before this is due", private to the user who set it even though the task is shared — a reminder is a personal intention, not a property of the work. `TaskReminder(ProjectTaskId, UserId, MinutesBeforeDue, RemindAt, SentAt)`, swept every minute by `TaskReminderJob` on L24.5's runner. Three decisions worth keeping. **(1) The offset is the source of truth, `RemindAt` is derived.** Storing only a timestamp goes stale the moment a deadline moves; storing only an offset makes the sweep untranslatable, since `DueDate - offset` per row is not something EF can push into SQLite, and evaluating it in memory would mean loading every unsent reminder every tick. So both are stored, `RemindAt` is recomputed in `UpdateTask` — the one place a due date changes — and it is indexed, because the sweep asks the same range question sixty times an hour. **(2) `SentAt < RemindAt`, not `SentAt == null`.** Pushing a deadline forward moves `RemindAt` past the recorded send and re-arms the reminder; a null check would fire once and stay silent however far the task was rescheduled. **(3) Marked sent only after the send returns**, so a crash repeats an email rather than losing one — a duplicate reminder is an annoyance, a missed one defeats the feature. Completed tasks are skipped, using the same "last column" definition as everywhere else. Relative-only offsets on purpose: "1 day before" needs no local time, which is what let the user timezone column stay deferred until something wants "at 9am". Endpoints require project membership only, not `ManageTasks` — a Viewer can remind themselves about work they cannot edit. 6 job tests plus UI in the task sheet, saved immediately rather than with the form since the task's own PUT knows nothing about them. |
 | L26 | **Sub-tasks / checklists** | A self-referencing parent on `ProjectTask`, or a lighter embedded checklist. Checklists are enough for most real use and avoid recursive queries, permissions and drag-and-drop implications — worth resisting full nesting unless it's actually needed. |
-| L27 | **Personal views: Today / Upcoming** | Built on L16's cross-project query. "What do I have to do today" is the question the app should answer on open, and it currently can't answer it at all. |
+| L27 | ✅ **Personal views: Today / Upcoming** | Built on L16's cross-project query — "what do I have to do today" is the question the app should answer on open, and it could not answer it at all. Two routes rather than one with a horizon toggle, so each is its own destination in the sidebar. **All three task screens share one query**: `userTasksQueryOptions` (`_app/-components/user-tasks-query.ts`) is the same 200-row `listUserTasks` call the dashboard already made, so moving between Dashboard, Today and Upcoming hits a warm cache instead of refetching the same rows in a slightly different shape. A per-view `dueBefore` would have split that into three cache entries and bought nothing, since each view filters what it renders anyway — and it leaves L28's range filter unbuilt until a calendar actually needs it. **Today is a strict subset of the dashboard's own grouping** (`todaySections` filters `groupByDueSection` down to overdue + today) rather than a second pass over the tasks, so the two screens cannot disagree about which day a task belongs to. **Upcoming deliberately omits overdue and due-today work**, linking to a count instead: repeating those rows would leave two screens giving different answers to "what is urgent". One section per day for 14 days, then a single "Beyond 14 days" section — enough to answer "is there something out there" without pretending to be a calendar. Read-only, rows link to the board: `TaskSheet` needs a full `ProjectDetails`, so editing in place would mean loading each task's project. `task-buckets.ts` and `task-list.tsx` moved up from `dashboard/-components/` to `_app/-components/`, and `TaskList` now takes pre-grouped sections plus an empty state, so the three views share the rows and the section chrome while each keeps its own copy. 7 new tests (56 in the suite). |
 | L28 | **Calendar view** | Sidebar links to `/calendar` and the route does not exist. Four things make this more than a grid of chips. **(1) The shadcn `calendar.tsx` already in the repo is a react-day-picker date *picker*, not an event surface** — it will not carry items inside day cells. Either build the month grid or take a real dependency; do not try to bend the picker. **(2) The read endpoint needs a window, not a page.** L16's `GET /api/tasks` has `dueBefore` but no `dueAfter`, and its 200-row cap is the wrong bound for a month view, which wants *everything* in the range — add a range filter and let the window bound the result. L50 is what makes such a range query translatable at all. **(3) Tasks already have both `StartDate` and `DueDate`, so a task is a span, not a point.** Multi-day bars with proper stacking are a genuinely different layout problem from single-day chips, and skipping it makes the view feel broken for exactly the long-running work a calendar is meant to show. **(4) Drag-to-reschedule is not the board's drag.** Dropping on a day changes `DueDate`, not `Score`; `/move` and `scoreBetween` are the wrong tools and reusing them is the tempting wrong turn. This wants the update path or a small `PATCH /schedule`. Month / week / agenda views, of which agenda is nearly free on top of L16 and L27. Recurring tasks (L25) are what force the virtual-vs-materialized decision, since a month of a daily task is thirty instances that may not exist as rows. |
 | L29 | **Trash / soft delete** | Sidebar links to `/trash`, route doesn't exist. Deletes are currently hard — a `DeletedAt` column plus a restore window, and a global query filter so every existing query excludes trashed rows without being individually rewritten. |
 
@@ -161,28 +161,26 @@ speculative until the app has enough real data in it to be worth summarizing.
 ```
 Phase 1  Foundations              ██████████  12/12  done
 Phase 2  Deployable MVP           ██████████  13/13  done
-Phase 3  Personal task management ███░░░░░░░   3/9  <- current focus
+Phase 3  Personal task management ████░░░░░░   4/9  <- current focus
 Phase 4  Collaboration            ░░░░░░░░░░   0/5
 Phase 5  Power features           ░░░░░░░░░░   0/9
 Phase 6  AI assistance            ░░░░░░░░░░   0/5
 Phase 7  Reach & polish           █░░░░░░░░░   1/7
 ```
 
-The deploy spine (L17 → L18 → L19 → L19.5) is built: a push to `main` builds the image, pushes
-it to GHCR and pokes Dokploy. The image runs and migrates cleanly from an empty volume.
+**Phase 2 is done.** The app is live, a push to `main` builds the image, pushes it to GHCR and
+pokes Dokploy, and the image runs and migrates cleanly from an empty volume. L14 closed by
+removing the dependency rather than fixing it: every emailed link is built from `App__BaseUrl`
+instead of from whatever the request claimed to be.
 
-**Shipped.** The app is live, an account has been created and confirmed against it, and a push
-to `main` now builds, pushes to GHCR and redeploys on its own.
+**Phase 3 so far** is the scheduler (L24.5), the two things that needed it — reminders (L25.5),
+and L24.6, which stopped an ordinary `dotnet build` from migrating databases and firing jobs —
+and the personal views (L27), which are the first screens that answer "what do I have to do
+today" rather than "what is in this project".
 
-**Phase 2 is effectively done**: the app deploys itself from a push to `main`, survives
-restarts and navigates without dead ends. L14 is reopened but is cosmetic — the edge redirect
-means no user ever sees the `http://` link — and its remaining work is a config change
-(`App__BaseUrl`), not the middleware, which is in place and tested.
-
-**Next, in order:** Phase 3, starting with L24.5, because the scheduler blocks L25, L25.5 and
-L32 and nothing else in the phase depends on those three. L14's `App__BaseUrl` and L51 are both
-parked: the first until it is worth a deploy, the second until someone has more than 200 open
-tasks.
-
-Phase 2 now has **no hard blockers left**: the app deploys, navigates and lands somewhere
-useful. What remains is one stubbed UI and three pieces of correctness debt.
+**Next:** the five that remain, two of which want a decision before any code. L24 has to settle
+a per-user Inbox project against a nullable `RelatedProjectId`, and L25 the question of virtual
+vs materialized recurrence, which L28 then inherits — a month of a daily task is thirty
+instances that may not exist as rows. The other two are self-contained: L26 is one entity, L29 is a
+column plus a global query filter. L51 stays parked until someone has more than 200 open tasks
+— it is what would let the dashboard, Today and Upcoming stop sharing one capped query.

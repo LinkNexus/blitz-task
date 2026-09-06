@@ -1,5 +1,6 @@
-import { IconCalendarDue, IconChecklist } from "@tabler/icons-react";
+import { IconCalendarDue } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 import type { UserTaskSummary } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -8,18 +9,15 @@ import {
   getPriorityIcon,
   getPriorityPillClass,
 } from "@/routes/_app/projects/$projectId/-components/kanban-view/lib";
-import { type DueSection, groupByDueSection } from "./task-buckets";
+import type { SectionAccent, TaskSection } from "./task-buckets";
 
-/** Sections past the deadline get a red heading; the rest are neutral. */
-const SECTION_ACCENT: Record<DueSection["key"], string> = {
-  overdue: "text-red-600 dark:text-red-400",
-  today: "text-orange-600 dark:text-orange-400",
-  week: "text-muted-foreground",
-  later: "text-muted-foreground",
-  none: "text-muted-foreground",
+/** Sections past the deadline get a red heading, today's an orange one; the rest are neutral. */
+const ACCENT_CLASS: Record<SectionAccent, string> = {
+  danger: "text-red-600 dark:text-red-400",
+  warning: "text-orange-600 dark:text-orange-400",
 };
 
-function TaskRow({ task }: { task: UserTaskSummary }) {
+export function TaskRow({ task }: { task: UserTaskSummary }) {
   return (
     <Link
       to="/projects/$projectId"
@@ -64,25 +62,22 @@ function TaskRow({ task }: { task: UserTaskSummary }) {
   );
 }
 
+/**
+ * Renders pre-grouped task sections. The grouping is the caller's — the dashboard, Today and
+ * Upcoming each slice the same `listUserTasks` payload differently but present it identically,
+ * so what varies is the sections and the empty state, not the rows.
+ */
 export function TaskList({
-  tasks,
-  assignedToMe,
+  sections,
+  empty,
 }: {
-  tasks: UserTaskSummary[];
-  assignedToMe: boolean;
+  sections: TaskSection[];
+  empty: ReactNode;
 }) {
-  const sections = groupByDueSection(tasks);
-
   if (sections.length === 0) {
     return (
       <Card className="flex flex-col items-center gap-2 p-10 text-center">
-        <IconChecklist className="size-8 text-muted-foreground/50" />
-        <p className="text-sm font-medium">Nothing open</p>
-        <p className="max-w-xs text-xs text-muted-foreground">
-          {assignedToMe
-            ? "No open tasks are assigned to you. Switch to All tasks to see everything in your projects."
-            : "Every task in your projects is in its final column."}
-        </p>
+        {empty}
       </Card>
     );
   }
@@ -94,7 +89,9 @@ export function TaskList({
           <h3
             className={cn(
               "mb-1.5 flex items-center gap-2 px-3 text-xs font-semibold uppercase tracking-wide",
-              SECTION_ACCENT[section.key],
+              section.accent
+                ? ACCENT_CLASS[section.accent]
+                : "text-muted-foreground",
             )}
           >
             {section.label}

@@ -1,42 +1,30 @@
+import { IconChecklist } from "@tabler/icons-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { z } from "zod";
-import {
-  listProjectsOptions,
-  listUserTasksOptions,
-} from "@/api/@tanstack/react-query.gen";
+import { listProjectsOptions } from "@/api/@tanstack/react-query.gen";
 import { useAccount } from "@/hooks/use-current-user";
+import {
+  countTasks,
+  groupByDueSection,
+} from "@/routes/_app/-components/task-buckets";
+import { TaskList } from "@/routes/_app/-components/task-list";
+import {
+  userTasksQueryOptions,
+  userTasksSearchSchema,
+} from "@/routes/_app/-components/user-tasks-query";
 import { DashboardSkeleton } from "./-components/dashboard-skeleton";
 import { ProjectsPanel } from "./-components/projects-panel";
 import { StatTiles } from "./-components/stat-tiles";
-import { countTasks } from "./-components/task-buckets";
-import { TaskList } from "./-components/task-list";
-
-/**
- * The dashboard reads every open task rather than a page of them, because the stat tiles are
- * counts and a truncated page would quietly under-report them. The cap is the endpoint's own
- * ceiling; past it the tiles would understate, which ROADMAP L51 fixes with server-side counts.
- */
-const TASK_LIMIT = 200;
-
-const searchSchema = z.object({
-  // Most tasks in a solo project have no assignee at all, so defaulting to "assigned to me"
-  // would show an empty dashboard to the app's main use case. Opt in instead.
-  assignedToMe: z.boolean().default(false).catch(false),
-});
-
-const taskQueryOptions = (assignedToMe: boolean) =>
-  listUserTasksOptions({
-    query: { assignedToMe, limit: TASK_LIMIT },
-  });
 
 export const Route = createFileRoute("/_app/dashboard/")({
-  validateSearch: searchSchema,
+  validateSearch: userTasksSearchSchema,
   loaderDeps: ({ search: { assignedToMe } }) => ({ assignedToMe }),
   loader: async ({ context, deps }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(listProjectsOptions()),
-      context.queryClient.ensureQueryData(taskQueryOptions(deps.assignedToMe)),
+      context.queryClient.ensureQueryData(
+        userTasksQueryOptions(deps.assignedToMe),
+      ),
     ]);
   },
   pendingComponent: DashboardSkeleton,
@@ -55,7 +43,7 @@ function DashboardPage() {
   const { user } = useAccount();
 
   const { data: projects } = useSuspenseQuery(listProjectsOptions());
-  const { data: tasks } = useSuspenseQuery(taskQueryOptions(assignedToMe));
+  const { data: tasks } = useSuspenseQuery(userTasksQueryOptions(assignedToMe));
 
   const counts = countTasks(tasks);
 
@@ -91,7 +79,20 @@ function DashboardPage() {
             </Link>
           </div>
 
-          <TaskList tasks={tasks} assignedToMe={assignedToMe} />
+          <TaskList
+            sections={groupByDueSection(tasks)}
+            empty={
+              <>
+                <IconChecklist className="size-8 text-muted-foreground/50" />
+                <p className="text-sm font-medium">Nothing open</p>
+                <p className="max-w-xs text-xs text-muted-foreground">
+                  {assignedToMe
+                    ? "No open tasks are assigned to you. Switch to All tasks to see everything in your projects."
+                    : "Every task in your projects is in its final column."}
+                </p>
+              </>
+            }
+          />
         </div>
 
         <ProjectsPanel projects={projects} />
