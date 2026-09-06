@@ -12,6 +12,7 @@ import {
   SidebarMenuItem,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
+import { useAccount } from "@/hooks/use-current-user";
 import { Route as CreateProjectRoute } from "@/routes/_app/projects/create";
 
 /** First letters of the project name, for the tile that stands in for a project icon. */
@@ -64,6 +65,12 @@ function ProjectItem({
 
 export const NavProjects = memo(() => {
   const location = useLocation();
+  const { user } = useAccount();
+
+  // /api/projects is behind the "EmailConfirmed" policy, and the shell still renders for an
+  // unconfirmed user on /verify-email — asking anyway earns a 403 and a "Forbidden Access"
+  // toast on the very page that is already explaining the problem.
+  const canListProjects = user.emailConfirmed === true;
 
   // useQuery, not useSuspenseQuery: this sidebar renders on every authenticated page and sits
   // outside any Suspense boundary, so suspending here would blank the whole app shell on each
@@ -72,7 +79,7 @@ export const NavProjects = memo(() => {
     data: projects,
     isPending,
     isError,
-  } = useQuery(listProjectsOptions());
+  } = useQuery({ ...listProjectsOptions(), enabled: canListProjects });
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -81,7 +88,8 @@ export const NavProjects = memo(() => {
       </SidebarGroupLabel>
 
       <SidebarMenu>
-        {isPending &&
+        {canListProjects &&
+          isPending &&
           [0, 1, 2].map((row) => (
             <SidebarMenuItem key={row}>
               <SidebarMenuSkeleton showIcon />
