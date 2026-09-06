@@ -161,28 +161,26 @@ speculative until the app has enough real data in it to be worth summarizing.
 ```
 Phase 1  Foundations              ██████████  12/12  done
 Phase 2  Deployable MVP           ██████████  13/13  done
-Phase 3  Personal task management ███░░░░░░░   3/9  <- current focus
+Phase 3  Personal task management ████░░░░░░   4/9  <- current focus
 Phase 4  Collaboration            ░░░░░░░░░░   0/5
 Phase 5  Power features           ░░░░░░░░░░   0/9
 Phase 6  AI assistance            ░░░░░░░░░░   0/5
 Phase 7  Reach & polish           █░░░░░░░░░   1/7
 ```
 
-The deploy spine (L17 → L18 → L19 → L19.5) is built: a push to `main` builds the image, pushes
-it to GHCR and pokes Dokploy. The image runs and migrates cleanly from an empty volume.
+**Phase 2 is done.** The app is live, a push to `main` builds the image, pushes it to GHCR and
+pokes Dokploy, and the image runs and migrates cleanly from an empty volume. L14 closed by
+removing the dependency rather than fixing it: every emailed link is built from `App__BaseUrl`
+instead of from whatever the request claimed to be.
 
-**Shipped.** The app is live, an account has been created and confirmed against it, and a push
-to `main` now builds, pushes to GHCR and redeploys on its own.
+**Phase 3 so far** is the scheduler (L24.5), the two things that needed it — reminders (L25.5),
+and L24.6, which stopped an ordinary `dotnet build` from migrating databases and firing jobs —
+and the personal views (L27), which are the first screens that answer "what do I have to do
+today" rather than "what is in this project".
 
-**Phase 2 is effectively done**: the app deploys itself from a push to `main`, survives
-restarts and navigates without dead ends. L14 is reopened but is cosmetic — the edge redirect
-means no user ever sees the `http://` link — and its remaining work is a config change
-(`App__BaseUrl`), not the middleware, which is in place and tested.
-
-**Next, in order:** Phase 3, starting with L24.5, because the scheduler blocks L25, L25.5 and
-L32 and nothing else in the phase depends on those three. L14's `App__BaseUrl` and L51 are both
-parked: the first until it is worth a deploy, the second until someone has more than 200 open
-tasks.
-
-Phase 2 now has **no hard blockers left**: the app deploys, navigates and lands somewhere
-useful. What remains is one stubbed UI and three pieces of correctness debt.
+**Next:** the five that remain, two of which want a decision before any code. L24 has to settle
+a per-user Inbox project against a nullable `RelatedProjectId`, and L25 the question of virtual
+vs materialized recurrence, which L28 then inherits — a month of a daily task is thirty
+instances that may not exist as rows. The other two are self-contained: L26 is one entity, L29 is a
+column plus a global query filter. L51 stays parked until someone has more than 200 open tasks
+— it is what would let the dashboard, Today and Upcoming stop sharing one capped query.
