@@ -1,8 +1,10 @@
+import { IconPlus } from "@tabler/icons-react";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { type ApiMessageResponse, resendConfirmEmail } from "@/api";
 import { client } from "@/api/client.gen";
+import { Button } from "@/components/ui/button";
 import {
   SidebarInset,
   SidebarProvider,
@@ -10,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import { flashMessagesStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { QuickCapture, requestQuickCapture } from "./-components/quick-capture";
 import { AppSidebar } from "./-components/sidebar/app-sidebar";
 
 const authErrorsInterceptor = async (
@@ -116,6 +119,15 @@ function RouteComponent() {
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
           </div>
+          <div className="ml-auto px-4">
+            <Button variant="outline" size="sm" onClick={requestQuickCapture}>
+              <IconPlus className="size-4" />
+              Capture
+              <kbd className="ml-1 hidden rounded border bg-muted px-1 text-[10px] font-medium text-muted-foreground sm:inline">
+                c
+              </kbd>
+            </Button>
+          </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="min-h-screen">
@@ -125,6 +137,10 @@ function RouteComponent() {
           </div>
         </div>
       </SidebarInset>
+
+      {/* Mounted in the layout, not per route: capture has to be reachable from anywhere, and
+          the dialog owns its own open state via a document event. */}
+      <QuickCapture />
     </SidebarProvider>
   );
 }

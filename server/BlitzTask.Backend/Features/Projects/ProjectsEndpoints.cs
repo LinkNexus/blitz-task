@@ -56,7 +56,8 @@ namespace BlitzTask.Backend.Features.Projects
                     new RequireProjectPermissionFilter(ProjectPermission.DeleteProject)
                 )
                 .Produces(StatusCodes.Status204NoContent)
-                .Produces<ApiMessageResponse>(StatusCodes.Status404NotFound);
+                .Produces<ApiMessageResponse>(StatusCodes.Status404NotFound)
+                .Produces<ApiMessageResponse>(StatusCodes.Status400BadRequest);
 
             group
                 .MapGet("/{projectId:int}/attachments/{attachmentId:guid}", AccessAttachment)
@@ -161,8 +162,12 @@ namespace BlitzTask.Backend.Features.Projects
             // ProjectSummary asks EF to ORDER BY a member of a constructed record, which it
             // cannot translate — and it throws at request time rather than falling back, so the
             // endpoint 500s on every call.
+            // The Inbox is a project only so that tasks, columns, scores and RBAC keep working;
+            // it is not one the user filed anything into, so it stays out of the sidebar, the
+            // dashboard panel and the project count. /api/inbox is the only way to it.
             var projects = await dbContext
-                .Projects.OrderByDescending(p => p.UpdatedAt)
+                .Projects.Where(p => !p.IsInbox)
+                .OrderByDescending(p => p.UpdatedAt)
                 .SelectProjectSummariesFor(user.Id)
                 .ToListAsync(cancellationToken);
 
@@ -233,7 +238,9 @@ namespace BlitzTask.Backend.Features.Projects
             return Results.Json(project.ToProjectDetails().WithPermissionsFor(user.Id));
         }
 
-        public static async Task<Results<NoContent, NotFound<ApiMessageResponse>>> DeleteProject(
+        public static async Task<
+            Results<NoContent, NotFound<ApiMessageResponse>, BadRequest<ApiMessageResponse>>
+        > DeleteProject(
             int projectId,
             ApplicationDbContext dbContext,
             IFileService fileService,
@@ -248,6 +255,13 @@ namespace BlitzTask.Backend.Features.Projects
 
             if (project is null)
                 return TypedResults.NotFound(new ApiMessageResponse("Project not found"));
+
+            // Nothing recreates an Inbox with its captures in it — GetInbox would hand back a
+            // fresh empty one and the tasks would be gone with the cascade.
+            if (project.IsInbox)
+                return TypedResults.BadRequest(
+                    new ApiMessageResponse("Your Inbox cannot be deleted.")
+                );
 
             if (project.ImageId.HasValue)
                 await fileService.DeleteFileAsync(project.ImageId.Value, cancellationToken);
