@@ -127,6 +127,44 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             return TypedResults.Ok(tasks);
         }
 
+        private static IEnumerable<int> DistinctOffsets(List<int>? minutes) =>
+            (minutes ?? []).Where(m => m > 0).Distinct();
+
+        /// <summary>
+        /// Brings the caller's reminders on a task in line with the offsets they submitted.
+        /// <para>
+        /// Reconciled rather than deleted-and-recreated, which is the whole point: a rebuilt row
+        /// comes back with <c>SentAt</c> null, and an already-fired reminder that looks unfired
+        /// is one the sweep will send again. Saving a task must not re-send yesterday's email.
+        /// </para>
+        /// <para>
+        /// Scoped to one user in both directions — reminders are private, so another member's
+        /// are neither read nor removed here.
+        /// </para>
+        /// </summary>
+        private static void SyncReminders(ProjectTask task, int userId, List<int>? minutes)
+        {
+            var desired = DistinctOffsets(minutes).ToHashSet();
+            var mine = task.Reminders.Where(r => r.UserId == userId).ToList();
+
+            foreach (var reminder in mine.Where(r => !desired.Contains(r.MinutesBeforeDue)))
+                task.Reminders.Remove(reminder);
+
+            foreach (var offset in desired.Where(o => !mine.Any(r => r.MinutesBeforeDue == o)))
+            {
+                task.Reminders.Add(
+                    new TaskReminder
+                    {
+                        UserId = userId,
+                        MinutesBeforeDue = offset,
+                        // Re-derived by the caller's loop; set here so the row is never briefly
+                        // valid-looking with a default firing time.
+                        RemindAt = TaskReminder.ResolveRemindAt(task.DueDate!.Value, offset),
+                    }
+                );
+            }
+        }
+
         // A dashboard widget shows a handful of rows; the cap exists so a malformed `limit`
         // cannot turn this into a full table scan serialised over the wire.
         private const int MaxUserTaskPageSize = 200;
@@ -317,6 +355,24 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 Assignees = assignees,
                 Priority = request.Priority,
                 Tags = request.Tags ?? [],
+                // Set here rather than by a follow-up call to the reminders endpoint: that one
+                // needs an id, so the task would have to be saved first, and a failure between
+                // the two would leave a task whose reminder the user believes they set.
+                Reminders = request.DueDate is null
+                    ? []
+                    :
+                    [
+                        .. DistinctOffsets(request.ReminderMinutesBeforeDue)
+                            .Select(minutes => new TaskReminder
+                            {
+                                UserId = user.Id,
+                                MinutesBeforeDue = minutes,
+                                RemindAt = TaskReminder.ResolveRemindAt(
+                                    request.DueDate.Value,
+                                    minutes
+                                ),
+                            }),
+                    ],
             };
 
             dbContext.ProjectTasks.Add(task);
@@ -385,6 +441,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             // them (it requires a due date), and setting a deadline again restores them.
             if (task.DueDate is not null)
             {
+                SyncReminders(task, context.GetUser().Id, request.ReminderMinutesBeforeDue);
+
                 foreach (var reminder in task.Reminders)
                 {
                     reminder.RemindAt = TaskReminder.ResolveRemindAt(

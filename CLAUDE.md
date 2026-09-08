@@ -405,6 +405,15 @@ on the wrong branch.
   taking one like `/move` does, because filing into a project you are not looking at has no
   visible neighbours to interpolate between. Assignees who are not participants of the target
   are dropped: otherwise the task leaves their board but stays on their "assigned to me".
+- **Reminders ride on the task's own create/update request, and must be reconciled rather than
+  rebuilt.** `ReminderMinutesBeforeDue` on both task requests replaces *the caller's* reminders
+  (`SyncReminders`), adding and deleting only the difference. Delete-and-recreate is the obvious
+  implementation and it is a bug: a fresh row has `SentAt` null, and `TaskReminderJob` fires
+  anything whose `SentAt` is behind its `RemindAt` — so saving an unrelated edit would re-send
+  an email that already went out. Offsets are **ignored while the task has no due date** (not
+  rejected), which is what keeps "clear the deadline, keep the reminders" working. The
+  standalone `/reminders` endpoints still exist and are still the only path for a Viewer, who
+  may set a reminder but cannot save the task it hangs off.
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,
