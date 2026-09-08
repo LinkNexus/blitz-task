@@ -375,6 +375,17 @@ on the wrong branch.
   renders there and a doomed request costs a "Forbidden Access" toast. A new route that loads
   data needs no guard of its own — but it does inherit this one, so don't put anything an
   unconfirmed user is supposed to reach under `_app`.
+- **The webfont is self-hosted, and its metrics are load-bearing.** `--font-sans` named Poppins
+  from the start while nothing loaded it, so the app rendered in the `sans-serif` fallback for
+  months — visible not as a wrong typeface but as *every icon sitting a pixel off its label*.
+  Centring an icon beside text centres their **boxes**, while the eye reads cap-height to
+  baseline; the difference is `fontSize x ((ascent - descent) - capHeight) / 2` and **line-height
+  cannot change it** — half-leading is added symmetrically and cancels. Helvetica makes that
+  -0.089em (~1px at 14px); Poppins is drawn so `ascent - descent` (700) *is* its cap height
+  (698), so the term is zero. Don't reach for `leading-*`, `mt-px` or `translate-y` on a label
+  that looks misaligned: check the font is actually loading first. `@fontsource/poppins` is
+  imported per subset in `index.css`, because the aggregate `400.css` also carries devanagari
+  that would be copied into `wwwroot` and never requested.
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,

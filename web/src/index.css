@@ -1,3 +1,23 @@
+/* Poppins, self-hosted. `--font-sans` has named it from the start but nothing ever loaded it,
+   so every screen rendered in the `sans-serif` fallback — and that is not only a cosmetic
+   difference. Centring an icon beside a label centres their *boxes*, while what the eye reads
+   is cap-height-to-baseline; the gap between those two centres is
+   `fontSize x ((ascent - descent) - capHeight) / 2`, which line-height cannot change. Helvetica
+   makes that -0.089em, so every icon+label row in the app sat about a pixel out. Poppins is
+   drawn so ascent - descent (700) is its cap height (698), i.e. the term is zero.
+
+   Per-subset imports rather than `@fontsource/poppins/400.css`: the aggregate file also carries
+   devanagari, which no unicode-range here will ever request but which would still be copied
+   into wwwroot. Four weights x latin: ~32KB. */
+@import "@fontsource/poppins/latin-400.css";
+@import "@fontsource/poppins/latin-500.css";
+@import "@fontsource/poppins/latin-600.css";
+@import "@fontsource/poppins/latin-700.css";
+@import "@fontsource/poppins/latin-ext-400.css";
+@import "@fontsource/poppins/latin-ext-500.css";
+@import "@fontsource/poppins/latin-ext-600.css";
+@import "@fontsource/poppins/latin-ext-700.css";
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
