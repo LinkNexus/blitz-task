@@ -232,6 +232,7 @@ public class Program
 
         app.MapAuthEndpoints()
             .MapProjectsEndpoints()
+            .MapInboxEndpoints()
             .MapProjectMembersEndpoints()
             .MapProjectColumnsEndpoints()
             .MapProjectTasksEndpoints()

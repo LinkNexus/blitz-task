@@ -160,6 +160,18 @@ came from the file fallback only accepting GET and HEAD.
   `Directory.GetCurrentDirectory()` — so the working directory matters at runtime.
 - **Files**: `LocalFileService` writes to the `FileUpload:UploadDirectory` path (`Uploads/`)
   on local disk. Attachments are `Guid`-keyed rows in the DB pointing at those files.
+- **Inbox**: one hidden project per user, flagged `Project.IsInbox`, holding work captured
+  before it has been decided where it belongs. A real project rather than a nullable
+  `RelatedProjectId` on the task, because every query, the board, the scores, the reminders and
+  the whole RBAC layer already assume a task has a project and a column. The flag buys only the
+  places it must *not* behave like a project: `ListProjects` filters it out, `DeleteProject`
+  refuses it, and `UserTaskSummary.IsInbox` tells a list row to link to `/inbox` rather than to
+  its board. `GET /api/inbox` is **get-or-create** — no row at registration and no data
+  migration for accounts that already exist — with a unique filtered index
+  (`IX_Projects_InboxPerUser`) as the backstop, since the handler is check-then-insert and two
+  first-ever captures could race. It is created with **two** columns: "done" is a position in
+  this app, so a one-column Inbox would hold tasks that can never be completed and the dashboard
+  would show every capture ever made, forever.
 
 ### Frontend: file-based routes
 
@@ -386,6 +398,13 @@ on the wrong branch.
   that looks misaligned: check the font is actually loading first. `@fontsource/poppins` is
   imported per subset in `index.css`, because the aggregate `400.css` also carries devanagari
   that would be copied into `wwwroot` and never requested.
+- **`PATCH /api/tasks/{id}/project` is the only cross-project move.** It authorises *two*
+  projects, so it cannot use `RequireProjectPermissionFilter` (which reads one `projectId` from
+  the route) and does the checks in the handler — mirroring the filter's rule that a project you
+  are not in reads as **404, not 403**. It also computes the score server-side rather than
+  taking one like `/move` does, because filing into a project you are not looking at has no
+  visible neighbours to interpolate between. Assignees who are not participants of the target
+  are dropped: otherwise the task leaves their board but stays on their "assigned to me".
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,

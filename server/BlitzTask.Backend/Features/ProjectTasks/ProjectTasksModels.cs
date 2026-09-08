@@ -81,6 +81,13 @@ namespace BlitzTask.Backend.Features.ProjectTasks
     /// project and column it belongs to, because a cross-project list is meaningless without
     /// them, and drops attachments and description-level detail, which a list never renders.
     /// </summary>
+    /// <summary>
+    /// Files a task into a project — the way out of the Inbox. <c>ColumnId</c> is optional
+    /// because the caller filing a capture has no opinion about status: unset means the target
+    /// project's first column.
+    /// </summary>
+    public record FileTaskRequest(int ProjectId, int? ColumnId);
+
     public record UserTaskSummary(
         int Id,
         string Name,
@@ -97,7 +104,10 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         int ColumnId,
         string ColumnName,
         string ColumnColor,
-        bool IsCompleted
+        bool IsCompleted,
+        // So a list row knows to link an Inbox capture to /inbox rather than to a board the
+        // user is not supposed to be managing.
+        bool IsInbox
     );
 
     public record ProjectTaskDetails(

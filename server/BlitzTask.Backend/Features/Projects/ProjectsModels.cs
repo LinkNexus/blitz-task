@@ -75,6 +75,20 @@ namespace BlitzTask.Backend.Features.Projects
         public DateTime CreatedAt { get; set; }
         public int CreatedById { get; set; }
 
+        /// <summary>
+        /// The owner's Inbox: one hidden project per user, holding work captured before it has
+        /// been decided where it belongs.
+        /// <para>
+        /// A real project rather than a nullable <c>RelatedProjectId</c> on the task, because
+        /// every query, the board, the score ordering, the reminders and the whole RBAC layer
+        /// already assume a task has a project and a column — a nullable owner would have made
+        /// each of those a special case. What this flag buys is only the handful of places where
+        /// the Inbox must *not* behave like a project: it is hidden from the project list, it
+        /// cannot be deleted, and it takes no members.
+        /// </para>
+        /// </summary>
+        public bool IsInbox { get; set; }
+
         public ICollection<ProjectParticipant> Participants { get; set; } = [];
         public User CreatedBy { get; set; } = null!;
         public Attachment? Image { get; set; }
@@ -114,6 +128,14 @@ namespace BlitzTask.Backend.Features.Projects
         ProjectRole Role,
         DateTime JoinedAt
     );
+
+    /// <summary>
+    /// Just enough of the Inbox to capture into it and to read its tasks back through
+    /// <c>GET /api/tasks?projectId=</c>. Not <see cref="ProjectDetails"/>: that would carry the
+    /// tasks a second time, in the shape the board wants rather than the shape the Inbox list
+    /// renders, and the two copies would drift apart in the cache.
+    /// </summary>
+    public record InboxSummary(int ProjectId, int CaptureColumnId);
 
     /// <summary>
     /// A list row. Deliberately narrower than <see cref="ProjectDetails"/>, which carries every

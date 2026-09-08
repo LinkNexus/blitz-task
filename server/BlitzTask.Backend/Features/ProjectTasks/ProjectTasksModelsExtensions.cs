@@ -59,7 +59,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                     // (highest-score) column. Inlined rather than factored into a helper because
                     // this runs inside an expression tree: EF cannot translate a method call.
                     // Kept identical to IncompleteTasks below and to the frontend's overdue test.
-                    !t.RelatedProject.Columns.Any(c => c.Score > t.RelatedColumn.Score)
+                    !t.RelatedProject.Columns.Any(c => c.Score > t.RelatedColumn.Score),
+                    t.RelatedProject.IsInbox
                 ));
         }
 

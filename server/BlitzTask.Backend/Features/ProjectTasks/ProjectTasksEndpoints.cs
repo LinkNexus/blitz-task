@@ -78,6 +78,13 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .WithName("list-user-tasks")
                 .Produces<List<UserTaskSummary>>();
 
+            userTasks
+                .MapPatch("/{taskId:int}/project", FileTask)
+                .WithName("file-user-task")
+                .Produces<UserTaskSummary>()
+                .Produces<ApiMessageResponse>(StatusCodes.Status404NotFound)
+                .Produces<ApiMessageResponse>(StatusCodes.Status403Forbidden);
+
             return app;
         }
 
@@ -123,6 +130,116 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         // A dashboard widget shows a handful of rows; the cap exists so a malformed `limit`
         // cannot turn this into a full table scan serialised over the wire.
         private const int MaxUserTaskPageSize = 200;
+
+        /// <summary>
+        /// Moves a task to another project — what makes the Inbox a staging area rather than a
+        /// place captures go to die.
+        /// <para>
+        /// Cross-project, so it cannot live under <c>/api/projects/{projectId}</c> and cannot use
+        /// <see cref="RequireProjectPermissionFilter"/>: there are two projects to authorise, not
+        /// one. Both are checked here, and — as in that filter — a project the caller does not
+        /// participate in reads as "not found" rather than "forbidden", so the endpoint cannot be
+        /// used to discover which project ids exist.
+        /// </para>
+        /// <para>
+        /// The score is computed server-side rather than taken from the caller like
+        /// <c>/move</c> does, because "file this somewhere I am not currently looking at" has no
+        /// visible neighbours to interpolate between.
+        /// </para>
+        /// </summary>
+        public static async Task<IResult> FileTask(
+            int taskId,
+            FileTaskRequest request,
+            ApplicationDbContext dbContext,
+            HttpContext context,
+            CancellationToken cancellationToken
+        )
+        {
+            var user = context.GetUser();
+
+            var task = await dbContext
+                .ProjectTasks.Include(t => t.Assignees)
+                .FirstOrDefaultAsync(t => t.Id == taskId, cancellationToken);
+
+            if (task is null)
+                return Results.NotFound(new ApiMessageResponse("Task not found."));
+
+            var roles = await dbContext
+                .ProjectParticipants.Where(pp =>
+                    pp.UserId == user.Id
+                    && (pp.ProjectId == task.RelatedProjectId || pp.ProjectId == request.ProjectId)
+                )
+                .ToDictionaryAsync(pp => pp.ProjectId, pp => pp.Role, cancellationToken);
+
+            if (!roles.TryGetValue(task.RelatedProjectId, out var sourceRole))
+                return Results.NotFound(new ApiMessageResponse("Task not found."));
+
+            if (!roles.TryGetValue(request.ProjectId, out var targetRole))
+                return Results.NotFound(new ApiMessageResponse("Project not found."));
+
+            if (
+                !sourceRole.HasPermission(ProjectPermission.ManageTasks)
+                || !targetRole.HasPermission(ProjectPermission.ManageTasks)
+            )
+            {
+                return Results.Json(
+                    new ApiMessageResponse(
+                        "You do not have permission to do this action or access this resource"
+                    ),
+                    statusCode: StatusCodes.Status403Forbidden
+                );
+            }
+
+            var column = request.ColumnId is int columnId
+                ? await dbContext.ProjectColumns.FirstOrDefaultAsync(
+                    c => c.Id == columnId && c.ProjectId == request.ProjectId,
+                    cancellationToken
+                )
+                : await dbContext
+                    .ProjectColumns.Where(c => c.ProjectId == request.ProjectId)
+                    .OrderBy(c => c.Score)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+            if (column is null)
+                return Results.NotFound(new ApiMessageResponse("Project column was not found"));
+
+            var maxScore =
+                await dbContext
+                    .ProjectTasks.Where(t => t.RelatedColumnId == column.Id)
+                    .Select(t => (float?)t.Score)
+                    .MaxAsync(cancellationToken)
+                ?? 0f;
+
+            task.RelatedProjectId = request.ProjectId;
+            task.RelatedColumnId = column.Id;
+            task.Score = maxScore + 1000f;
+
+            // An assignee who is not in the target project keeps an assignment they can no
+            // longer see: the task leaves their board but stays in their "assigned to me" list,
+            // and nothing they can reach would let them hand it back.
+            var targetParticipantIds = await dbContext
+                .ProjectParticipants.Where(pp => pp.ProjectId == request.ProjectId)
+                .Select(pp => pp.UserId)
+                .ToListAsync(cancellationToken);
+
+            foreach (
+                var assignee in task
+                    .Assignees.Where(a => !targetParticipantIds.Contains(a.Id))
+                    .ToList()
+            )
+            {
+                task.Assignees.Remove(assignee);
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            var summary = await dbContext
+                .ProjectTasks.Where(t => t.Id == task.Id)
+                .SelectUserTaskSummariesFor(user.Id)
+                .FirstAsync(cancellationToken);
+
+            return Results.Ok(summary);
+        }
 
         public static async Task<
             Results<JsonHttpResult<ProjectTaskDetails>, NotFound<ApiMessageResponse>>

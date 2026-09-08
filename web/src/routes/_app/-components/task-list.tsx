@@ -17,13 +17,12 @@ const ACCENT_CLASS: Record<SectionAccent, string> = {
   warning: "text-orange-600 dark:text-orange-400",
 };
 
+const ROW_CLASS =
+  "flex items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 transition-colors hover:border-border hover:bg-muted/50";
+
 export function TaskRow({ task }: { task: UserTaskSummary }) {
-  return (
-    <Link
-      to="/projects/$projectId"
-      params={{ projectId: String(task.projectId) }}
-      className="flex items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 transition-colors hover:border-border hover:bg-muted/50"
-    >
+  const body = (
+    <>
       <span
         className="mt-1.5 size-2 shrink-0 rounded-full"
         style={{ backgroundColor: task.columnColor }}
@@ -58,6 +57,23 @@ export function TaskRow({ task }: { task: UserTaskSummary }) {
         {getPriorityIcon(task.priority)}
         {task.priority.charAt(0) + task.priority.slice(1).toLowerCase()}
       </span>
+    </>
+  );
+
+  // A capture links to the Inbox, not to the Inbox's board: that board exists only because
+  // tasks need columns, and sending someone there invites them to manage a project that is
+  // supposed to be invisible.
+  return task.isInbox ? (
+    <Link to="/inbox" className={ROW_CLASS}>
+      {body}
+    </Link>
+  ) : (
+    <Link
+      to="/projects/$projectId"
+      params={{ projectId: String(task.projectId) }}
+      className={ROW_CLASS}
+    >
+      {body}
     </Link>
   );
 }

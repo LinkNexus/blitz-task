@@ -32,6 +32,7 @@ function task(name: string, dueDate: string | null): UserTaskSummary {
     columnName: "Todo",
     columnColor: "#fff",
     isCompleted: false,
+    isInbox: false,
   };
 }
 

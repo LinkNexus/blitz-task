@@ -31,6 +31,21 @@ namespace BlitzTask.Backend.Features.Projects
                 .HasForeignKey(p => p.ImageId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // One Inbox per user, enforced by the database rather than by the get-or-create
+            // handler: two capture requests racing on a first-ever click would both see no
+            // Inbox and both insert one, and the loser of that race must fail loudly instead of
+            // leaving the account with two Inboxes that each hold half its captures.
+            // Declared explicitly only because the filtered index below would otherwise take its
+            // place: EF's foreign-key convention skips creating an index when one is already
+            // configured on those properties, and a *filtered* index cannot serve the ordinary
+            // "projects this user created" lookup.
+            builder.HasIndex(p => p.CreatedById);
+
+            builder
+                .HasIndex(p => p.CreatedById, "IX_Projects_InboxPerUser")
+                .IsUnique()
+                .HasFilter($"\"{nameof(Project.IsInbox)}\" = 1");
+
             builder.ConfigureAuditable();
         }
     }
