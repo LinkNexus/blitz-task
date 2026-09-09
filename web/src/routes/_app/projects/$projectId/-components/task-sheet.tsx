@@ -11,7 +11,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type z from "zod";
@@ -218,16 +218,42 @@ export function TaskSheet({ project }: Props) {
     ...listTaskRemindersOptions({
       path: { projectId: Number(project.id), taskId: editingTaskId ?? 0 },
     }),
-    enabled: editingTaskId !== null && !!editingTask?.dueDate,
+    // Not gated on the task having a due date. A task can hold reminders while its deadline is
+    // cleared — the API keeps them for when it comes back — and leaving them unread would mean
+    // the next save submitted an empty list and deleted the lot.
+    enabled: editingTaskId !== null,
   });
 
+  // Seeded once per opening, and deliberately not keyed on the query data alone: React Query
+  // hands back the *same* data reference when a refetch is deep-equal, so an effect watching
+  // only `savedReminders` never re-runs when the sheet is reopened — by which point the form
+  // has been reset to [], and a reminder that is saved, sent and in the cache still reads as
+  // missing until a full reload.
+  const seeded = useRef<{ taskId: number; from: unknown } | null>(null);
+
   useEffect(() => {
-    if (!savedReminders || form.formState.dirtyFields.reminderOffsets) return;
+    if (!open || editingTaskId === null || !savedReminders) return;
+    // Re-seed on a new opening (the ref is cleared then) or on data that is genuinely new —
+    // the second case matters when the sheet is reopened before the refetch that follows a save
+    // has landed, which would otherwise pin the form to the list from before it.
+    if (
+      seeded.current?.taskId === editingTaskId &&
+      seeded.current.from === savedReminders
+    ) {
+      return;
+    }
+
+    seeded.current = { taskId: editingTaskId, from: savedReminders };
+
+    // Unless the user got there first: reminders can land after the sheet is already open, and
+    // their edit outranks what the server said a moment ago.
+    if (form.formState.dirtyFields.reminderOffsets) return;
+
     form.setValue(
       "reminderOffsets",
       savedReminders.map((r) => Number(r.minutesBeforeDue)),
     );
-  }, [savedReminders, form]);
+  }, [open, editingTaskId, savedReminders, form]);
 
   useEffect(() => {
     const onCreateEvent = (e: Event) => {
@@ -235,6 +261,7 @@ export function TaskSheet({ project }: Props) {
       setEditingTask(null);
       setExistingAttachments([]);
       setColumnId(detail?.columnId ?? defaultColumnId);
+      seeded.current = null;
       form.reset(EMPTY_DEFAULTS);
       setOpen(true);
     };
@@ -243,6 +270,7 @@ export function TaskSheet({ project }: Props) {
       setEditingTask(task);
       setExistingAttachments(task.attachments ?? []);
       setColumnId(null);
+      seeded.current = null;
       form.reset({
         ...EMPTY_DEFAULTS,
         name: task.name,
