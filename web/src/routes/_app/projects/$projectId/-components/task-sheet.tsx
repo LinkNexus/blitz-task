@@ -10,7 +10,7 @@ import {
   IconVideo,
   IconX,
 } from "@tabler/icons-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Controller, type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -23,6 +23,8 @@ import type {
 import {
   createProjectTaskMutation,
   getProjectQueryKey,
+  listTaskRemindersOptions,
+  listTaskRemindersQueryKey,
   updateProjectTaskMutation,
 } from "@/api/@tanstack/react-query.gen";
 import { DatePickerField } from "@/components/forms/fields/date-picker";
@@ -184,6 +186,7 @@ const EMPTY_DEFAULTS: FormValues = {
   assigneeIds: [],
   newAttachments: [],
   removedAttachmentIds: [],
+  reminderOffsets: [],
 };
 
 export function TaskSheet({ project }: Props) {
@@ -206,6 +209,25 @@ export function TaskSheet({ project }: Props) {
     resolver: zodResolver(TaskSchema) as Resolver<FormValues>,
     defaultValues: EMPTY_DEFAULTS,
   });
+
+  // The task detail the board hands over carries no reminders — they are per-user, and the
+  // board's payload is shared by everyone looking at it. So they are read separately and seeded
+  // into the form once, leaving anything the user has already touched alone.
+  const editingTaskId = editingTask ? Number(editingTask.id) : null;
+  const { data: savedReminders } = useQuery({
+    ...listTaskRemindersOptions({
+      path: { projectId: Number(project.id), taskId: editingTaskId ?? 0 },
+    }),
+    enabled: editingTaskId !== null && !!editingTask?.dueDate,
+  });
+
+  useEffect(() => {
+    if (!savedReminders || form.formState.dirtyFields.reminderOffsets) return;
+    form.setValue(
+      "reminderOffsets",
+      savedReminders.map((r) => Number(r.minutesBeforeDue)),
+    );
+  }, [savedReminders, form]);
 
   useEffect(() => {
     const onCreateEvent = (e: Event) => {
@@ -281,6 +303,11 @@ export function TaskSheet({ project }: Props) {
         }),
       );
       invalidateUserTasks(queryClient);
+      queryClient.invalidateQueries({
+        queryKey: listTaskRemindersQueryKey({
+          path: { projectId: Number(project.id), taskId: Number(updated.id) },
+        }),
+      });
       toast.success("Task updated");
       setOpen(false);
     },
@@ -298,6 +325,9 @@ export function TaskSheet({ project }: Props) {
       startDate: data.startDate,
       dueDate: data.dueDate,
       assigneeIds: data.assigneeIds,
+      // Always sent, empty included: this request is the full representation of the caller's
+      // reminders, so omitting the field is how "I removed my last one" is expressed.
+      reminderMinutesBeforeDue: data.reminderOffsets,
     };
 
     if (editingTask) {
@@ -549,16 +579,22 @@ export function TaskSheet({ project }: Props) {
               )}
             />
 
-            {/* Reminders. Only for a saved task — a reminder needs a task id — and saved
-                immediately rather than with the form, since they are per-user data that the
-                task's own PUT knows nothing about. */}
-            {editingTask && (
-              <TaskReminders
-                projectId={Number(project.id)}
-                taskId={Number(editingTask.id)}
-                hasDueDate={!!form.watch("dueDate")}
-              />
-            )}
+            {/* Available while creating too: the reminder rides along on the task's own
+                request, so it no longer needs a task id or a stored due date to exist first. */}
+            <Controller
+              control={form.control}
+              name="reminderOffsets"
+              render={({ field }) => (
+                <TaskReminders
+                  value={field.value}
+                  onChange={field.onChange}
+                  hasDueDate={!!form.watch("dueDate")}
+                  sentOffsets={(savedReminders ?? [])
+                    .filter((r) => r.sentAt)
+                    .map((r) => Number(r.minutesBeforeDue))}
+                />
+              )}
+            />
 
             {/* Attachments */}
             <div className="space-y-3">

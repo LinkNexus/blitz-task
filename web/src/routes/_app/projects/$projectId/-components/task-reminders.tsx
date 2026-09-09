@@ -1,12 +1,4 @@
 import { IconBell, IconPlus, IconX } from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import {
-  createTaskReminderMutation,
-  deleteTaskReminderMutation,
-  listTaskRemindersOptions,
-  listTaskRemindersQueryKey,
-} from "@/api/@tanstack/react-query.gen";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,43 +24,27 @@ function labelFor(minutes: number): string {
 }
 
 type Props = {
-  projectId: number;
-  taskId: number;
+  /** Offsets in minutes before the due date. */
+  value: number[];
+  onChange: (next: number[]) => void;
   /** Reminders are relative to the due date, so there is nothing to offer without one. */
   hasDueDate: boolean;
+  /** Offsets that have already fired, so a chip can say so. */
+  sentOffsets?: number[];
 };
 
-export function TaskReminders({ projectId, taskId, hasDueDate }: Props) {
-  const queryClient = useQueryClient();
-  const path = { projectId, taskId };
-
-  const { data: reminders } = useQuery({
-    ...listTaskRemindersOptions({ path }),
-    enabled: hasDueDate,
-  });
-
-  const invalidate = () =>
-    queryClient.invalidateQueries({
-      queryKey: listTaskRemindersQueryKey({ path }),
-    });
-
-  const create = useMutation({
-    ...createTaskReminderMutation(),
-    onSuccess: invalidate,
-    onError: (error) =>
-      // 409 when the same offset is already set — worth saying out loud, since the UI
-      // otherwise looks like it silently ignored the click.
-      toast.error("Couldn't add that reminder", {
-        description: "message" in error ? error.message : undefined,
-      }),
-  });
-
-  const remove = useMutation({
-    ...deleteTaskReminderMutation(),
-    onSuccess: invalidate,
-    onError: () => toast.error("Couldn't remove that reminder"),
-  });
-
+/**
+ * A form field, not a save button: adding a reminder edits form state and the task's own
+ * create/update request carries it. The reminders endpoints still exist and still work, but
+ * they need a task that already has an id and a stored due date — which is what made setting a
+ * deadline and a reminder together take two saves and a reopen.
+ */
+export function TaskReminders({
+  value,
+  onChange,
+  hasDueDate,
+  sentOffsets = [],
+}: Props) {
   if (!hasDueDate) {
     return (
       <div className="space-y-1.5">
@@ -83,10 +59,8 @@ export function TaskReminders({ projectId, taskId, hasDueDate }: Props) {
     );
   }
 
-  const taken = new Set(
-    (reminders ?? []).map((r) => Number(r.minutesBeforeDue)),
-  );
-  const available = PRESETS.filter((p) => !taken.has(p.minutes));
+  const selected = [...value].sort((a, b) => a - b);
+  const available = PRESETS.filter((p) => !value.includes(p.minutes));
 
   return (
     <div className="space-y-2">
@@ -104,7 +78,6 @@ export function TaskReminders({ projectId, taskId, hasDueDate }: Props) {
                 variant="ghost"
                 size="sm"
                 className="h-7 gap-1 text-xs"
-                disabled={create.isPending}
               >
                 <IconPlus className="size-3.5" />
                 Add
@@ -114,12 +87,7 @@ export function TaskReminders({ projectId, taskId, hasDueDate }: Props) {
               {available.map((preset) => (
                 <DropdownMenuItem
                   key={preset.minutes}
-                  onSelect={() =>
-                    create.mutate({
-                      path,
-                      body: { minutesBeforeDue: preset.minutes },
-                    })
-                  }
+                  onSelect={() => onChange([...value, preset.minutes])}
                 >
                   {preset.label}
                 </DropdownMenuItem>
@@ -129,27 +97,23 @@ export function TaskReminders({ projectId, taskId, hasDueDate }: Props) {
         )}
       </div>
 
-      {reminders?.length ? (
+      {selected.length ? (
         <div className="flex flex-wrap gap-1.5">
-          {reminders.map((reminder) => (
+          {selected.map((minutes) => (
             <Badge
-              key={String(reminder.id)}
+              key={minutes}
               variant="secondary"
               className="gap-1 pr-1 font-normal"
             >
-              {labelFor(Number(reminder.minutesBeforeDue))}
-              {reminder.sentAt && (
+              {labelFor(minutes)}
+              {sentOffsets.includes(minutes) && (
                 <span className="text-muted-foreground">· sent</span>
               )}
               <button
                 type="button"
-                aria-label={`Remove reminder ${labelFor(Number(reminder.minutesBeforeDue))}`}
+                aria-label={`Remove reminder ${labelFor(minutes)}`}
                 className="rounded-sm p-0.5 hover:bg-muted-foreground/20"
-                onClick={() =>
-                  remove.mutate({
-                    path: { ...path, reminderId: Number(reminder.id) },
-                  })
-                }
+                onClick={() => onChange(value.filter((m) => m !== minutes))}
               >
                 <IconX className="size-3" />
               </button>

@@ -38,6 +38,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public ICollection<Attachment> Attachments { get; set; } = [];
         public ICollection<TaskReminder> Reminders { get; set; } = [];
 
+        public static int MaxRemindersCount => 5;
         public static int MaxTagsCount => 5;
         public static int MaxTagsLength => 20;
         public static int MaxAttachmentsCount => 5;
@@ -59,6 +60,15 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public DateTimeOffset? DueDate { get; set; }
         public List<int>? AssigneeIds { get; set; } = [];
         public List<IFormFile>? Attachments { get; set; } = [];
+
+        /// <summary>
+        /// Reminder offsets, in minutes before the due date, for the <b>caller</b> — a reminder
+        /// is a personal intention, so a request can only ever set its own. Carried on the task
+        /// request rather than left to <c>POST .../reminders</c> because that endpoint needs a
+        /// task that already exists with a due date already saved, which forced "save, reopen,
+        /// then add a reminder" for what is one thought.
+        /// </summary>
+        public List<int>? ReminderMinutesBeforeDue { get; set; } = [];
     }
 
     public record MoveProjectTaskRequest(int ColumnId, float Score);
@@ -74,6 +84,19 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public List<int>? AssigneeIds { get; set; } = [];
         public List<IFormFile>? NewAttachments { get; set; }
         public List<Guid>? RemovedAttachmentIds { get; set; }
+
+        /// <summary>
+        /// The caller's reminder offsets, in minutes before the due date. **Replaces** whatever
+        /// they had on this task, matching how this PUT already treats <c>Tags</c>: it is a full
+        /// representation, so an absent list means none. Other members' reminders on the same
+        /// task are never touched.
+        /// <para>
+        /// Ignored entirely while the task has no due date, so that clearing a deadline keeps
+        /// the reminders rather than dropping them — the sweep will not fire a reminder without
+        /// a due date, and setting the deadline again brings them back.
+        /// </para>
+        /// </summary>
+        public List<int>? ReminderMinutesBeforeDue { get; set; } = [];
     }
 
     /// <summary>

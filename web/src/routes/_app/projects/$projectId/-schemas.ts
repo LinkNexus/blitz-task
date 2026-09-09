@@ -16,6 +16,11 @@ export const TaskSchema = z
     assigneeIds: z.array(z.number().int()),
     newAttachments: z.array(z.instanceof(File)).max(5, "Maximum 5 attachments"),
     removedAttachmentIds: z.array(z.string()),
+    // Minutes before the due date. Part of the form rather than saved on click, so a due date
+    // and the reminder that depends on it are one save instead of save-reopen-add.
+    reminderOffsets: z
+      .array(z.number().int().positive())
+      .max(5, "Maximum 5 reminders"),
   })
   .refine(
     (data) => {

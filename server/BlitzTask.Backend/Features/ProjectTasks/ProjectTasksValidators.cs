@@ -41,6 +41,17 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 )
                 .WithMessage("Due date cannot be before start date");
 
+            // Only shape is checked here — count and sign. The "no due date" case is not an
+            // error: the handler ignores reminder offsets while the task has no deadline, so
+            // that clearing one keeps the reminders instead of dropping them.
+            RuleFor(x => x.ReminderMinutesBeforeDue)
+                .Must(reminders => reminders is null
+                    || reminders.Count <= ProjectTask.MaxRemindersCount)
+                .WithMessage($"Maximum {ProjectTask.MaxRemindersCount} reminders allowed")
+                .ForEach(reminder =>
+                    reminder.GreaterThan(0).WithMessage("A reminder must be set before the due date")
+                );
+
             When(
                 x => x.NewAttachments is not null,
                 () =>
@@ -105,6 +116,17 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                         dueDate is null || request.StartDate is null || dueDate >= request.StartDate
                 )
                 .WithMessage("Due date cannot be before start date");
+
+            // Only shape is checked here — count and sign. The "no due date" case is not an
+            // error: the handler ignores reminder offsets while the task has no deadline, so
+            // that clearing one keeps the reminders instead of dropping them.
+            RuleFor(x => x.ReminderMinutesBeforeDue)
+                .Must(reminders => reminders is null
+                    || reminders.Count <= ProjectTask.MaxRemindersCount)
+                .WithMessage($"Maximum {ProjectTask.MaxRemindersCount} reminders allowed")
+                .ForEach(reminder =>
+                    reminder.GreaterThan(0).WithMessage("A reminder must be set before the due date")
+                );
 
             When(
                 x => x.Attachments is not null,
