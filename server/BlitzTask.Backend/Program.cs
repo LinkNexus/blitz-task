@@ -236,7 +236,8 @@ public class Program
             .MapProjectMembersEndpoints()
             .MapProjectColumnsEndpoints()
             .MapProjectTasksEndpoints()
-            .MapTaskRemindersEndpoints();
+            .MapTaskRemindersEndpoints()
+            .MapTaskChecklistEndpoints();
 
         app.MapGet(
             "/api/csrf-token",

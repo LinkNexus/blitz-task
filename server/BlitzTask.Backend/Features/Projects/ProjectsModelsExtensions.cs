@@ -87,7 +87,10 @@ namespace BlitzTask.Backend.Features.Projects
                                 t.UpdatedAt,
                                 t.Assignees.Select(a => a.Id).ToList(),
                                 t.Attachments.Select(a => new AttachmentMetadata(a.Id, a.OriginalFilename, a.ContentType, a.SizeInBytes, a.CreatedAt)).ToList(),
-                                t.RelatedColumnId
+                                t.RelatedColumnId,
+                                t.ChecklistItems.OrderBy(c => c.Position)
+                                    .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))
+                                    .ToList()
                             ))
                             .ToList()
                     ))
@@ -142,7 +145,9 @@ namespace BlitzTask.Backend.Features.Projects
                                         t.UpdatedAt,
                                         [.. t.Assignees.Select(a => a.Id)],
                                         [.. t.Attachments.Select(a => new AttachmentMetadata(a.Id, a.OriginalFilename, a.ContentType, a.SizeInBytes, a.CreatedAt))],
-                                        t.RelatedColumnId
+                                        t.RelatedColumnId,
+                                        [.. t.ChecklistItems.OrderBy(c => c.Position)
+                                            .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))]
                                     )),
                             ]
                         )),

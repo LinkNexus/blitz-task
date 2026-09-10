@@ -414,6 +414,14 @@ on the wrong branch.
   rejected), which is what keeps "clear the deadline, keep the reminders" working. The
   standalone `/reminders` endpoints still exist and are still the only path for a Viewer, who
   may set a reminder but cannot save the task it hangs off.
+- **A checklist item's `IsDone` is not on the task request, on purpose.** `ChecklistItems` on
+  both task requests carries text and order only, reconciled by id (`SyncChecklist`); ticking is
+  `PATCH /api/{projectId}/tasks/{taskId}/checklist/{itemId}` and lands immediately. Adding
+  `isDone` to the task request would make a save from a sheet opened before someone ticked
+  something silently untick it, and it is what keeps the two write paths from fighting. The
+  corollary is that **every handler returning `ProjectTaskDetails` must `Include` the checklist**
+  — `MoveTask` especially, since the board writes its response straight into the project cache
+  and a missing projection reads on screen as the drag having wiped the list.
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,
