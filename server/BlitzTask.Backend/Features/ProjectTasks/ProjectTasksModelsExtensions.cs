@@ -21,7 +21,9 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 [.. task.Attachments.Select(a => new AttachmentMetadata(
                     a.Id, a.OriginalFilename, a.ContentType, a.SizeInBytes, a.CreatedAt
                 ))],
-                task.RelatedColumnId
+                task.RelatedColumnId,
+                [.. task.ChecklistItems.OrderBy(c => c.Position)
+                    .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))]
             );
         }
 

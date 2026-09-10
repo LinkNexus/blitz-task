@@ -61,6 +61,7 @@ import { aspNetFormSerializer } from "@/lib/form-serializer";
 import { invalidateUserTasks } from "@/lib/query-invalidation";
 import { getInitials } from "@/lib/utils";
 import { TaskSchema } from "../-schemas";
+import { TaskChecklist } from "./task-checklist";
 import { TaskReminders } from "./task-reminders";
 
 type FormValues = z.infer<typeof TaskSchema>;
@@ -187,6 +188,7 @@ const EMPTY_DEFAULTS: FormValues = {
   newAttachments: [],
   removedAttachmentIds: [],
   reminderOffsets: [],
+  checklistItems: [],
 };
 
 export function TaskSheet({ project }: Props) {
@@ -280,6 +282,13 @@ export function TaskSheet({ project }: Props) {
         startDate: task.startDate ?? null,
         dueDate: task.dueDate ?? null,
         assigneeIds: (task.assigneeIds ?? []).map(Number),
+        // Carried on the task, unlike reminders, so there is nothing to wait for and nothing to
+        // re-seed: whatever the board's cache holds is what the list is.
+        checklistItems: (task.checklistItems ?? []).map((item) => ({
+          id: Number(item.id),
+          text: item.text,
+          isDone: item.isDone,
+        })),
       });
       setOpen(true);
     };
@@ -356,6 +365,12 @@ export function TaskSheet({ project }: Props) {
       // Always sent, empty included: this request is the full representation of the caller's
       // reminders, so omitting the field is how "I removed my last one" is expressed.
       reminderMinutesBeforeDue: data.reminderOffsets,
+      // Text and order only. Ticking has already been saved by the time this runs, so sending
+      // the state this form happens to hold could only ever undo it.
+      checklistItems: data.checklistItems.map((item) => ({
+        id: item.id,
+        text: item.text,
+      })),
     };
 
     if (editingTask) {
@@ -620,6 +635,21 @@ export function TaskSheet({ project }: Props) {
                   sentOffsets={(savedReminders ?? [])
                     .filter((r) => r.sentAt)
                     .map((r) => Number(r.minutesBeforeDue))}
+                />
+              )}
+            />
+
+            {/* Ticking is immediate and does not wait for a save; the rows themselves are form
+                state, so a checklist can be written on a task that does not exist yet. */}
+            <Controller
+              control={form.control}
+              name="checklistItems"
+              render={({ field }) => (
+                <TaskChecklist
+                  value={field.value}
+                  onChange={field.onChange}
+                  projectId={Number(project.id)}
+                  taskId={editingTask ? Number(editingTask.id) : null}
                 />
               )}
             />

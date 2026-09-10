@@ -21,6 +21,19 @@ export const TaskSchema = z
     reminderOffsets: z
       .array(z.number().int().positive())
       .max(5, "Maximum 5 reminders"),
+    // `isDone` is here so a row can render ticked, not so it can be saved: the task request has
+    // no field for it, and ticking is its own immediate call. `id` is null until the row has
+    // been saved once, which is what the server matches on to keep an item's ticked state
+    // across a save instead of rebuilding the list.
+    checklistItems: z
+      .array(
+        z.object({
+          id: z.number().int().nullable(),
+          text: z.string().max(200, "Checklist item too long"),
+          isDone: z.boolean(),
+        }),
+      )
+      .max(20, "Maximum 20 checklist items"),
   })
   .refine(
     (data) => {

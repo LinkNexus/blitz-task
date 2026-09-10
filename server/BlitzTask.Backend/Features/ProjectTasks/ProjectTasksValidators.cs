@@ -6,6 +6,22 @@ using Microsoft.Extensions.Options;
 
 namespace BlitzTask.Backend.Features.ProjectTasks
 {
+    /// <summary>
+    /// Shape only. An empty item is not an error — the handler drops it, because a row the user
+    /// started and abandoned should not fail the save it is sitting in.
+    /// </summary>
+    public class ChecklistItemInputValidator : AbstractValidator<ChecklistItemInput>
+    {
+        public ChecklistItemInputValidator()
+        {
+            RuleFor(x => x.Text)
+                .MaximumLength(ProjectTask.MaxChecklistItemLength)
+                .WithMessage(
+                    $"A checklist item must be at most {ProjectTask.MaxChecklistItemLength} characters long"
+                );
+        }
+    }
+
     public class UpdateProjectTaskRequestValidator : AbstractValidator<UpdateProjectTaskRequest>
     {
         public UpdateProjectTaskRequestValidator(IOptions<FileUploadSettings> fileUploadSettings)
@@ -51,6 +67,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .ForEach(reminder =>
                     reminder.GreaterThan(0).WithMessage("A reminder must be set before the due date")
                 );
+
+            RuleFor(x => x.ChecklistItems)
+                .Must(items => items is null
+                    || items.Count <= ProjectTask.MaxChecklistItemsCount)
+                .WithMessage($"Maximum {ProjectTask.MaxChecklistItemsCount} checklist items allowed")
+                .ForEach(item => item.SetValidator(new ChecklistItemInputValidator()));
 
             When(
                 x => x.NewAttachments is not null,
@@ -127,6 +149,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .ForEach(reminder =>
                     reminder.GreaterThan(0).WithMessage("A reminder must be set before the due date")
                 );
+
+            RuleFor(x => x.ChecklistItems)
+                .Must(items => items is null
+                    || items.Count <= ProjectTask.MaxChecklistItemsCount)
+                .WithMessage($"Maximum {ProjectTask.MaxChecklistItemsCount} checklist items allowed")
+                .ForEach(item => item.SetValidator(new ChecklistItemInputValidator()));
 
             When(
                 x => x.Attachments is not null,

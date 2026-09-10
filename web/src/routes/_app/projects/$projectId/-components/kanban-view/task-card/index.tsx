@@ -1,5 +1,9 @@
 import { useSortable } from "@dnd-kit/react/sortable";
-import { IconCalendarDue, IconPaperclip } from "@tabler/icons-react";
+import {
+  IconCalendarDue,
+  IconListCheck,
+  IconPaperclip,
+} from "@tabler/icons-react";
 import { useMemo } from "react";
 import type { ProjectDetails, ProjectTaskDetails } from "@/api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -50,6 +54,8 @@ export function TaskCard({
     !!currentColumn &&
     Number(currentColumn.score) < maxScore &&
     new Date(task.dueDate) < new Date();
+
+  const checklistDone = task.checklistItems.filter((i) => i.isDone).length;
 
   const priorityLabel =
     task.priority.charAt(0) + task.priority.slice(1).toLowerCase();
@@ -124,6 +130,19 @@ export function TaskCard({
                   month: "short",
                   day: "numeric",
                 })}
+              </span>
+            )}
+
+            {task.checklistItems.length > 0 && (
+              <span
+                className={`flex items-center gap-1 text-xs tabular-nums ${
+                  checklistDone === task.checklistItems.length
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <IconListCheck className="size-3.5 shrink-0" />
+                {checklistDone}/{task.checklistItems.length}
               </span>
             )}
 

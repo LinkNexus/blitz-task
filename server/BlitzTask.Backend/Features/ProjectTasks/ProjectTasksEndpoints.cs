@@ -165,6 +165,52 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             }
         }
 
+        /// <summary>
+        /// Brings a task's checklist in line with the submitted list — inserting items that
+        /// arrived without an id, deleting the ones no longer present, and renumbering the rest
+        /// into the order they were sent in.
+        /// <para>
+        /// The ticked state is never read from the request and never written here. That is the
+        /// whole reason items carry an id: matching on it lets an existing row keep its
+        /// <c>IsDone</c>, so a save made from a sheet that was opened before someone ticked
+        /// something cannot untick it. Delete-and-recreate would clear the lot on every save.
+        /// </para>
+        /// <para>
+        /// Blank text is dropped rather than rejected: it means a row the user started and left
+        /// empty, and failing the whole save over it would lose the edits around it.
+        /// </para>
+        /// </summary>
+        private static void SyncChecklist(ProjectTask task, List<ChecklistItemInput>? items)
+        {
+            var submitted = (items ?? [])
+                .Where(i => !string.IsNullOrWhiteSpace(i.Text))
+                .ToList();
+
+            var keptIds = submitted.Where(i => i.Id.HasValue).Select(i => i.Id!.Value).ToHashSet();
+
+            foreach (var item in task.ChecklistItems.Where(c => !keptIds.Contains(c.Id)).ToList())
+                task.ChecklistItems.Remove(item);
+
+            for (var position = 0; position < submitted.Count; position++)
+            {
+                var input = submitted[position];
+                var existing = input.Id.HasValue
+                    ? task.ChecklistItems.FirstOrDefault(c => c.Id == input.Id.Value)
+                    : null;
+
+                if (existing is null)
+                {
+                    task.ChecklistItems.Add(
+                        new TaskChecklistItem { Text = input.Text.Trim(), Position = position }
+                    );
+                    continue;
+                }
+
+                existing.Text = input.Text.Trim();
+                existing.Position = position;
+            }
+        }
+
         // A dashboard widget shows a handful of rows; the cap exists so a malformed `limit`
         // cannot turn this into a full table scan serialised over the wire.
         private const int MaxUserTaskPageSize = 200;
@@ -373,6 +419,19 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                                 ),
                             }),
                     ],
+                ChecklistItems =
+                [
+                    .. (request.ChecklistItems ?? [])
+                        .Where(i => !string.IsNullOrWhiteSpace(i.Text))
+                        .Select(
+                            (item, position) =>
+                                new TaskChecklistItem
+                                {
+                                    Text = item.Text.Trim(),
+                                    Position = position,
+                                }
+                        ),
+                ],
             };
 
             dbContext.ProjectTasks.Add(task);
@@ -397,6 +456,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .ProjectTasks.Where(t => t.Id == taskId && t.RelatedProjectId == projectId)
                 .Include(t => t.Assignees)
                 .Include(t => t.Attachments)
+                .Include(t => t.ChecklistItems)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (task is null)
@@ -422,6 +482,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .Include(t => t.Assignees)
                 .Include(t => t.Attachments)
                 .Include(t => t.Reminders)
+                .Include(t => t.ChecklistItems)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (task is null)
@@ -433,6 +494,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             task.Tags = request.Tags ?? [];
             task.StartDate = request.StartDate;
             task.DueDate = request.DueDate;
+            SyncChecklist(task, request.ChecklistItems);
 
             // TaskReminder.RemindAt is derived from the due date, so moving the deadline has to
             // move the reminders with it — this is the one place a due date ever changes, and
@@ -505,10 +567,15 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             CancellationToken cancellationToken
         )
         {
+            // Every one of these Includes is load-bearing for the *response*, not the move:
+            // ToProjectTasksDetails projects what is loaded, the frontend writes that straight
+            // into the project cache, and anything missing here reads on the board as the drag
+            // having wiped it.
             var task = await dbContext
                 .ProjectTasks.Where(t => t.Id == taskId && t.RelatedProjectId == projectId)
                 .Include(t => t.Assignees)
                 .Include(t => t.Attachments)
+                .Include(t => t.ChecklistItems)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (task is null)

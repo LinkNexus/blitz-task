@@ -37,11 +37,14 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public Project RelatedProject { get; set; } = null!;
         public ICollection<Attachment> Attachments { get; set; } = [];
         public ICollection<TaskReminder> Reminders { get; set; } = [];
+        public ICollection<TaskChecklistItem> ChecklistItems { get; set; } = [];
 
         public static int MaxRemindersCount => 5;
         public static int MaxTagsCount => 5;
         public static int MaxTagsLength => 20;
         public static int MaxAttachmentsCount => 5;
+        public static int MaxChecklistItemsCount => 20;
+        public static int MaxChecklistItemLength => 200;
     }
 
     public class ProjectTaskAttachment
@@ -69,6 +72,17 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         /// then add a reminder" for what is one thought.
         /// </summary>
         public List<int>? ReminderMinutesBeforeDue { get; set; } = [];
+
+        /// <summary>
+        /// The task's checklist, in the order it should read. Carried here rather than left to
+        /// the checklist endpoint for the same reason as reminders: a task being created has no
+        /// id yet, so anything needing one could not be offered on a new task at all.
+        /// <para>
+        /// Text and order only — an item's ticked state is never submitted here, so nothing about
+        /// saving a task can change it.
+        /// </para>
+        /// </summary>
+        public List<ChecklistItemInput>? ChecklistItems { get; set; } = [];
     }
 
     public record MoveProjectTaskRequest(int ColumnId, float Score);
@@ -97,6 +111,18 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         /// </para>
         /// </summary>
         public List<int>? ReminderMinutesBeforeDue { get; set; } = [];
+
+        /// <summary>
+        /// The task's checklist, in the order it should read. A full representation like
+        /// <c>Tags</c>: an absent list means the task has none.
+        /// <para>
+        /// **Reconciled, not rebuilt.** An item already on the task carries its id, and the
+        /// handler matches on it — so the item keeps the row it had, and with it the ticked state
+        /// this request never mentions. Rebuilding the list would silently untick everything on
+        /// every save.
+        /// </para>
+        /// </summary>
+        public List<ChecklistItemInput>? ChecklistItems { get; set; } = [];
     }
 
     /// <summary>
@@ -146,6 +172,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         DateTime UpdatedAt,
         List<int> AssigneeIds,
         List<AttachmentMetadata> Attachments,
-        int ColumnId
+        int ColumnId,
+        List<ChecklistItemDetails> ChecklistItems
     );
 }
