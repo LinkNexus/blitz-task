@@ -40,6 +40,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 );
 
             builder.ConfigureAuditable();
+            builder.ConfigureSoftDeletable();
         }
     }
 }

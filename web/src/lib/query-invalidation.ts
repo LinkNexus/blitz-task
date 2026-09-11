@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import {
+  getProjectQueryKey,
   listProjectsQueryKey,
   listUserTasksQueryKey,
 } from "@/api/@tanstack/react-query.gen";
@@ -35,4 +36,22 @@ export function invalidateProjectLists(queryClient: QueryClient) {
     queryClient.invalidateQueries({ queryKey: listProjectsQueryKey() }),
     invalidateUserTasks(queryClient),
   ]);
+}
+
+/**
+ * Drops every cached project board.
+ *
+ * The generated key is `[{ _id, baseUrl, path }]` and React Query matches it deep-partially, so
+ * passing a key built with no `path` is a prefix that covers every project at once — a plain
+ * `["getProject"]` matches nothing at all, since the real key holds an object rather than that
+ * string.
+ *
+ * Restoring from the trash needs this: which board changed depends on what was brought back, and
+ * a task restored into a project that is already open would otherwise stay missing from it for
+ * the 30 seconds of `staleTime`.
+ */
+export function invalidateProjectBoards(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({
+    queryKey: getProjectQueryKey({ path: { projectId: undefined } } as never),
+  });
 }

@@ -243,34 +243,45 @@ namespace BlitzTask.Backend.Features.Projects
         > DeleteProject(
             int projectId,
             ApplicationDbContext dbContext,
-            IFileService fileService,
             CancellationToken cancellationToken
         )
         {
             var project = await dbContext
                 .Projects.Where(p => p.Id == projectId)
                 .Include(p => p.Tasks)
-                    .ThenInclude(t => t.Attachments)
+                .Include(p => p.Columns)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (project is null)
                 return TypedResults.NotFound(new ApiMessageResponse("Project not found"));
 
             // Nothing recreates an Inbox with its captures in it — GetInbox would hand back a
-            // fresh empty one and the tasks would be gone with the cascade.
+            // fresh empty one and the tasks would be left orphaned behind a flag nothing reads.
             if (project.IsInbox)
                 return TypedResults.BadRequest(
                     new ApiMessageResponse("Your Inbox cannot be deleted.")
                 );
 
-            if (project.ImageId.HasValue)
-                await fileService.DeleteFileAsync(project.ImageId.Value, cancellationToken);
+            // Trashed, not destroyed. Nothing on disk is touched here: the image and every
+            // attachment have to survive until the purge, or restoring gives back a project whose
+            // files 404.
+            //
+            // One instant is stamped across the project and everything under it, and that shared
+            // value is load-bearing — it is how the restore tells apart what came down with the
+            // project from what was already in the trash on its own.
+            //
+            // Hence the explicit DeletedAt == null: the query filter keeps trashed rows out of the
+            // SQL, but EF's navigation fix-up puts any that happen to be *tracked* back into these
+            // collections, and re-stamping one would quietly resurrect it on the next restore.
+            var deletedAt = DateTime.UtcNow;
+            project.DeletedAt = deletedAt;
 
-            foreach (var task in project.Tasks.ToList())
-            foreach (var attachment in task.Attachments.ToList())
-                await fileService.DeleteFileAsync(attachment.Id, cancellationToken);
+            foreach (var column in project.Columns.Where(c => c.DeletedAt == null))
+                column.DeletedAt = deletedAt;
 
-            dbContext.Projects.Remove(project);
+            foreach (var task in project.Tasks.Where(t => t.DeletedAt == null))
+                task.DeletedAt = deletedAt;
+
             await dbContext.SaveChangesAsync(cancellationToken);
             return TypedResults.NoContent();
         }

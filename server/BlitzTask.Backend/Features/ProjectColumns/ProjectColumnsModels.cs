@@ -4,7 +4,7 @@ using BlitzTask.Backend.Features.Shared.Models;
 
 namespace BlitzTask.Backend.Features.ProjectColumns
 {
-    public class ProjectColumn : IAuditable
+    public class ProjectColumn : IAuditable, ISoftDeletable
     {
         public int Id { get; set; }
         public required string Name { get; set; }
@@ -14,6 +14,7 @@ namespace BlitzTask.Backend.Features.ProjectColumns
 
         public DateTime UpdatedAt { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime? DeletedAt { get; set; }
 
         public Project Project { get; set; } = null!;
         public ICollection<ProjectTask> Tasks { get; set; } = [];

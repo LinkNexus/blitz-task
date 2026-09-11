@@ -140,7 +140,6 @@ public class InboxTests
         var result = await ProjectsEndpoints.DeleteProject(
             inbox.ProjectId,
             dbContext,
-            Mock.Of<IFileService>(),
             CancellationToken.None
         );
 

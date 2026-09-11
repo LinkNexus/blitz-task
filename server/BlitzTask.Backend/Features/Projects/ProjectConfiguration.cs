@@ -47,6 +47,7 @@ namespace BlitzTask.Backend.Features.Projects
                 .HasFilter($"\"{nameof(Project.IsInbox)}\" = 1");
 
             builder.ConfigureAuditable();
+            builder.ConfigureSoftDeletable();
         }
     }
 

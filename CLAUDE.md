@@ -432,6 +432,18 @@ on the wrong branch.
   backlog of overdue ones. The successor is an ordinary task: that is the whole point of
   materialising one at a time, and it is why the board, RBAC, reminders and checklists needed no
   changes.
+- **Deleting anything is a soft delete, and the purge job is the only thing that touches disk.**
+  `Project`, `ProjectColumn` and `ProjectTask` implement `ISoftDeletable` and carry a global query
+  filter (`ConfigureSoftDeletable`), so ordinary queries exclude trashed rows for free — reaching
+  one means `IgnoreQueryFilters()`. Never call `DeleteFileAsync` from a delete endpoint again: a
+  restore has to give back a task whose attachments still open, so files die only in
+  `TrashPurgeJob`, past the 30-day window.
+- **A cascade stamps one `DeletedAt` instant across parent and children, and restore matches on
+  it.** That equality is what keeps a task deleted last week from reappearing when its project is
+  restored. Two consequences when writing a new cascade: stamp only rows where
+  `DeletedAt == null` — EF's **navigation fix-up puts tracked trashed rows back into a collection
+  the query filter excluded**, and re-stamping one silently resurrects it — and never hard-delete
+  a parent whose children you meant to keep recoverable, since the FK cascade ignores every flag.
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,

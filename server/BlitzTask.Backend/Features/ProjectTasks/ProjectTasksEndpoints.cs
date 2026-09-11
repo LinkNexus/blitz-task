@@ -764,22 +764,19 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             int projectId,
             int taskId,
             ApplicationDbContext dbContext,
-            IFileService fileService,
             CancellationToken cancellationToken
         )
         {
             var task = await dbContext
                 .ProjectTasks.Where(t => t.Id == taskId && t.RelatedProjectId == projectId)
-                .Include(t => t.Attachments)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (task is null)
                 return TypedResults.NotFound(new ApiMessageResponse("Task not found"));
 
-            foreach (var attachment in task.Attachments)
-                await fileService.DeleteFileAsync(attachment.Id, cancellationToken);
-
-            dbContext.ProjectTasks.Remove(task);
+            // Attachments stay on disk until the purge — deleting them here would make a restore
+            // hand back a task whose files are gone.
+            task.DeletedAt = DateTime.UtcNow;
             await dbContext.SaveChangesAsync(cancellationToken);
             return TypedResults.NoContent();
         }
