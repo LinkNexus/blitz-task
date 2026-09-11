@@ -211,6 +211,150 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             }
         }
 
+        private static List<int> NormaliseWeekdays(RecurrenceInput input) =>
+            input.Frequency != RecurrenceFrequency.WEEKLY
+                ? []
+                : [.. (input.Weekdays ?? []).Where(d => d is >= 0 and <= 6).Distinct().Order()];
+
+        /// <summary>
+        /// Brings a task's recurrence rule in line with the request. Null means "does not
+        /// repeat", and removes whatever rule was there.
+        /// <para>
+        /// Updated in place rather than replaced so the row survives an edit, which keeps
+        /// <see cref="ProjectTask.RecurrenceSpawnedAt"/> meaningful — a rebuilt rule on a task
+        /// that has already spawned would look like a fresh series.
+        /// </para>
+        /// </summary>
+        private static void SyncRecurrence(ProjectTask task, RecurrenceInput? input)
+        {
+            if (input is null)
+            {
+                task.Recurrence = null;
+                return;
+            }
+
+            var weekdays = NormaliseWeekdays(input);
+            var interval = Math.Clamp(input.Interval, 1, ProjectTask.MaxRecurrenceInterval);
+
+            if (task.Recurrence is null)
+            {
+                task.Recurrence = new TaskRecurrence
+                {
+                    Frequency = input.Frequency,
+                    Interval = interval,
+                    Weekdays = weekdays,
+                };
+                return;
+            }
+
+            task.Recurrence.Frequency = input.Frequency;
+            task.Recurrence.Interval = interval;
+            task.Recurrence.Weekdays = weekdays;
+        }
+
+        /// <summary>
+        /// Writes the next occurrence of a series, if the task that was just completed is part of
+        /// one. Returns the new task, or null when there is nothing to spawn.
+        /// <para>
+        /// The successor is an ordinary task, which is the entire point of materialising one at a
+        /// time: the board, the score ordering, RBAC, reminders and checklists need to know
+        /// nothing about recurrence. It carries the work forward — name, description, priority,
+        /// tags, assignees, the checklist (**unticked**, since it describes the steps and not the
+        /// last time they were done) and everyone's reminders, re-armed against the new deadline.
+        /// </para>
+        /// <para>
+        /// Attachments are deliberately not carried over: they are files that belonged to the
+        /// occurrence that had them, and copying the rows would leave two tasks owning one blob
+        /// whose deletion is reference-counted nowhere.
+        /// </para>
+        /// </summary>
+        private static async Task<ProjectTask?> SpawnNextOccurrenceAsync(
+            ProjectTask completed,
+            ApplicationDbContext dbContext,
+            CancellationToken cancellationToken
+        )
+        {
+            // No deadline means nothing to advance from. The rule is kept rather than treated as
+            // an error, mirroring reminders: clearing a due date should not quietly throw away
+            // the intention to repeat.
+            if (completed.Recurrence is null || completed.DueDate is null)
+                return null;
+
+            if (completed.RecurrenceSpawnedAt is not null)
+                return null;
+
+            var firstColumn = await dbContext
+                .ProjectColumns.Where(c => c.ProjectId == completed.RelatedProjectId)
+                .OrderBy(c => c.Score)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (firstColumn is null)
+                return null;
+
+            var nextDue = TaskRecurrence.NextDueDate(
+                completed.Recurrence,
+                completed.DueDate.Value,
+                DateTimeOffset.UtcNow
+            );
+
+            // The span is moved, not recomputed: a task that ran for three days before its
+            // deadline still does.
+            var shift = nextDue - completed.DueDate.Value;
+
+            var maxScore =
+                await dbContext
+                    .ProjectTasks.Where(t => t.RelatedColumnId == firstColumn.Id)
+                    .Select(t => (float?)t.Score)
+                    .MaxAsync(cancellationToken)
+                ?? 0f;
+
+            var next = new ProjectTask
+            {
+                Name = completed.Name,
+                Description = completed.Description,
+                Priority = completed.Priority,
+                RelatedProjectId = completed.RelatedProjectId,
+                RelatedColumnId = firstColumn.Id,
+                Score = maxScore + 1000f,
+                Tags = [.. completed.Tags],
+                StartDate = completed.StartDate?.Add(shift),
+                DueDate = nextDue,
+                Assignees = [.. completed.Assignees],
+                ChecklistItems =
+                [
+                    .. completed.ChecklistItems.OrderBy(c => c.Position)
+                        .Select(c => new TaskChecklistItem
+                        {
+                            Text = c.Text,
+                            Position = c.Position,
+                            IsDone = false,
+                        }),
+                ],
+                Reminders =
+                [
+                    // SentAt starts null on purpose: this is a different deadline, so a reminder
+                    // that already fired for the previous occurrence has to fire again.
+                    .. completed.Reminders.Select(r => new TaskReminder
+                    {
+                        UserId = r.UserId,
+                        MinutesBeforeDue = r.MinutesBeforeDue,
+                        RemindAt = TaskReminder.ResolveRemindAt(nextDue, r.MinutesBeforeDue),
+                    }),
+                ],
+                Recurrence = new TaskRecurrence
+                {
+                    Frequency = completed.Recurrence.Frequency,
+                    Interval = completed.Recurrence.Interval,
+                    Weekdays = [.. completed.Recurrence.Weekdays],
+                },
+            };
+
+            dbContext.ProjectTasks.Add(next);
+            completed.RecurrenceSpawnedAt = DateTime.UtcNow;
+
+            return next;
+        }
+
         // A dashboard widget shows a handful of rows; the cap exists so a malformed `limit`
         // cannot turn this into a full table scan serialised over the wire.
         private const int MaxUserTaskPageSize = 200;
@@ -434,6 +578,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 ],
             };
 
+            SyncRecurrence(task, request.Recurrence);
+
             dbContext.ProjectTasks.Add(task);
             await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -457,6 +603,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .Include(t => t.Assignees)
                 .Include(t => t.Attachments)
                 .Include(t => t.ChecklistItems)
+                .Include(t => t.Recurrence)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (task is null)
@@ -483,6 +630,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .Include(t => t.Attachments)
                 .Include(t => t.Reminders)
                 .Include(t => t.ChecklistItems)
+                .Include(t => t.Recurrence)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (task is null)
@@ -495,6 +643,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             task.StartDate = request.StartDate;
             task.DueDate = request.DueDate;
             SyncChecklist(task, request.ChecklistItems);
+            SyncRecurrence(task, request.Recurrence);
 
             // TaskReminder.RemindAt is derived from the due date, so moving the deadline has to
             // move the reminders with it — this is the one place a due date ever changes, and
@@ -576,6 +725,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .Include(t => t.Assignees)
                 .Include(t => t.Attachments)
                 .Include(t => t.ChecklistItems)
+                .Include(t => t.Reminders)
+                .Include(t => t.Recurrence)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (task is null)
@@ -590,6 +741,20 @@ namespace BlitzTask.Backend.Features.ProjectTasks
 
             task.RelatedColumnId = request.ColumnId;
             task.Score = request.Score;
+
+            // Completion is a position, not a flag — a task is done once it sits in its project's
+            // last column — so this drop is the only moment the app can notice that a recurring
+            // task has been finished. Kept inline rather than handed to the scheduler: a card
+            // that appears a minute after you tick its predecessor reads as a glitch, and the
+            // spawn has to land in the same SaveChanges as the move for the guard against
+            // double-spawning to mean anything.
+            var isLastColumn = !await dbContext.ProjectColumns.AnyAsync(
+                c => c.ProjectId == projectId && c.Score > column.Score,
+                cancellationToken
+            );
+
+            if (isLastColumn)
+                await SpawnNextOccurrenceAsync(task, dbContext, cancellationToken);
 
             await dbContext.SaveChangesAsync(cancellationToken);
             return TypedResults.Ok(task.ToProjectTasksDetails());

@@ -3,6 +3,7 @@ import {
   IconCalendarDue,
   IconListCheck,
   IconPaperclip,
+  IconRepeat,
 } from "@tabler/icons-react";
 import { useMemo } from "react";
 import type { ProjectDetails, ProjectTaskDetails } from "@/api";
@@ -130,6 +131,15 @@ export function TaskCard({
                   month: "short",
                   day: "numeric",
                 })}
+              </span>
+            )}
+
+            {task.recurrence && (
+              <span
+                className="flex items-center gap-1 text-xs text-muted-foreground"
+                title="Repeats — completing this writes the next one"
+              >
+                <IconRepeat className="size-3.5 shrink-0" />
               </span>
             )}
 

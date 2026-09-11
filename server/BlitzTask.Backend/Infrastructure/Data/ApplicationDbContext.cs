@@ -22,6 +22,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
     public DbSet<TaskReminder> TaskReminders => Set<TaskReminder>();
     public DbSet<TaskChecklistItem> TaskChecklistItems => Set<TaskChecklistItem>();
+    public DbSet<TaskRecurrence> TaskRecurrences => Set<TaskRecurrence>();
 
     /// <summary>
     /// Applied as a convention rather than per property so that any DateTimeOffset added later

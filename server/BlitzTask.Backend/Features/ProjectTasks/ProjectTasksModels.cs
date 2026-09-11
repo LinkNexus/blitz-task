@@ -38,11 +38,21 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public ICollection<Attachment> Attachments { get; set; } = [];
         public ICollection<TaskReminder> Reminders { get; set; } = [];
         public ICollection<TaskChecklistItem> ChecklistItems { get; set; } = [];
+        public TaskRecurrence? Recurrence { get; set; }
+
+        /// <summary>
+        /// When this instance spawned its successor. The guard that makes materialising the next
+        /// occurrence idempotent: completion is a *position* in this app, so dragging a task out
+        /// of the last column and back in again is an ordinary thing to do, and each of those
+        /// drops would otherwise mint another instance.
+        /// </summary>
+        public DateTime? RecurrenceSpawnedAt { get; set; }
 
         public static int MaxRemindersCount => 5;
         public static int MaxTagsCount => 5;
         public static int MaxTagsLength => 20;
         public static int MaxAttachmentsCount => 5;
+        public static int MaxRecurrenceInterval => 365;
         public static int MaxChecklistItemsCount => 20;
         public static int MaxChecklistItemLength => 200;
     }
@@ -83,6 +93,13 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         /// </para>
         /// </summary>
         public List<ChecklistItemInput>? ChecklistItems { get; set; } = [];
+
+        /// <summary>
+        /// How the task repeats, or null for a one-off. Only the next occurrence is ever
+        /// materialised, so this is the rule and not a schedule: completing the task is what
+        /// writes the following instance.
+        /// </summary>
+        public RecurrenceInput? Recurrence { get; set; }
     }
 
     public record MoveProjectTaskRequest(int ColumnId, float Score);
@@ -123,6 +140,17 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         /// </para>
         /// </summary>
         public List<ChecklistItemInput>? ChecklistItems { get; set; } = [];
+
+        /// <summary>
+        /// How the task repeats. A full representation like the rest of this request: null means
+        /// the task does not repeat, and clears any rule it had.
+        /// <para>
+        /// Editing the rule only affects occurrences not yet written. The instance in front of
+        /// you is a row like any other, so there is no series to rewrite — which is the trade
+        /// materialise-next makes, and the reason it leaves every existing query alone.
+        /// </para>
+        /// </summary>
+        public RecurrenceInput? Recurrence { get; set; }
     }
 
     /// <summary>
@@ -173,6 +201,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         List<int> AssigneeIds,
         List<AttachmentMetadata> Attachments,
         int ColumnId,
-        List<ChecklistItemDetails> ChecklistItems
+        List<ChecklistItemDetails> ChecklistItems,
+        RecurrenceDetails? Recurrence
     );
 }

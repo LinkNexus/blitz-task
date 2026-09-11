@@ -393,6 +393,20 @@ export function useDragNDrop(
             // app has — so the dashboard's open-task list changes even though the drag never
             // touched its query.
             invalidateUserTasks(queryClient);
+
+            // Completing a recurring task makes the server write the *next* occurrence, and
+            // that task exists in no cache: the response describes only the one that was
+            // dragged. Refetch, or the new instance stays invisible until something else
+            // happens to reload the board.
+            const completedARecurringTask =
+              !!movedTask.recurrence &&
+              !columns.some(
+                (c) => Number(c.score) > Number(destinationCol.score),
+              );
+
+            if (completedARecurringTask) {
+              queryClient.invalidateQueries({ queryKey });
+            }
           },
           onError: () => {
             queryClient.invalidateQueries({ queryKey });
