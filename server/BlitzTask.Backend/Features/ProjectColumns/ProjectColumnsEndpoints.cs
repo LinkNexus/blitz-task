@@ -177,24 +177,29 @@ namespace BlitzTask.Backend.Features.ProjectColumns
             int projectId,
             int columnId,
             ApplicationDbContext dbContext,
-            IFileService fileService,
             CancellationToken cancellationToken
         )
         {
             var column = await dbContext
                 .ProjectColumns.Where(c => c.Id == columnId && c.ProjectId == projectId)
                 .Include(c => c.Tasks)
-                    .ThenInclude(t => t.Attachments)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (column is null)
                 return TypedResults.NotFound(new ApiMessageResponse("Column not found"));
 
-            foreach (var task in column.Tasks)
-            foreach (var attachment in task.Attachments)
-                await fileService.DeleteFileAsync(attachment.Id, cancellationToken);
+            // The column has to be trashed rather than dropped even though only its tasks are
+            // worth recovering: the tasks' FK to it cascades, so a hard delete here would take
+            // them with it however carefully they were stamped.
+            // Already-trashed tasks keep their own timestamp — see DeleteProject: a tracked row
+            // reappears in this collection through navigation fix-up even though the query filter
+            // excluded it, and re-stamping it would put it back on the board at the next restore.
+            var deletedAt = DateTime.UtcNow;
+            column.DeletedAt = deletedAt;
 
-            dbContext.ProjectColumns.Remove(column);
+            foreach (var task in column.Tasks.Where(t => t.DeletedAt == null))
+                task.DeletedAt = deletedAt;
+
             await dbContext.SaveChangesAsync(cancellationToken);
             return TypedResults.NoContent();
         }

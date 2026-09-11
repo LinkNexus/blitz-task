@@ -18,6 +18,7 @@ namespace BlitzTask.Backend.Features.ProjectColumns
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.ConfigureAuditable();
+            builder.ConfigureSoftDeletable();
         }
     }
 }

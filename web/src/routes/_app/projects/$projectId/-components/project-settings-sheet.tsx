@@ -419,9 +419,9 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
                             Archive "{project.name}"?
                           </AlertDialogTitle>
                           <AlertDialogDescription>
-                            The project will be hidden from active views but all
-                            data will be preserved. You can restore it later
-                            from your archived projects.
+                            The project, its board and its tasks move to the
+                            trash. They are kept for 30 days, and you can
+                            restore them from there until then.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

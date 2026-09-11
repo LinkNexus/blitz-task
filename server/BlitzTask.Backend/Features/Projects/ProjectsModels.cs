@@ -62,7 +62,7 @@ namespace BlitzTask.Backend.Features.Projects
             _permissions.TryGetValue(role, out var perms) ? [.. perms] : [];
     }
 
-    public class Project : IAuditable
+    public class Project : IAuditable, ISoftDeletable
     {
         public int Id { get; set; }
         public required string Name { get; set; }
@@ -73,6 +73,7 @@ namespace BlitzTask.Backend.Features.Projects
         public List<string> Tags { get; set; } = [];
         public DateTime UpdatedAt { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime? DeletedAt { get; set; }
         public int CreatedById { get; set; }
 
         /// <summary>

@@ -16,7 +16,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         URGENT,
     }
 
-    public class ProjectTask : IAuditable
+    public class ProjectTask : IAuditable, ISoftDeletable
     {
         public int Id { get; set; }
         public required string Name { get; set; }
@@ -31,6 +31,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
 
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public DateTime? DeletedAt { get; set; }
 
         public ICollection<User> Assignees { get; set; } = [];
         public ProjectColumn RelatedColumn { get; set; } = null!;

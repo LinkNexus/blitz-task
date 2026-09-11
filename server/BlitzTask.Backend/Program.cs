@@ -4,6 +4,7 @@ using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.ProjectTasks;
+using BlitzTask.Backend.Features.Trash;
 using BlitzTask.Backend.Features.Shared.Models;
 using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Auth;
@@ -146,6 +147,7 @@ public class Program
 
         builder.Services.AddScoped<IScheduledJob, ExpiredTokenCleanupJob>();
         builder.Services.AddScoped<IScheduledJob, TaskReminderJob>();
+        builder.Services.AddScoped<IScheduledJob, TrashPurgeJob>();
 
         // Not during document generation: `dotnet build` starts the host to read the API
         // surface, and a runner registered here would tick and send real mail from a build.
@@ -237,7 +239,8 @@ public class Program
             .MapProjectColumnsEndpoints()
             .MapProjectTasksEndpoints()
             .MapTaskRemindersEndpoints()
-            .MapTaskChecklistEndpoints();
+            .MapTaskChecklistEndpoints()
+            .MapTrashEndpoints();
 
         app.MapGet(
             "/api/csrf-token",
