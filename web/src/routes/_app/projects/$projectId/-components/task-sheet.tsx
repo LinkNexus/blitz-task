@@ -62,6 +62,7 @@ import { invalidateUserTasks } from "@/lib/query-invalidation";
 import { getInitials } from "@/lib/utils";
 import { TaskSchema } from "../-schemas";
 import { TaskChecklist } from "./task-checklist";
+import { TaskRecurrence } from "./task-recurrence";
 import { TaskReminders } from "./task-reminders";
 
 type FormValues = z.infer<typeof TaskSchema>;
@@ -189,6 +190,7 @@ const EMPTY_DEFAULTS: FormValues = {
   removedAttachmentIds: [],
   reminderOffsets: [],
   checklistItems: [],
+  recurrence: null,
 };
 
 export function TaskSheet({ project }: Props) {
@@ -289,6 +291,13 @@ export function TaskSheet({ project }: Props) {
           text: item.text,
           isDone: item.isDone,
         })),
+        recurrence: task.recurrence
+          ? {
+              frequency: task.recurrence.frequency,
+              interval: Number(task.recurrence.interval),
+              weekdays: task.recurrence.weekdays.map(Number),
+            }
+          : null,
       });
       setOpen(true);
     };
@@ -371,6 +380,9 @@ export function TaskSheet({ project }: Props) {
         id: item.id,
         text: item.text,
       })),
+      // Sent even when null — this is a full representation, so null is how "stop repeating"
+      // is expressed.
+      recurrence: data.recurrence,
     };
 
     if (editingTask) {
@@ -635,6 +647,18 @@ export function TaskSheet({ project }: Props) {
                   sentOffsets={(savedReminders ?? [])
                     .filter((r) => r.sentAt)
                     .map((r) => Number(r.minutesBeforeDue))}
+                />
+              )}
+            />
+
+            <Controller
+              control={form.control}
+              name="recurrence"
+              render={({ field }) => (
+                <TaskRecurrence
+                  value={field.value}
+                  onChange={field.onChange}
+                  hasDueDate={!!form.watch("dueDate")}
                 />
               )}
             />

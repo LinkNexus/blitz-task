@@ -23,7 +23,14 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 ))],
                 task.RelatedColumnId,
                 [.. task.ChecklistItems.OrderBy(c => c.Position)
-                    .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))]
+                    .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))],
+                task.Recurrence is null
+                    ? null
+                    : new RecurrenceDetails(
+                        task.Recurrence.Frequency,
+                        task.Recurrence.Interval,
+                        task.Recurrence.Weekdays
+                    )
             );
         }
 

@@ -10,6 +10,33 @@ namespace BlitzTask.Backend.Features.ProjectTasks
     /// Shape only. An empty item is not an error — the handler drops it, because a row the user
     /// started and abandoned should not fail the save it is sitting in.
     /// </summary>
+    /// <summary>
+    /// Shape only. Weekdays are not rejected on a non-weekly rule — the handler drops them,
+    /// because switching a rule from weekly to monthly in the sheet should not 422 over a
+    /// leftover control's state.
+    /// </summary>
+    public class RecurrenceInputValidator : AbstractValidator<RecurrenceInput>
+    {
+        public RecurrenceInputValidator()
+        {
+            RuleFor(x => x.Frequency)
+                .IsInEnum()
+                .WithMessage("Repeat frequency must be a valid enum value");
+
+            RuleFor(x => x.Interval)
+                .GreaterThan(0)
+                .WithMessage("A task must repeat at least every period")
+                .LessThanOrEqualTo(ProjectTask.MaxRecurrenceInterval)
+                .WithMessage(
+                    $"A task cannot repeat less often than every {ProjectTask.MaxRecurrenceInterval} periods"
+                );
+
+            RuleFor(x => x.Weekdays)
+                .Must(days => days is null || days.All(d => d is >= 0 and <= 6))
+                .WithMessage("Weekdays must be days of the week");
+        }
+    }
+
     public class ChecklistItemInputValidator : AbstractValidator<ChecklistItemInput>
     {
         public ChecklistItemInputValidator()
@@ -73,6 +100,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                     || items.Count <= ProjectTask.MaxChecklistItemsCount)
                 .WithMessage($"Maximum {ProjectTask.MaxChecklistItemsCount} checklist items allowed")
                 .ForEach(item => item.SetValidator(new ChecklistItemInputValidator()));
+
+            When(
+                x => x.Recurrence is not null,
+                () =>
+                    RuleFor(x => x.Recurrence!).SetValidator(new RecurrenceInputValidator())
+            );
 
             When(
                 x => x.NewAttachments is not null,
@@ -155,6 +188,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                     || items.Count <= ProjectTask.MaxChecklistItemsCount)
                 .WithMessage($"Maximum {ProjectTask.MaxChecklistItemsCount} checklist items allowed")
                 .ForEach(item => item.SetValidator(new ChecklistItemInputValidator()));
+
+            When(
+                x => x.Recurrence is not null,
+                () =>
+                    RuleFor(x => x.Recurrence!).SetValidator(new RecurrenceInputValidator())
+            );
 
             When(
                 x => x.Attachments is not null,

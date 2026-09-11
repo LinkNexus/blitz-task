@@ -90,7 +90,14 @@ namespace BlitzTask.Backend.Features.Projects
                                 t.RelatedColumnId,
                                 t.ChecklistItems.OrderBy(c => c.Position)
                                     .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))
-                                    .ToList()
+                                    .ToList(),
+                                t.Recurrence == null
+                                    ? null
+                                    : new RecurrenceDetails(
+                                        t.Recurrence.Frequency,
+                                        t.Recurrence.Interval,
+                                        t.Recurrence.Weekdays
+                                    )
                             ))
                             .ToList()
                     ))
@@ -147,7 +154,14 @@ namespace BlitzTask.Backend.Features.Projects
                                         [.. t.Attachments.Select(a => new AttachmentMetadata(a.Id, a.OriginalFilename, a.ContentType, a.SizeInBytes, a.CreatedAt))],
                                         t.RelatedColumnId,
                                         [.. t.ChecklistItems.OrderBy(c => c.Position)
-                                            .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))]
+                                            .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))],
+                                        t.Recurrence == null
+                                            ? null
+                                            : new RecurrenceDetails(
+                                                t.Recurrence.Frequency,
+                                                t.Recurrence.Interval,
+                                                t.Recurrence.Weekdays
+                                            )
                                     )),
                             ]
                         )),

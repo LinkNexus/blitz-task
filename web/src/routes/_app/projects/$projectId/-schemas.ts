@@ -34,6 +34,15 @@ export const TaskSchema = z
         }),
       )
       .max(20, "Maximum 20 checklist items"),
+    // Null is a one-off. Only the next occurrence is ever materialised, so this is a rule and
+    // not a schedule — editing it changes what gets written next, not a series of existing rows.
+    recurrence: z
+      .object({
+        frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]),
+        interval: z.number().int().min(1).max(365),
+        weekdays: z.array(z.number().int().min(0).max(6)),
+      })
+      .nullable(),
   })
   .refine(
     (data) => {

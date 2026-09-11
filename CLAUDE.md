@@ -422,6 +422,16 @@ on the wrong branch.
   corollary is that **every handler returning `ProjectTaskDetails` must `Include` the checklist**
   — `MoveTask` especially, since the board writes its response straight into the project cache
   and a missing projection reads on screen as the drag having wiped the list.
+- **A recurring task advances on the drop, in `MoveTask`, and only once.** Completion is a
+  position — the last column — so a drop is the only moment the app can see a series advance;
+  `SpawnNextOccurrenceAsync` runs there and shares the move's `SaveChanges`. Dragging out of the
+  last column and back in is ordinary, so `ProjectTask.RecurrenceSpawnedAt` is the guard that
+  stops each re-entry minting another instance — don't "simplify" it away. The next due date is
+  anchored on the **previous due date**, never on when the task was ticked, and `NextDueDate`
+  takes a `notBefore` so a long-neglected series catches up to one future occurrence instead of a
+  backlog of overdue ones. The successor is an ordinary task: that is the whole point of
+  materialising one at a time, and it is why the board, RBAC, reminders and checklists needed no
+  changes.
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,
