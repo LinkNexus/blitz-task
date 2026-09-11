@@ -3,6 +3,7 @@ using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.Projects;
+using BlitzTask.Backend.Features.Calendar;
 using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Trash;
 using BlitzTask.Backend.Features.Shared.Models;
@@ -240,7 +241,8 @@ public class Program
             .MapProjectTasksEndpoints()
             .MapTaskRemindersEndpoints()
             .MapTaskChecklistEndpoints()
-            .MapTrashEndpoints();
+            .MapTrashEndpoints()
+            .MapCalendarEndpoints();
 
         app.MapGet(
             "/api/csrf-token",

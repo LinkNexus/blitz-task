@@ -444,6 +444,14 @@ on the wrong branch.
   `DeletedAt == null` — EF's **navigation fix-up puts tracked trashed rows back into a collection
   the query filter excluded**, and re-stamping one silently resurrects it — and never hard-delete
   a parent whose children you meant to keep recoverable, since the FK cascade ignores every flag.
+- **The calendar is the only read path that returns things which are not rows.** `GET /api/calendar`
+  is bounded by a window rather than a row count (a month view that truncates is wrong, not short),
+  and it projects future occurrences of a recurrence rule as `CalendarItem`s with a **null
+  `TaskId`**. Those have no id, no column and no row: never make one clickable, completable or
+  draggable. Project them **server-side only** — `TaskRecurrence.NextDueDate` is the single
+  definition of when a series falls, and a TypeScript copy would be a second one. Its date filter
+  tests **overlap** (`start <= to && due >= from`), not containment, or every task spanning the
+  window disappears from it.
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,
