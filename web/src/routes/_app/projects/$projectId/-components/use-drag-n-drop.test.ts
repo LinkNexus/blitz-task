@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { columnScoreBetween, scoreBetween } from "./use-drag-n-drop";
+import type { ProjectColumnDetails, ProjectTaskDetails } from "@/api";
+import {
+  columnScoreBetween,
+  scoreAtTopOf,
+  scoreBetween,
+} from "./use-drag-n-drop";
 
 // These two look like near-duplicates but their neighbour semantics are deliberately
 // mirrored: tasks render highest-score-first, columns lowest-score-first. Getting one
@@ -74,5 +79,31 @@ describe("columnScoreBetween (columns — rendered lowest score first)", () => {
     expect(columnScoreBetween(5000, undefined)).not.toBe(
       scoreBetween(5000, undefined),
     );
+  });
+});
+
+describe("scoreAtTopOf (a move with no visible neighbours)", () => {
+  const col = (...scores: number[]) =>
+    ({
+      tasks: scores.map((score) => ({ score }) as ProjectTaskDetails),
+    }) as ProjectColumnDetails;
+
+  test("an empty column starts at 1000, like a first drop", () => {
+    expect(scoreAtTopOf(col())).toBe(1000);
+  });
+
+  test("lands above every task already in the column", () => {
+    const score = scoreAtTopOf(col(1000, 5000, 3000));
+    expect(score).toBeGreaterThan(5000);
+  });
+
+  test("measures against the highest score, not the last task in the array", () => {
+    // The column's `tasks` are in whatever order the API returned them; taking
+    // `tasks.at(-1)` would file the task below whatever happens to sort above it.
+    expect(scoreAtTopOf(col(9000, 1000))).toBe(scoreAtTopOf(col(1000, 9000)));
+  });
+
+  test("handles a column whose scores have gone negative", () => {
+    expect(scoreAtTopOf(col(-5000, -3000))).toBe(-2000);
   });
 });

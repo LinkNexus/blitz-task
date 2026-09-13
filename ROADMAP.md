@@ -188,9 +188,19 @@ nothing the app does is unrecoverable for thirty days.
 come back, lets work be broken down and written down before it is filed, and stops losing anything
 for thirty days.
 
-**Next:** Phase 4 — collaboration — is the first phase with nothing started. Two smaller things are
-worth doing before it, and both surfaced while building Phase 3: the task card's **"Move to"
-submenu is still a `console.log`**, the last of the three dead menu items, and the calendar wants
-**drag-to-reschedule**, which needs an endpoint of its own because dropping on a day changes
-`DueDate` rather than `Score`. L51 stays parked until someone has more than 200 open tasks — it is
-what would let the dashboard, Today and Upcoming stop sharing one capped query.
+**Next:** Phase 4 — collaboration — is the first phase with nothing started. One smaller thing is
+still worth doing before it: the calendar wants **drag-to-reschedule**, which needs an endpoint of
+its own because dropping on a day changes `DueDate` rather than `Score`. L51 stays parked until
+someone has more than 200 open tasks — it is what would let the dashboard, Today and Upcoming stop
+sharing one capped query.
+
+The task card's **"Move to" submenu** is done — the last of the three dead menu items. It reuses
+`PATCH /move` rather than waiting for L42.5's position-based variant, and lands the task on **top
+of the target column**, which is the placement the server already picks for the one neighbourless
+move it owns (`PATCH /api/tasks/{id}/project`, `maxScore + 1000f`): a menu move cannot interpolate
+between neighbours it is not looking at. The move itself moved out of `use-drag-n-drop.ts` into a
+shared `useMoveTask`, because only the *score* differs between a drop and a menu move and
+everything after it — the one-task optimistic write, `invalidateUserTasks` for the last-column
+crossing, the refetch when a recurrence successor was minted — is bookkeeping that would drift in a
+second copy. It is also the only way to move a task while a manual sort has dragging disabled, or
+from the table view's non-column groupings, which have no dnd at all.

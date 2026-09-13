@@ -34,17 +34,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { invalidateUserTasks } from "@/lib/query-invalidation";
+import { scoreAtTopOf } from "../../use-drag-n-drop";
+import { useMoveTask } from "../../use-move-task";
 
 type Props = {
   task: ProjectTaskDetails;
-  columns: ProjectDetails["columns"];
-  projectId: number;
+  project: ProjectDetails;
 };
 
-export function ProjectMenu({ task, columns, projectId }: Props) {
+export function ProjectMenu({ task, project }: Props) {
   const queryClient = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const projectId = Number(project.id);
   const queryKey = getProjectQueryKey({ path: { projectId } });
+  const { moveTask } = useMoveTask(project);
 
   const deleteTask = useMutation({
     ...deleteProjectTaskMutation(),
@@ -67,7 +70,7 @@ export function ProjectMenu({ task, columns, projectId }: Props) {
     onError: () => toast.error("Failed to delete task"),
   });
 
-  const otherColumns = columns.filter(
+  const otherColumns = project.columns.filter(
     (c) => Number(c.id) !== Number(task.columnId),
   );
 
@@ -96,6 +99,10 @@ export function ProjectMenu({ task, columns, projectId }: Props) {
           Edit task
         </DropdownMenuItem>
 
+        {/* Not just a convenience: dragging is disabled while a manual sort is active, and
+            the table view's non-column groupings have no dnd at all, so this is the only way
+            to move a task from either of those. It lands on top of the target column —
+            there are no neighbours to drop between when you cannot see where it goes. */}
         {otherColumns.length > 0 && (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
@@ -106,7 +113,12 @@ export function ProjectMenu({ task, columns, projectId }: Props) {
               {otherColumns.map((c) => (
                 <DropdownMenuItem
                   key={c.id}
-                  onClick={() => console.log("Move to", c.id, "task", task.id)}
+                  onClick={() =>
+                    moveTask(task, Number(c.id), scoreAtTopOf(c), {
+                      onSuccess: () => toast.success(`Moved to ${c.name}`),
+                      onError: () => toast.error("Failed to move task"),
+                    })
+                  }
                 >
                   <div
                     className="size-2 rounded-full shrink-0"
