@@ -85,6 +85,14 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .Produces<ApiMessageResponse>(StatusCodes.Status404NotFound)
                 .Produces<ApiMessageResponse>(StatusCodes.Status403Forbidden);
 
+            userTasks
+                .MapPatch("/{taskId:int}/schedule", RescheduleTask)
+                .WithName("reschedule-user-task")
+                .Produces<UserTaskSummary>()
+                .Produces<ApiMessageResponse>(StatusCodes.Status400BadRequest)
+                .Produces<ApiMessageResponse>(StatusCodes.Status404NotFound)
+                .Produces<ApiMessageResponse>(StatusCodes.Status403Forbidden);
+
             return app;
         }
 
@@ -459,6 +467,108 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 task.Assignees.Remove(assignee);
             }
 
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            var summary = await dbContext
+                .ProjectTasks.Where(t => t.Id == task.Id)
+                .SelectUserTaskSummariesFor(user.Id)
+                .FirstAsync(cancellationToken);
+
+            return Results.Ok(summary);
+        }
+
+        /// <summary>
+        /// Moves a task's deadline — a drop onto another day on the calendar.
+        /// <para>
+        /// Cross-project for the same reason <see cref="FileTask"/> is: the calendar spans every
+        /// project the caller is in, so there is no route <c>projectId</c> for
+        /// <see cref="RequireProjectPermissionFilter"/> to resolve a role against. The check is
+        /// the filter's, done here, down to a project the caller is not in reading as "not
+        /// found" rather than "forbidden".
+        /// </para>
+        /// <para>
+        /// This is <b>not</b> <c>/move</c>. A drop on the board encodes a position and changes
+        /// <c>Score</c>; a drop on a calendar changes when the work is due and touches no
+        /// position at all — the task stays in its column, and a deadline that lands in the past
+        /// is a perfectly ordinary thing to ask for.
+        /// </para>
+        /// </summary>
+        public static async Task<IResult> RescheduleTask(
+            int taskId,
+            RescheduleTaskRequest request,
+            ApplicationDbContext dbContext,
+            HttpContext context,
+            CancellationToken cancellationToken
+        )
+        {
+            var user = context.GetUser();
+
+            var task = await dbContext
+                .ProjectTasks.Include(t => t.Reminders)
+                .FirstOrDefaultAsync(t => t.Id == taskId, cancellationToken);
+
+            if (task is null)
+                return Results.NotFound(new ApiMessageResponse("Task not found."));
+
+            var role = await dbContext
+                .ProjectParticipants.Where(pp =>
+                    pp.UserId == user.Id && pp.ProjectId == task.RelatedProjectId
+                )
+                .Select(pp => (ProjectRole?)pp.Role)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (role is null)
+                return Results.NotFound(new ApiMessageResponse("Task not found."));
+
+            if (!role.Value.HasPermission(ProjectPermission.ManageTasks))
+            {
+                return Results.Json(
+                    new ApiMessageResponse(
+                        "You do not have permission to do this action or access this resource"
+                    ),
+                    statusCode: StatusCodes.Status403Forbidden
+                );
+            }
+
+            // The span travels with the deadline: dragging a bar moves the whole thing, it does
+            // not stretch it. Rescheduling one end only would silently resize a task, and on a
+            // task that already started it would leave the deadline behind the start date.
+            var delta = task.DueDate is { } previousDue ? request.DueDate - previousDue : TimeSpan.Zero;
+            var start = task.StartDate + delta;
+
+            // Only reachable when the task had no deadline to shift from — with one, the delta
+            // moves both ends and the order between them cannot change.
+            if (start > request.DueDate)
+            {
+                return Results.BadRequest(
+                    new ApiMessageResponse("A task cannot be due before it starts.")
+                );
+            }
+
+            task.StartDate = start;
+            task.DueDate = request.DueDate;
+
+            // TaskReminder.RemindAt is derived from the due date, so this endpoint inherits
+            // UpdateTask's obligation to move it — reschedule a task without this and every
+            // reminder on it still fires against the deadline it used to have.
+            //
+            // Everyone's reminders, not just the caller's. A reminder is private in the sense
+            // that only its owner set it and only they receive it (L25.5), but *when* it fires
+            // is arithmetic on a deadline that belongs to the task, and one person moving the
+            // task is exactly when the others need re-arming. Nothing here touches SentAt: a
+            // deadline pushed forward drags RemindAt past the recorded send, and the sweep's
+            // `SentAt < RemindAt` re-arms it on its own.
+            foreach (var reminder in task.Reminders)
+            {
+                reminder.RemindAt = TaskReminder.ResolveRemindAt(
+                    task.DueDate.Value,
+                    reminder.MinutesBeforeDue
+                );
+            }
+
+            // A recurring task is deliberately left alone beyond its dates. L25 anchors the next
+            // occurrence on the previous *due date*, so moving this one moves the whole series
+            // after it — which is what rescheduling "every Monday" to a Tuesday should mean.
             await dbContext.SaveChangesAsync(cancellationToken);
 
             var summary = await dbContext

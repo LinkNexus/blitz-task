@@ -36,7 +36,15 @@ namespace BlitzTask.Backend.Features.Calendar
         string ColumnColor,
         bool IsCompleted,
         bool IsInbox,
-        bool IsProjected
+        bool IsProjected,
+        /// <summary>
+        /// Whether the caller may drag this to another day. Seeing an item is not being allowed
+        /// to move it — the calendar shows every project the caller is in, including ones they
+        /// only have read access to, and a bar that moves and then snaps back is worse than one
+        /// that never offered. Always false for a projected occurrence, which has no row to
+        /// write a new date onto.
+        /// </summary>
+        bool CanReschedule
     );
 
     public static class CalendarWindow

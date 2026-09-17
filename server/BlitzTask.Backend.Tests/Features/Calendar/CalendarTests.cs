@@ -1,5 +1,6 @@
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.Calendar;
+using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Models;
 using BlitzTask.Backend.Infrastructure.Data;
@@ -223,6 +224,54 @@ public class CalendarTests
             CancellationToken.None
         );
         Assert.IsType<BadRequest<ApiMessageResponse>>(backwards.Result);
+    }
+
+    [Fact]
+    public async Task OnlyWorkTheCallerMayEditComesBackAsReschedulable()
+    {
+        // The drag has to be gated on something, and the client cannot be the one to decide: the
+        // calendar spans every project the caller is in, including ones they only read. A bar
+        // that moves and then snaps back on a 403 is worse than one that never offered.
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var bob = await TestsUtils.SeedUserAsync(dbContext, "bob@example.com");
+        var (mine, todo, _) = await SeedProjectAsync(dbContext, "Mine", alice.Id);
+        var (theirs, theirTodo, _) = await SeedProjectAsync(
+            dbContext,
+            "Theirs",
+            bob.Id,
+            (alice.Id, ProjectRole.Viewer)
+        );
+
+        await SeedTaskAsync(dbContext, mine, todo, "Mine", MonthStart.AddDays(3));
+        await SeedTaskAsync(dbContext, theirs, theirTodo, "Theirs", MonthStart.AddDays(4));
+
+        var items = await GetAsync(dbContext, alice);
+
+        Assert.True(items.Single(i => i.Name == "Mine").CanReschedule);
+        Assert.False(items.Single(i => i.Name == "Theirs").CanReschedule);
+    }
+
+    [Fact]
+    public async Task AProjectedOccurrenceIsNeverReschedulable()
+    {
+        // It has no row behind it, so there is nothing to write a date onto — the same reason it
+        // cannot be opened or completed.
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var (project, todo, _) = await SeedProjectAsync(dbContext, "Alpha", alice.Id);
+        var task = await SeedTaskAsync(dbContext, project, todo, "Weekly", MonthStart.AddDays(1));
+        task.Recurrence = new TaskRecurrence
+        {
+            Frequency = RecurrenceFrequency.WEEKLY,
+            Interval = 1,
+        };
+        await dbContext.SaveChangesAsync();
+
+        var items = await GetAsync(dbContext, alice);
+
+        Assert.True(items.Single(i => !i.IsProjected).CanReschedule);
+        Assert.All(items.Where(i => i.IsProjected), i => Assert.False(i.CanReschedule));
     }
 
     [Fact]

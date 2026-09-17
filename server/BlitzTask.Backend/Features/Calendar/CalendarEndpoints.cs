@@ -1,3 +1,4 @@
+using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Models;
 using BlitzTask.Backend.Infrastructure.Data;
@@ -64,6 +65,14 @@ namespace BlitzTask.Backend.Features.Calendar
 
             var user = context.GetUser();
 
+            // The caller's role in each of their projects, so every row can say whether it may
+            // be dragged. Read once rather than projected per row: ProjectPermissions is a
+            // dictionary lookup in C# and nothing EF can translate, and the calendar's rows come
+            // from a handful of projects however many days the window covers.
+            var roles = await dbContext
+                .ProjectParticipants.Where(pp => pp.UserId == user.Id)
+                .ToDictionaryAsync(pp => pp.ProjectId, pp => pp.Role, cancellationToken);
+
             var query = dbContext
                 .ProjectTasks.Where(t => t.RelatedProject.Participants.Any(pp => pp.UserId == user.Id))
                 .Where(t => t.DueDate != null);
@@ -113,7 +122,8 @@ namespace BlitzTask.Backend.Features.Calendar
                     t.ColumnColor,
                     t.IsCompleted,
                     t.IsInbox,
-                    IsProjected: false
+                    IsProjected: false,
+                    roles[t.RelatedProjectId].HasPermission(ProjectPermission.ManageTasks)
                 )),
             ];
 
@@ -192,7 +202,10 @@ namespace BlitzTask.Backend.Features.Calendar
                             task.ColumnColor,
                             IsCompleted: false,
                             task.IsInbox,
-                            IsProjected: true
+                            IsProjected: true,
+                            // No row, nothing to write a date onto. The rule it was computed
+                            // from is edited on the task that carries it.
+                            CanReschedule: false
                         )
                     );
                 }
