@@ -5,6 +5,7 @@ using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Models;
+using BlitzTask.Backend.Features.TaskComments;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlitzTask.Backend.Infrastructure.Data;
@@ -22,6 +23,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
     public DbSet<TaskReminder> TaskReminders => Set<TaskReminder>();
     public DbSet<TaskChecklistItem> TaskChecklistItems => Set<TaskChecklistItem>();
+    public DbSet<TaskComment> TaskComments => Set<TaskComment>();
     public DbSet<TaskRecurrence> TaskRecurrences => Set<TaskRecurrence>();
 
     /// <summary>
@@ -33,6 +35,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         base.ConfigureConventions(configurationBuilder);
         configurationBuilder.Properties<DateTimeOffset>().HaveConversion<UtcDateTimeOffsetConverter>();
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
