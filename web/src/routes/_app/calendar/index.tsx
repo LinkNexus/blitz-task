@@ -6,23 +6,19 @@ import {
 } from "@tabler/icons-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  addDays,
-  addMonths,
-  format,
-  parse,
-  startOfMonth,
-  startOfWeek,
-} from "date-fns";
+import { addMonths, format } from "date-fns";
 import z from "zod";
-import { getCalendarOptions } from "@/api/@tanstack/react-query.gen";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Agenda } from "./-components/agenda";
+import {
+  calendarQuery,
+  MONTH_FORMAT,
+  monthFrom,
+} from "./-components/calendar-query";
 import { MonthGrid } from "./-components/month-grid";
-
-const MONTH_FORMAT = "yyyy-MM";
+import { useRescheduleTask } from "./-components/use-reschedule";
 
 const searchSchema = z.object({
   /** The month being shown, as `yyyy-MM`. In the URL so a view survives a reload and a back. */
@@ -32,33 +28,6 @@ const searchSchema = z.object({
     .optional(),
   view: z.enum(["month", "agenda"]).optional(),
 });
-
-function monthFrom(search?: string): Date {
-  if (!search) return startOfMonth(new Date());
-  const parsed = parse(search, MONTH_FORMAT, new Date());
-  return Number.isNaN(parsed.getTime()) ? startOfMonth(new Date()) : parsed;
-}
-
-/**
- * The window the grid actually draws, which is not the month.
- *
- * A month grid always renders six weeks, so its first and last cells belong to the neighbouring
- * months — fetching only the month itself leaves those cells wrongly empty. Asking for the grid's
- * own range is what makes the padding days true rather than blank.
- */
-function windowFor(month: Date) {
-  const from = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
-  // Exactly the 42 cells the grid draws, which is also comfortably inside the endpoint's
-  // 366-day ceiling.
-  return { from, to: addDays(from, 42) };
-}
-
-function calendarQuery(month: Date) {
-  const { from, to } = windowFor(month);
-  return getCalendarOptions({
-    query: { from: from.toISOString(), to: to.toISOString() },
-  });
-}
 
 export const Route = createFileRoute("/_app/calendar/")({
   validateSearch: searchSchema,
@@ -82,6 +51,7 @@ function CalendarPage() {
   const { month: monthParam, view = "month" } = Route.useSearch();
   const month = monthFrom(monthParam);
   const { data: items } = useSuspenseQuery(calendarQuery(month));
+  const { reschedule } = useRescheduleTask(month);
 
   const step = (delta: number) => format(addMonths(month, delta), MONTH_FORMAT);
 
@@ -159,12 +129,15 @@ function CalendarPage() {
           month={month}
           items={items}
           empty="Nothing scheduled this month."
+          onReschedule={reschedule}
         />
       ) : (
         <Agenda items={items} />
       )}
 
       <p className="px-1 text-xs text-muted-foreground">
+        {view === "month" &&
+          "Drag a task to another day to move its deadline. "}
         Faded, dashed entries are future occurrences of a repeating task. They
         are worked out from the rule and do not exist yet — the next one is
         created when you complete the current one.

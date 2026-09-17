@@ -166,6 +166,22 @@ namespace BlitzTask.Backend.Features.ProjectTasks
     /// </summary>
     public record FileTaskRequest(int ProjectId, int? ColumnId);
 
+    /// <summary>
+    /// Moves a task's deadline — what a drop onto another day on the calendar means.
+    /// <para>
+    /// One date, not two. The task's span travels with its due date rather than being sent
+    /// alongside it: a request carrying both ends could put a task's deadline before its start,
+    /// and shifting the start by the same delta makes that unrepresentable instead of merely
+    /// invalid.
+    /// </para>
+    /// <para>
+    /// The <b>instant</b> is what arrives here, not a day. A drop means a day in the user's own
+    /// timezone, and the server has none to convert with — no timezone column exists yet (L25.5
+    /// deferred it) — so the caller does the calendar-day arithmetic and sends the result.
+    /// </para>
+    /// </summary>
+    public record RescheduleTaskRequest(DateTimeOffset DueDate);
+
     public record UserTaskSummary(
         int Id,
         string Name,

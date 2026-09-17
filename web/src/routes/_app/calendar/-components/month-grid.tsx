@@ -1,8 +1,21 @@
+import { pointerIntersection } from "@dnd-kit/collision";
+import {
+  DragDropProvider,
+  type DragEndEvent,
+  useDraggable,
+  useDroppable,
+} from "@dnd-kit/react";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import type { ReactNode } from "react";
 import type { CalendarItem } from "@/api";
 import { cn } from "@/lib/utils";
+import {
+  barDndId,
+  dayDndId,
+  dayFromDndId,
+  rescheduledDueDate,
+} from "./calendar-dnd";
 import {
   isInMonth,
   isToday,
@@ -18,6 +31,9 @@ import {
 const MAX_LANES = 3;
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/** What a bar hands the drop handler. Only the item — the target day comes from the droppable. */
+type DragData = { item: CalendarItem };
 
 export type CalendarLayoutItem = LayoutItem & { item: CalendarItem };
 
@@ -35,7 +51,13 @@ export function toLayoutItems(items: CalendarItem[]): CalendarLayoutItem[] {
   }));
 }
 
-function ItemBar({ segment }: { segment: Segment<CalendarLayoutItem> }) {
+function ItemBar({
+  segment,
+  isDragging,
+}: {
+  segment: Segment<CalendarLayoutItem>;
+  isDragging?: boolean;
+}) {
   const { item } = segment.item;
 
   const body = (
@@ -55,6 +77,9 @@ function ItemBar({ segment }: { segment: Segment<CalendarLayoutItem> }) {
     segment.continuesBefore ? "rounded-l-none border-l-0" : "rounded-l-md",
     segment.continuesAfter ? "rounded-r-none border-r-0" : "rounded-r-md",
     item.isCompleted && "text-muted-foreground line-through",
+    // Only a bar that can actually land somewhere else says so with the cursor.
+    item.canReschedule && "cursor-grab active:cursor-grabbing",
+    isDragging && "opacity-50",
     item.isProjected
       ? // Not a row: it cannot be opened, completed or rescheduled, so it must not look like
         // something that can. Dashed and faded, and rendered as a span rather than a link.
@@ -91,98 +116,162 @@ function ItemBar({ segment }: { segment: Segment<CalendarLayoutItem> }) {
   );
 }
 
+/**
+ * The positioned wrapper around a bar, and the thing that is actually dragged.
+ *
+ * The bar underneath stays a `<Link>`: dnd-kit's default pointer constraints need 5px of travel
+ * or a 200ms hold before a drag starts, so a click still opens the board it points at.
+ */
+function CalendarBar({
+  segment,
+  weekStart,
+}: {
+  segment: Segment<CalendarLayoutItem>;
+  weekStart: Date;
+}) {
+  const { item } = segment.item;
+
+  const { ref, isDragging } = useDraggable<DragData>({
+    id: barDndId(segment.item.key, weekStart),
+    type: "calendar-item",
+    data: { item },
+    // A projected occurrence has no row, and a Viewer may see work they cannot edit. Neither
+    // should be able to start a drag that the server would only refuse.
+    disabled: !item.canReschedule,
+  });
+
+  return (
+    <div
+      ref={ref}
+      className="pointer-events-auto min-w-0"
+      style={{
+        gridColumn: `${segment.startCol + 1} / span ${segment.span}`,
+        gridRow: segment.lane + 1,
+      }}
+    >
+      <ItemBar segment={segment} isDragging={isDragging} />
+    </div>
+  );
+}
+
+function DayCell({ day, month }: { day: Date; month: Date }) {
+  // Pointer intersection rather than the default geometry: a bar spanning five columns overlaps
+  // five day cells at once, so "which cell is this over" has to mean the one under the cursor.
+  const { ref, isDropTarget } = useDroppable({
+    id: dayDndId(day),
+    type: "day",
+    accept: "calendar-item",
+    collisionDetector: pointerIntersection,
+  });
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        // Tall enough for the overlay it does not contain: the bars are absolutely
+        // positioned, so they cannot push this cell taller, and 2rem of day number plus
+        // three 1.5rem lanes plus the overflow line has to fit inside 8rem or it spills
+        // into next week's row.
+        "min-h-32 border-r p-1 last:border-r-0 transition-colors",
+        !isInMonth(day, month) && "bg-muted/30",
+        isDropTarget && "bg-primary/10",
+      )}
+    >
+      <span
+        className={cn(
+          "inline-flex size-6 items-center justify-center rounded-full text-xs tabular-nums",
+          isInMonth(day, month)
+            ? "text-foreground"
+            : "text-muted-foreground/60",
+          isToday(day) && "bg-primary font-semibold text-primary-foreground",
+        )}
+      >
+        {format(day, "d")}
+      </span>
+    </div>
+  );
+}
+
 export function MonthGrid({
   month,
   items,
   empty,
+  onReschedule,
 }: {
   month: Date;
   items: CalendarItem[];
   empty?: ReactNode;
+  onReschedule: (item: CalendarItem, dueDate: Date) => void;
 }) {
   const weeks = layoutMonth(month, toLayoutItems(items), MAX_LANES);
 
-  return (
-    <div className="overflow-hidden rounded-xl border">
-      <div className="grid grid-cols-7 border-b bg-muted/40">
-        {WEEKDAYS.map((day) => (
-          <div
-            key={day}
-            className="px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
-          >
-            {day}
-          </div>
-        ))}
-      </div>
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { source, target } = event.operation;
+    if (event.canceled || !source || !target) return;
 
-      {weeks.map((week) => (
-        <div
-          key={week.days[0].toISOString()}
-          className="relative grid grid-cols-7 border-b last:border-b-0"
-        >
-          {week.days.map((day) => (
+    const day = dayFromDndId(target.id);
+    const item = (source.data as DragData | undefined)?.item;
+    if (!day || !item) return;
+
+    onReschedule(item, rescheduledDueDate(new Date(item.dueDate), day));
+  };
+
+  return (
+    <DragDropProvider onDragEnd={handleDragEnd}>
+      <div className="overflow-hidden rounded-xl border">
+        <div className="grid grid-cols-7 border-b bg-muted/40">
+          {WEEKDAYS.map((day) => (
             <div
-              key={day.toISOString()}
-              className={cn(
-                // Tall enough for the overlay it does not contain: the bars are absolutely
-                // positioned, so they cannot push this cell taller, and 2rem of day number plus
-                // three 1.5rem lanes plus the overflow line has to fit inside 8rem or it spills
-                // into next week's row.
-                "min-h-32 border-r p-1 last:border-r-0",
-                !isInMonth(day, month) && "bg-muted/30",
-              )}
+              key={day}
+              className="px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
             >
-              <span
-                className={cn(
-                  "inline-flex size-6 items-center justify-center rounded-full text-xs tabular-nums",
-                  isInMonth(day, month)
-                    ? "text-foreground"
-                    : "text-muted-foreground/60",
-                  isToday(day) &&
-                    "bg-primary font-semibold text-primary-foreground",
-                )}
-              >
-                {format(day, "d")}
-              </span>
+              {day}
             </div>
           ))}
+        </div>
 
-          {/* The bars live in their own grid laid over the cells, because a span has to cross
-              cell boundaries — nesting them inside a day would cap them at one column. */}
-          <div className="pointer-events-none absolute inset-x-0 top-8 grid grid-cols-7 gap-y-1 px-1">
-            {week.segments.map((segment) => (
-              <div
-                key={segment.item.key}
-                className="pointer-events-auto min-w-0"
-                style={{
-                  gridColumn: `${segment.startCol + 1} / span ${segment.span}`,
-                  gridRow: segment.lane + 1,
-                }}
-              >
-                <ItemBar segment={segment} />
-              </div>
+        {weeks.map((week) => (
+          <div
+            key={week.days[0].toISOString()}
+            className="relative grid grid-cols-7 border-b last:border-b-0"
+          >
+            {week.days.map((day) => (
+              <DayCell key={day.toISOString()} day={day} month={month} />
             ))}
 
-            {week.overflow.map((count, col) =>
-              count > 0 ? (
-                <div
-                  key={week.days[col].toISOString()}
-                  className="px-1 text-[10px] text-muted-foreground"
-                  style={{ gridColumn: col + 1, gridRow: MAX_LANES + 1 }}
-                >
-                  +{count} more
-                </div>
-              ) : null,
-            )}
-          </div>
-        </div>
-      ))}
+            {/* The bars live in their own grid laid over the cells, because a span has to cross
+                cell boundaries — nesting them inside a day would cap them at one column. The
+                container stays click-through so the day underneath remains the drop target. */}
+            <div className="pointer-events-none absolute inset-x-0 top-8 grid grid-cols-7 gap-y-1 px-1">
+              {week.segments.map((segment) => (
+                <CalendarBar
+                  key={segment.item.key}
+                  segment={segment}
+                  weekStart={week.days[0]}
+                />
+              ))}
 
-      {items.length === 0 && empty && (
-        <div className="border-t p-6 text-center text-sm text-muted-foreground">
-          {empty}
-        </div>
-      )}
-    </div>
+              {week.overflow.map((count, col) =>
+                count > 0 ? (
+                  <div
+                    key={week.days[col].toISOString()}
+                    className="px-1 text-[10px] text-muted-foreground"
+                    style={{ gridColumn: col + 1, gridRow: MAX_LANES + 1 }}
+                  >
+                    +{count} more
+                  </div>
+                ) : null,
+              )}
+            </div>
+          </div>
+        ))}
+
+        {items.length === 0 && empty && (
+          <div className="border-t p-6 text-center text-sm text-muted-foreground">
+            {empty}
+          </div>
+        )}
+      </div>
+    </DragDropProvider>
   );
 }
