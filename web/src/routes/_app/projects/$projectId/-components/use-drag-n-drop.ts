@@ -16,14 +16,13 @@ import type {
 import {
   getProjectQueryKey,
   moveProjectColumnMutation,
-  moveProjectTaskMutation,
 } from "@/api/@tanstack/react-query.gen";
-import { invalidateUserTasks } from "@/lib/query-invalidation";
 import {
   sortTasks,
   type ToolbarState,
   taskMatchesFilters,
 } from "./toolbar-filters";
+import { useMoveTask } from "./use-move-task";
 
 export const colDndId = (id: ProjectColumnDetails["id"]) => `column:${id}`;
 export const taskDndId = (id: ProjectTaskDetails["id"]) => `task:${id}`;
@@ -52,6 +51,22 @@ export function scoreBetween(above?: number, below?: number): number {
   if (Number.isNaN(a)) return b + 1000;
   if (Number.isNaN(b)) return a - 1000;
   return (a + b) / 2;
+}
+
+/**
+ * Where a task lands when it is moved without being dragged — from the card's "Move to"
+ * menu, which has no neighbours to interpolate between because the target column is not
+ * the one being looked at.
+ *
+ * Top of the column (tasks render highest score first), which is the same placement the
+ * server picks for the other neighbourless move it owns: `PATCH /api/tasks/{id}/project`
+ * scores a cross-project file at `maxScore + 1000f`.
+ */
+export function scoreAtTopOf(column: ProjectColumnDetails): number {
+  const top = column.tasks.length
+    ? Math.max(...column.tasks.map((t) => Number(t.score)))
+    : undefined;
+  return scoreBetween(undefined, top);
 }
 
 // Columns render in ascending score order (leftmost/topmost = lowest), so the
@@ -96,8 +111,8 @@ export function useDragNDrop(
     useState<ColumnsOrder | null>(null);
   const { columns } = project;
 
-  const moveTaskMut = useMutation(moveProjectTaskMutation());
   const moveColumnMut = useMutation(moveProjectColumnMutation());
+  const { moveTask } = useMoveTask(project);
 
   const tasksByIds = useMemo(
     () =>
@@ -326,98 +341,11 @@ export function useDragNDrop(
         getTaskScore(destIds[srcIdx + 1]),
       );
 
-      const queryKey = getProjectQueryKey({
-        path: { projectId: Number(project.id) },
+      moveTask(tasksByIds.get(sourceId)!, Number(destinationCol.id), newScore, {
+        onSettled: cleanup,
       });
-
-      const movedTask: ProjectTaskDetails = {
-        ...tasksByIds.get(sourceId)!,
-        columnId: Number(destinationCol.id),
-        score: newScore,
-      };
-
-      // Move just the dragged task between columns rather than rebuilding every
-      // column from `newOrder`: that order only contains the tasks the toolbar
-      // filters leave visible, so rebuilding from it would drop the hidden ones
-      // out of the cache. Order within each column doesn't matter here — both
-      // views re-derive it from `score`.
-      queryClient.setQueryData(
-        queryKey,
-        (p: ProjectDetails | undefined) =>
-          p && {
-            ...p,
-            columns: p.columns.map((col) => ({
-              ...col,
-              tasks:
-                Number(col.id) === Number(destinationCol.id)
-                  ? [
-                      ...col.tasks.filter((t) => Number(t.id) !== sourceId),
-                      movedTask,
-                    ]
-                  : col.tasks.filter((t) => Number(t.id) !== sourceId),
-            })),
-          },
-      );
-
-      moveTaskMut.mutate(
-        {
-          path: { projectId: Number(project.id), taskId: sourceId },
-          body: {
-            columnId: Number(destinationCol.id),
-            score: newScore,
-          },
-        },
-        {
-          onSuccess: (updatedTask) => {
-            queryClient.setQueryData(
-              queryKey,
-              (p: ProjectDetails | undefined) =>
-                p && {
-                  ...p,
-                  columns: p.columns.map((col) => ({
-                    ...col,
-                    tasks:
-                      Number(col.id) === Number(updatedTask.columnId)
-                        ? [
-                            ...col.tasks.filter(
-                              (t) => Number(t.id) !== sourceId,
-                            ),
-                            updatedTask,
-                          ]
-                        : col.tasks.filter((t) => Number(t.id) !== sourceId),
-                  })),
-                },
-            );
-
-            // A drop can cross the last column, which is the only definition of "done" this
-            // app has — so the dashboard's open-task list changes even though the drag never
-            // touched its query.
-            invalidateUserTasks(queryClient);
-
-            // Completing a recurring task makes the server write the *next* occurrence, and
-            // that task exists in no cache: the response describes only the one that was
-            // dragged. Refetch, or the new instance stays invisible until something else
-            // happens to reload the board.
-            const completedARecurringTask =
-              !!movedTask.recurrence &&
-              !columns.some(
-                (c) => Number(c.score) > Number(destinationCol.score),
-              );
-
-            if (completedARecurringTask) {
-              queryClient.invalidateQueries({ queryKey });
-            }
-          },
-          onError: () => {
-            queryClient.invalidateQueries({ queryKey });
-          },
-          onSettled: () => {
-            cleanup();
-          },
-        },
-      );
     },
-    [columns, moveTaskMut, moveColumnMut, project, queryClient, tasksByIds],
+    [columns, moveColumnMut, moveTask, project, queryClient, tasksByIds],
   );
 
   return {

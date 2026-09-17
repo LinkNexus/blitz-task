@@ -92,11 +92,7 @@ export function TaskCard({
             className="opacity-0 transition-opacity group-hover:opacity-100 shrink-0 -mt-0.5 -mr-1"
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <ProjectMenu
-              task={task}
-              columns={project.columns}
-              projectId={Number(project.id)}
-            />
+            <ProjectMenu task={task} project={project} />
           </div>
         </div>
 

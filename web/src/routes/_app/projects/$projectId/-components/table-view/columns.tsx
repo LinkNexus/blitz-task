@@ -197,8 +197,7 @@ export const columns = columnHelper.columns([
       >
         <ProjectMenu
           task={info.row.original}
-          columns={info.table.options.meta!.project.columns}
-          projectId={Number(info.table.options.meta!.project.id)}
+          project={info.table.options.meta!.project}
         />
       </div>
     ),
