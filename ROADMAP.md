@@ -97,7 +97,8 @@ for *"buy milk"*.
 
 | # | Task | Notes |
 |---|------|-------|
-| L30 | **Task comments** | The most obviously missing collaboration primitive — the data model has no comment entity at all. New `Features/TaskComments/` slice, with markdown bodies (the frontend already renders markdown for descriptions via `react-markdown`). |
+| L30 | ✅ **Task comments** | `Features/TaskComments/`, markdown bodies, in the task sheet. The first thing in the app that is neither the work nor a property of it: a checklist item (L26) describes what has to happen, a reminder (L25.5) is a private intention, a comment is **attributed speech** — so `AuthorId` is not a display convenience, it is what the permission model hangs off. Four decisions. **(1) Its own endpoints, not a list on the task request.** L26's checklist rides along because it *is* part of the task, arrives whole and is small; a thread only grows, and `GET /api/projects/{id}` returns every task of a project in full — carrying comments there would put the entire discussion of every task into every board render. Read separately, like reminders. **(2) Editing and deleting are deliberately asymmetric.** Only the author may rewrite their own words — no moderator exception, because holding the project does not make someone else's sentence yours to reword — while anyone with `ManageParticipants` may take a remark *down*. Removal is visible as removal; a silent rewrite would pass as the author's words. `CanEdit`/`CanDelete` ship per row, the same pattern as L29's `CanRestore` and L28.5's `CanReschedule`, so the UI is not a second copy of the rule. **(3) A new `ProjectPermission.Comment`, not `ManageTasks`.** They cover the same roles today, which is exactly why they must not be the same permission: saying something about the work and changing the work are different acts, and folding them together means any future change to who may edit a task silently changes who may speak. A **Viewer does not get it** — the judgement worth recording. A Viewer may set a reminder (L25.5) because that is private; a comment is visible to everyone, and with no "commenter" tier between the two, granting it would make the read-only role not read-only. They still *read* the thread: `GET` takes membership only. Moving one line in `_permissions` reverses this if it proves wrong. **(4) Comments are not soft-deletable**, unlike everything L29 touched. Trash exists for things you lose *work* by losing; retracting your own sentence is deliberate and small, and a 30-day window would leave a remark someone regretted sitting there for a month. The FK cascade carries them off when `TrashPurgeJob` hard-deletes the task, and a *trashed* task keeps its thread — L29's query filter makes the comments unreachable without a line of code mentioning `DeletedAt`, so a restore gives the discussion back. **Also fixed a bug this surfaced that was never about comments** — see L30.5. Verified against a running instance: post, markdown render, edit, "(edited)", delete. 14 backend tests (187 in the suite); no frontend tests, since there is still no component test setup and nothing here is a pure function. **Not done:** a comment count on the card (`ToProjectTasksDetails` is an in-memory mapper, so it would mean `Include`-ing every comment body into every board render), @mentions (L34) and notifications (L32). |
+| L30.5 | ✅ **Every timestamp the API sent was wrong by the viewer's UTC offset** | `UtcDateTimeConverter`, applied by convention beside the `DateTimeOffset` one it mirrors. SQLite hands a `DateTime` back with `DateTimeKind.Unspecified`, and System.Text.Json writes an Unspecified value with **no trailing `Z`** — `2026-09-17T19:46:41` — which the browser parses as *local* time. Every `CreatedAt`, `UpdatedAt`, `DeletedAt`, `RemindAt` and `SentAt` the API has ever sent was shifted by the host's offset. It survived this long because nothing **rendered** one: they were sorted on server-side, where `Kind` does not affect comparison, and shown nowhere. L30's comments are the first screen to print one as relative time, and a comment reading "about 2 hours ago" the instant it was posted is what made it visible. The fix is the exact twin of `UtcDateTimeOffsetConverter`, whose own comment describes this bug for the offset case — identity on write, `SpecifyKind(Utc)` on read. **No migration**: nothing about storage changes, and `has-pending-model-changes` confirms it. Nothing else shifts either, because `DateTime` comparison ignores `Kind`. |
 | L31 | **Activity log / audit trail** | Who moved what, when. Entities already carry `CreatedAt`/`UpdatedAt` via `IAuditable` and the `SaveChangesAsync` override, but nothing records *transitions* — the interesting part for a shared board. |
 | L32 | **Notifications** | Assigned to a task, mentioned in a comment, due date approaching. In-app first (a bell + unread count), email digest second — the Resend integration from L4 is already there for the email half. |
 | L33 | **Real-time board updates** | Two people on one board today will silently overwrite each other's optimistic state. SignalR pushing column/task move events, with the client reconciling against the same score-based ordering it already uses. Worth doing after L31, since an activity stream and a realtime feed want the same event shape. |
@@ -165,7 +166,7 @@ speculative until the app has enough real data in it to be worth summarizing.
 Phase 1  Foundations              ██████████  12/12  done
 Phase 2  Deployable MVP           ██████████  13/13  done
 Phase 3  Personal task management ██████████  11/11  done
-Phase 4  Collaboration            ░░░░░░░░░░   0/5
+Phase 4  Collaboration            ███░░░░░░░   2/6
 Phase 5  Power features           ░░░░░░░░░░   0/9
 Phase 6  AI assistance            ░░░░░░░░░░   0/5
 Phase 7  Reach & polish           █░░░░░░░░░   1/8
@@ -189,10 +190,16 @@ nothing the app does is unrecoverable for thirty days.
 come back, lets work be broken down and written down before it is filed, and stops losing anything
 for thirty days.
 
-**Next:** Phase 4 — collaboration — is the first phase with nothing started, and nothing smaller is
-queued ahead of it now that the calendar reschedules (L28.5). L51 stays parked until someone has
-more than 200 open tasks — it is what would let the dashboard, Today and Upcoming stop sharing one
-capped query.
+**Phase 4 has started.** L30 gives a task a discussion — the first thing in the app that belongs to
+a *person* rather than to the work — and building it turned up L30.5, a timestamp bug that had been
+in every API response since the beginning and needed a screen that actually rendered one to become
+visible.
+
+**Next:** L31 (activity log) ahead of L32/L33, since an activity stream and a realtime feed want the
+same event shape, and L33 is what stops two people on one board overwriting each other. Nothing
+smaller is queued ahead of them now that the calendar reschedules (L28.5). L51 stays parked until
+someone has more than 200 open tasks — it is what would let the dashboard, Today and Upcoming stop
+sharing one capped query.
 
 The task card's **"Move to" submenu** is done — the last of the three dead menu items. It reuses
 `PATCH /move` rather than waiting for L42.5's position-based variant, and lands the task on **top

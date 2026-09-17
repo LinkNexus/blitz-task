@@ -62,6 +62,7 @@ import { invalidateUserTasks } from "@/lib/query-invalidation";
 import { getInitials } from "@/lib/utils";
 import { TaskSchema } from "../-schemas";
 import { TaskChecklist } from "./task-checklist";
+import { TaskComments } from "./task-comments";
 import { TaskRecurrence } from "./task-recurrence";
 import { TaskReminders } from "./task-reminders";
 
@@ -709,6 +710,14 @@ export function TaskSheet({ project }: Props) {
                 )}
               />
             </div>
+
+            {/* Edit mode only: a comment needs a task to hang off, the same reason L25.6 had to
+                move reminders onto the task's own request before they could be set here. The
+                composer posts on its own and is untouched by "Save changes" — a remark you typed
+                is not part of the record you were editing. */}
+            {editingTaskId !== null && (
+              <TaskComments project={project} taskId={editingTaskId} />
+            )}
           </div>
         </form>
 

@@ -8,6 +8,15 @@ handlers, and test them against `TestsUtils.CreateSqliteDbContext()`.
   asks EF to sort by a member of a constructed record and is untranslatable; move the
   `OrderBy` onto the entity queryable ahead of the `Select`. This shipped broken in L13 and
   went unnoticed until the dashboard became the first caller.
+- **A plain `DateTime` needs `UtcDateTimeConverter`, or every timestamp the API sends is wrong.**
+  SQLite returns `DateTime` with `Kind = Unspecified`, and System.Text.Json writes an Unspecified
+  value **without a trailing `Z`** — so the browser parses a UTC instant as local time and every
+  `CreatedAt`/`UpdatedAt`/`DeletedAt`/`RemindAt`/`SentAt` is off by the viewer's offset. The
+  converter is identity on write and `SpecifyKind(Utc)` on read, applied by convention beside the
+  `DateTimeOffset` one. Nothing on the server notices if you remove it (comparison ignores `Kind`,
+  so sorts and the reminder sweep stay correct) — it only breaks what is *rendered*, which is why
+  it went unnoticed until L30 printed a comment's age and got "about 2 hours ago" on a comment
+  posted a second earlier.
 - **`DateTimeOffset` is stored as UTC `DateTime` — keep it that way.**
   `UtcDateTimeOffsetConverter` is applied by convention in `ApplicationDbContext.ConfigureConventions`
   to *every* `DateTimeOffset`. Remove it and SQLite goes back to storing
@@ -141,7 +150,7 @@ came from the file fallback only accepting GET and HEAD.
 
 `Features/<Area>/` each hold `*Endpoints.cs`, `*Models.cs`, `*Validators.cs`,
 `*Configuration.cs` (EF mapping). Areas: `Auth`, `Projects`, `ProjectMembers`,
-`ProjectColumns`, `ProjectTasks`, `Attachments`, `Shared`. Cross-cutting code lives in
+`ProjectColumns`, `ProjectTasks`, `TaskComments`, `Attachments`, `Calendar`, `Trash`, `Shared`. Cross-cutting code lives in
 `Infrastructure/` (`Data`, `Auth`, `Filters`, `Extensions`).
 
 - **Auth**: cookie-based (`SameSite=Strict`), `PasswordHasher<User>` for hashing, plus an
