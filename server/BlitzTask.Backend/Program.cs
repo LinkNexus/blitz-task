@@ -5,6 +5,7 @@ using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Calendar;
 using BlitzTask.Backend.Features.ProjectTasks;
+using BlitzTask.Backend.Features.TaskComments;
 using BlitzTask.Backend.Features.Trash;
 using BlitzTask.Backend.Features.Shared.Models;
 using BlitzTask.Backend.Features.Shared.Services;
@@ -241,6 +242,7 @@ public class Program
             .MapProjectTasksEndpoints()
             .MapTaskRemindersEndpoints()
             .MapTaskChecklistEndpoints()
+            .MapTaskCommentsEndpoints()
             .MapTrashEndpoints()
             .MapCalendarEndpoints();
 

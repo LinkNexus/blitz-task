@@ -22,6 +22,7 @@ public class ProjectPermissionsTests
                     ProjectPermission.PromoteToCollaborator,
                     ProjectPermission.ManageColumns,
                     ProjectPermission.ManageTasks,
+                    ProjectPermission.Comment,
                 ]
             },
             {
@@ -31,9 +32,10 @@ public class ProjectPermissionsTests
                     ProjectPermission.ManageParticipants,
                     ProjectPermission.ManageColumns,
                     ProjectPermission.ManageTasks,
+                    ProjectPermission.Comment,
                 ]
             },
-            { ProjectRole.Contributor, [ProjectPermission.ManageTasks] },
+            { ProjectRole.Contributor, [ProjectPermission.ManageTasks, ProjectPermission.Comment] },
             { ProjectRole.Viewer, [] },
         };
 

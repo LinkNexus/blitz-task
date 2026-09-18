@@ -39,6 +39,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public ICollection<Attachment> Attachments { get; set; } = [];
         public ICollection<TaskReminder> Reminders { get; set; } = [];
         public ICollection<TaskChecklistItem> ChecklistItems { get; set; } = [];
+        public ICollection<TaskComments.TaskComment> Comments { get; set; } = [];
         public TaskRecurrence? Recurrence { get; set; }
 
         /// <summary>

@@ -27,6 +27,21 @@ namespace BlitzTask.Backend.Features.Projects
         PromoteToCollaborator,
         ManageColumns,
         ManageTasks,
+
+        /// <summary>
+        /// Join the discussion on a task. Separate from <see cref="ManageTasks"/> even though
+        /// the same roles hold both today: saying something about the work and changing the work
+        /// are different acts, and folding them together would mean any future change to who may
+        /// edit a task silently changed who may speak.
+        /// <para>
+        /// Not held by a Viewer, which is the one judgement here worth recording. A Viewer may
+        /// set themselves a reminder (L25.5) because that is private; a comment is visible to
+        /// everyone, and there is no "commenter" tier between the two — so granting it would
+        /// make the read-only role not read-only. Someone who should be in the conversation is a
+        /// Contributor, and moving this one line is all it would take to decide otherwise.
+        /// </para>
+        /// </summary>
+        Comment,
     }
 
     public static class ProjectPermissions
@@ -43,6 +58,7 @@ namespace BlitzTask.Backend.Features.Projects
                     ProjectPermission.PromoteToCollaborator,
                     ProjectPermission.ManageColumns,
                     ProjectPermission.ManageTasks,
+                    ProjectPermission.Comment,
                 ],
                 [ProjectRole.Collaborator] =
                 [
@@ -50,8 +66,13 @@ namespace BlitzTask.Backend.Features.Projects
                     ProjectPermission.ManageParticipants,
                     ProjectPermission.ManageColumns,
                     ProjectPermission.ManageTasks,
+                    ProjectPermission.Comment,
                 ],
-                [ProjectRole.Contributor] = [ProjectPermission.ManageTasks],
+                [ProjectRole.Contributor] =
+                [
+                    ProjectPermission.ManageTasks,
+                    ProjectPermission.Comment,
+                ],
                 [ProjectRole.Viewer] = [],
             };
 

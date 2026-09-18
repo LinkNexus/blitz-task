@@ -3,6 +3,7 @@ using System;
 using BlitzTask.Backend.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlitzTask.Backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260917194124_AddTaskComments")]
+    partial class AddTaskComments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
@@ -63,7 +66,7 @@ namespace BlitzTask.Backend.Migrations
 
                     b.HasIndex("UploadedByUserId");
 
-                    b.ToTable("Attachments", (string)null);
+                    b.ToTable("Attachments");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.Auth.User", b =>
@@ -103,7 +106,7 @@ namespace BlitzTask.Backend.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.Auth.UserToken", b =>
@@ -129,7 +132,7 @@ namespace BlitzTask.Backend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserTokens", (string)null);
+                    b.ToTable("UserTokens");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.ProjectColumns.ProjectColumn", b =>
@@ -172,7 +175,7 @@ namespace BlitzTask.Backend.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectColumns", (string)null);
+                    b.ToTable("ProjectColumns");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.ProjectMembers.ProjectInvitation", b =>
@@ -201,7 +204,7 @@ namespace BlitzTask.Backend.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectInvitations", (string)null);
+                    b.ToTable("ProjectInvitations");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.ProjectTasks.ProjectTask", b =>
@@ -266,7 +269,7 @@ namespace BlitzTask.Backend.Migrations
 
                     b.HasIndex("RelatedProjectId");
 
-                    b.ToTable("ProjectTasks", (string)null);
+                    b.ToTable("ProjectTasks");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.ProjectTasks.ProjectTaskAttachment", b =>
@@ -281,7 +284,7 @@ namespace BlitzTask.Backend.Migrations
 
                     b.HasIndex("AttachmentId");
 
-                    b.ToTable("ProjectTaskAttachment", (string)null);
+                    b.ToTable("ProjectTaskAttachment");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.ProjectTasks.TaskChecklistItem", b =>
@@ -308,7 +311,7 @@ namespace BlitzTask.Backend.Migrations
 
                     b.HasIndex("ProjectTaskId", "Position");
 
-                    b.ToTable("TaskChecklistItems", (string)null);
+                    b.ToTable("TaskChecklistItems");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.ProjectTasks.TaskRecurrence", b =>
@@ -335,7 +338,7 @@ namespace BlitzTask.Backend.Migrations
                     b.HasIndex("ProjectTaskId")
                         .IsUnique();
 
-                    b.ToTable("TaskRecurrences", (string)null);
+                    b.ToTable("TaskRecurrences");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.ProjectTasks.TaskReminder", b =>
@@ -368,7 +371,7 @@ namespace BlitzTask.Backend.Migrations
                     b.HasIndex("ProjectTaskId", "UserId", "MinutesBeforeDue")
                         .IsUnique();
 
-                    b.ToTable("TaskReminders", (string)null);
+                    b.ToTable("TaskReminders");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.Projects.Project", b =>
@@ -431,7 +434,7 @@ namespace BlitzTask.Backend.Migrations
                         .IsUnique()
                         .HasFilter("\"IsInbox\" = 1");
 
-                    b.ToTable("Projects", (string)null);
+                    b.ToTable("Projects");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.Projects.ProjectParticipant", b =>
@@ -458,7 +461,7 @@ namespace BlitzTask.Backend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ProjectParticipants", (string)null);
+                    b.ToTable("ProjectParticipants");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.TaskComments.TaskComment", b =>
@@ -490,7 +493,7 @@ namespace BlitzTask.Backend.Migrations
 
                     b.HasIndex("ProjectTaskId", "CreatedAt");
 
-                    b.ToTable("TaskComments", (string)null);
+                    b.ToTable("TaskComments");
                 });
 
             modelBuilder.Entity("ProjectTaskUser", b =>
@@ -505,7 +508,7 @@ namespace BlitzTask.Backend.Migrations
 
                     b.HasIndex("ProjectTaskId");
 
-                    b.ToTable("ProjectTaskUser", (string)null);
+                    b.ToTable("ProjectTaskUser");
                 });
 
             modelBuilder.Entity("BlitzTask.Backend.Features.Attachments.Attachment", b =>
