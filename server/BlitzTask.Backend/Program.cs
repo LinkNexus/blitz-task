@@ -1,5 +1,6 @@
 using BlitzTask.Backend.Features.Activity;
 using BlitzTask.Backend.Features.Attachments;
+using BlitzTask.Backend.Features.Realtime;
 using BlitzTask.Backend.Features.Notifications;
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
@@ -52,8 +53,17 @@ public class Program
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-        builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlite(connectionString)
+        builder.Services.AddSignalR();
+
+        // Scoped, and resolved through the scoped provider: the interceptor carries state
+        // between the two halves of one save, so a shared instance would have concurrent
+        // requests publishing each other's changes.
+        builder.Services.AddScoped<RealtimePublishInterceptor>();
+        builder.Services.AddDbContext<ApplicationDbContext>(
+            (serviceProvider, options) =>
+                options
+                    .UseSqlite(connectionString)
+                    .AddInterceptors(serviceProvider.GetRequiredService<RealtimePublishInterceptor>())
         );
 
         // Data Protection keys sign the auth cookie and the antiforgery token. The default
@@ -273,6 +283,10 @@ public class Program
         // failure then surfaces as "x.map is not a function" somewhere far from the cause.
         // Returning JSON 404 also fixes the old 405-instead-of-404 on POST/PATCH, which came
         // from the file fallback only accepting GET and HEAD.
+        // Ahead of the SPA fallback, like every API route — an unmatched /hub path must not
+        // come back as index.html.
+        app.MapHub<RealtimeHub>("/hub/realtime");
+
         app.MapFallback(
                 "/api/{**path}",
                 (string path) =>

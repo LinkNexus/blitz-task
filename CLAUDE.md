@@ -236,6 +236,14 @@ Conventions in `web/src/routes/`:
   history. Adding a new event kind means adding a `RecordTask`/`RecordProject` call in the slice
   that owns the action — not a hook.
 
+- **Realtime publishes itself — don't add a call for it.** `RealtimePublishInterceptor` derives
+  the affected projects from whatever a `SaveChanges` wrote, so new features get live updates for
+  free and there is no list of publish sites to fall behind. It collects before the save (entries
+  read `Unchanged` afterwards) and sends after it commits, is registered **scoped** because it
+  carries state between those two halves, and swallows its own failures: a socket must never fail
+  a write. The client treats a message as a *signal* and refetches — never patch the cache from a
+  push, or the board grows a second copy of the optimistic-write logic in `use-move-task.ts`.
+
 ### Background jobs
 
 `Infrastructure/Scheduling/` holds `ScheduledJobRunner` (a `BackgroundService` ticking once a

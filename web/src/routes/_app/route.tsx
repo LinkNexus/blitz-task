@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { NotificationBell } from "./-components/notification-bell";
 import { QuickCapture, requestQuickCapture } from "./-components/quick-capture";
 import { AppSidebar } from "./-components/sidebar/app-sidebar";
+import { useRealtime } from "./-components/use-realtime";
 
 const authErrorsInterceptor = async (
   error: unknown,
@@ -98,6 +99,9 @@ export const Route = createFileRoute("/_app")({
 
 function RouteComponent() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  // One connection for the session: the shell never unmounts, so this is the only place it can
+  // live without reconnecting on every navigation.
+  useRealtime(Route.useRouteContext().user);
 
   return (
     <SidebarProvider
