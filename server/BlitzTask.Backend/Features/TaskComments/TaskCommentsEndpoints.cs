@@ -1,4 +1,5 @@
 using BlitzTask.Backend.Features.Activity;
+using BlitzTask.Backend.Features.Notifications;
 using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Shared.Models;
@@ -164,6 +165,29 @@ namespace BlitzTask.Backend.Features.TaskComments
 
             dbContext.TaskComments.Add(comment);
             ActivityRecorder.RecordTask(dbContext, user, task, ActivityKind.COMMENT_ADDED);
+
+            // Who is "in" this conversation: the people the work is on, plus the people already
+            // talking about it. A task has no creator column to fall back on, and everyone who
+            // can see the project is far too wide a net — that turns a bell into a mailing list.
+            var assigneeIds = await dbContext
+                .ProjectTasks.Where(t => t.Id == taskId)
+                .SelectMany(t => t.Assignees.Select(a => a.Id))
+                .ToListAsync(cancellationToken);
+
+            var priorCommenterIds = await dbContext
+                .TaskComments.Where(c => c.ProjectTaskId == taskId)
+                .Select(c => c.AuthorId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            NotificationRecorder.NotifyAboutTask(
+                dbContext,
+                user,
+                task,
+                NotificationKind.TASK_COMMENTED,
+                assigneeIds.Concat(priorCommenterIds)
+            );
+
             await dbContext.SaveChangesAsync(cancellationToken);
 
             var canModerate = await CanModerateAsync(dbContext, projectId, user.Id, cancellationToken);

@@ -1,5 +1,6 @@
 using BlitzTask.Backend.Features.Activity;
 using BlitzTask.Backend.Features.Attachments;
+using BlitzTask.Backend.Features.Notifications;
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Shared.Models;
@@ -693,6 +694,17 @@ namespace BlitzTask.Backend.Features.ProjectTasks
 
             dbContext.ProjectTasks.Add(task);
             ActivityRecorder.RecordTask(dbContext, user, task, ActivityKind.TASK_CREATED);
+
+            // No diff to take on a task that did not exist a moment ago — everyone on it is
+            // newly assigned, and the recorder drops the creator if they put themselves on it.
+            NotificationRecorder.NotifyAboutTask(
+                dbContext,
+                user,
+                task,
+                NotificationKind.TASK_ASSIGNED,
+                assignees.Select(a => a.Id)
+            );
+
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return TypedResults.Json(
@@ -777,10 +789,23 @@ namespace BlitzTask.Backend.Features.ProjectTasks
 
             if (request.AssigneeIds is not null)
             {
+                // The request carries the whole list, so "who was just assigned" is a diff and
+                // not a read of it. Without this, saving an unrelated edit would tell everyone
+                // already on the task that they had been assigned it again.
+                var alreadyAssigned = task.Assignees.Select(a => a.Id).ToHashSet();
+
                 var assignees = await dbContext
                     .Users.Where(u => request.AssigneeIds.Contains(u.Id))
                     .ToListAsync(cancellationToken);
                 task.Assignees = assignees;
+
+                NotificationRecorder.NotifyAboutTask(
+                    dbContext,
+                    context.GetUser(),
+                    task,
+                    NotificationKind.TASK_ASSIGNED,
+                    assignees.Select(a => a.Id).Where(id => !alreadyAssigned.Contains(id))
+                );
             }
 
             if (request.RemovedAttachmentIds is { Count: > 0 })
