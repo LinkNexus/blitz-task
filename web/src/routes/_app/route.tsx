@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import { flashMessagesStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "./-components/notification-bell";
 import { QuickCapture, requestQuickCapture } from "./-components/quick-capture";
 import { AppSidebar } from "./-components/sidebar/app-sidebar";
 
@@ -119,7 +120,8 @@ function RouteComponent() {
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
           </div>
-          <div className="ml-auto px-4">
+          <div className="ml-auto flex items-center gap-1 px-4">
+            <NotificationBell />
             <Button variant="outline" size="sm" onClick={requestQuickCapture}>
               <IconPlus className="size-4" />
               Capture
