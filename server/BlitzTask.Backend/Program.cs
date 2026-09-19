@@ -1,3 +1,4 @@
+using BlitzTask.Backend.Features.Activity;
 using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
@@ -243,6 +244,7 @@ public class Program
             .MapTaskRemindersEndpoints()
             .MapTaskChecklistEndpoints()
             .MapTaskCommentsEndpoints()
+            .MapActivityEndpoints()
             .MapTrashEndpoints()
             .MapCalendarEndpoints();
 

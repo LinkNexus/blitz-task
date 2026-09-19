@@ -1,3 +1,4 @@
+using BlitzTask.Backend.Features.Activity;
 using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
@@ -24,6 +25,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<TaskReminder> TaskReminders => Set<TaskReminder>();
     public DbSet<TaskChecklistItem> TaskChecklistItems => Set<TaskChecklistItem>();
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
+    public DbSet<ActivityEvent> ActivityEvents => Set<ActivityEvent>();
     public DbSet<TaskRecurrence> TaskRecurrences => Set<TaskRecurrence>();
 
     /// <summary>

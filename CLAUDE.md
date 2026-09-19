@@ -228,6 +228,14 @@ Conventions in `web/src/routes/`:
 - Table `groupBy` other than `"column"` renders `StaticGroupBody` with **no** dnd: a drag
   encodes "move to column X at score Y", which says nothing about priority/assignee/due date.
 
+- **Activity is recorded by handlers, and the recorder never saves.** `ActivityRecorder` adds an
+  `ActivityEvent` to the context and leaves it to the handler's own `SaveChanges`, so a failed
+  request cannot leave a feed claiming it happened. Don't be tempted to derive the feed from EF's
+  change tracker: it can see `RelatedColumnId` change but not that the move *completed* the task,
+  and every label on an entry is denormalised on purpose so renaming a column does not rewrite
+  history. Adding a new event kind means adding a `RecordTask`/`RecordProject` call in the slice
+  that owns the action — not a hook.
+
 ### Background jobs
 
 `Infrastructure/Scheduling/` holds `ScheduledJobRunner` (a `BackgroundService` ticking once a

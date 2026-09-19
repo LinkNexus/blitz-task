@@ -288,6 +288,7 @@ public class CalendarTests
             project.Id,
             task.Id,
             dbContext,
+            ContextFor(alice),
             CancellationToken.None
         );
         dbContext.ChangeTracker.Clear();

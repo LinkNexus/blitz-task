@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  IconActivity,
   IconAlertTriangle,
   IconSettings2,
   IconUsers,
@@ -49,6 +50,7 @@ import { useAccount } from "@/hooks/use-current-user";
 import { invalidateProjectLists } from "@/lib/query-invalidation";
 import { cn, getInitials, imageFormats } from "@/lib/utils";
 import { MAX_PROJECT_IMAGE_SIZE, ProjectSchema } from "../-schemas";
+import { ProjectActivity } from "./project-activity";
 import { ProjectMembersSection } from "./project-members";
 
 type Props = {
@@ -223,6 +225,10 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
                 {project.participants.length}
               </span>
             </TabsTrigger>
+            <TabsTrigger value="activity" className="gap-1.5">
+              <IconActivity className="size-3.5" />
+              Activity
+            </TabsTrigger>
             <TabsTrigger
               value="danger"
               className="gap-1.5 data-[state=active]:text-destructive"
@@ -391,6 +397,11 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
               project={project}
               currentUser={currentUser}
             />
+          </TabsContent>
+
+          {/* ── Activity ── */}
+          <TabsContent value="activity" className="flex-1 overflow-y-auto p-6">
+            <ProjectActivity projectId={Number(project.id)} />
           </TabsContent>
 
           {/* ── Danger Zone ── */}

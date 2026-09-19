@@ -139,6 +139,7 @@ public class TaskRecurrenceTests
             task.Id,
             new MoveProjectTaskRequest(done.Id, 2000f),
             dbContext,
+            ContextFor(alice),
             CancellationToken.None
         );
 
@@ -178,6 +179,7 @@ public class TaskRecurrenceTests
                 task.Id,
                 new MoveProjectTaskRequest(columnId, 2000f),
                 dbContext,
+                ContextFor(alice),
                 CancellationToken.None
             );
 
@@ -209,6 +211,7 @@ public class TaskRecurrenceTests
             task.Id,
             new MoveProjectTaskRequest(todo.Id, 500f),
             dbContext,
+            ContextFor(alice),
             CancellationToken.None
         );
 
@@ -232,6 +235,7 @@ public class TaskRecurrenceTests
             task.Id,
             new MoveProjectTaskRequest(done.Id, 2000f),
             dbContext,
+            ContextFor(alice),
             CancellationToken.None
         );
 
@@ -273,6 +277,7 @@ public class TaskRecurrenceTests
             task.Id,
             new MoveProjectTaskRequest(done.Id, 2000f),
             dbContext,
+            ContextFor(alice),
             CancellationToken.None
         );
 

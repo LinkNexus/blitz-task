@@ -1,4 +1,5 @@
 using System.Net;
+using BlitzTask.Backend.Features.Activity;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Shared.Models;
 using BlitzTask.Backend.Features.Shared.Services;
@@ -292,6 +293,17 @@ namespace BlitzTask.Backend.Features.ProjectMembers
                 };
 
                 await dbContext.ProjectParticipants.AddAsync(projectParticipant, cancellationToken);
+
+                // Recorded here rather than where the invitation was sent: an invite nobody
+                // accepts is not somebody joining, and the actor is the person who walked in.
+                ActivityRecorder.RecordProject(
+                    dbContext,
+                    user,
+                    invitation.ProjectId,
+                    ActivityKind.MEMBER_ADDED,
+                    user.Name,
+                    toLabel: invitation.Role.ToString()
+                );
             }
 
             dbContext.ProjectInvitations.Remove(invitation);
@@ -310,6 +322,7 @@ namespace BlitzTask.Backend.Features.ProjectMembers
             int participantId,
             UpdateParticipantRoleRequest request,
             ApplicationDbContext dbContext,
+            HttpContext context,
             CancellationToken cancellationToken
         )
         {
@@ -325,7 +338,22 @@ namespace BlitzTask.Backend.Features.ProjectMembers
                 );
             }
 
+            var previousRole = projectParticipant.Role;
             projectParticipant.Role = request.Role;
+
+            if (previousRole != request.Role)
+            {
+                ActivityRecorder.RecordProject(
+                    dbContext,
+                    context.GetUser(),
+                    projectId,
+                    ActivityKind.MEMBER_ROLE_CHANGED,
+                    projectParticipant.User.Name,
+                    previousRole.ToString(),
+                    request.Role.ToString()
+                );
+            }
+
             await dbContext.SaveChangesAsync(cancellationToken);
             return TypedResults.Ok(
                 new ProjectParticipantInfo(
@@ -393,7 +421,20 @@ namespace BlitzTask.Backend.Features.ProjectMembers
                 );
             }
 
+            var removedName = await dbContext
+                .Users.Where(u => u.Id == projectParticipant.UserId)
+                .Select(u => u.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+
             dbContext.ProjectParticipants.Remove(projectParticipant);
+            ActivityRecorder.RecordProject(
+                dbContext,
+                context.GetUser(),
+                projectId,
+                ActivityKind.MEMBER_REMOVED,
+                removedName,
+                fromLabel: projectParticipant.Role.ToString()
+            );
             await dbContext.SaveChangesAsync(cancellationToken);
             return TypedResults.NoContent();
         }
@@ -419,7 +460,20 @@ namespace BlitzTask.Backend.Features.ProjectMembers
                     new ApiMessageResponse("The owner cannot leave the project")
                 );
 
+            var user = context.GetUser();
+
             dbContext.ProjectParticipants.Remove(participant);
+            // Same kind as being removed by someone else, because it is the same fact — the feed
+            // reads it as "left" rather than "removed" when the actor is the subject, which is a
+            // rendering decision and not a second row type.
+            ActivityRecorder.RecordProject(
+                dbContext,
+                user,
+                projectId,
+                ActivityKind.MEMBER_REMOVED,
+                user.Name,
+                fromLabel: participant.Role.ToString()
+            );
             await dbContext.SaveChangesAsync(cancellationToken);
             return TypedResults.NoContent();
         }

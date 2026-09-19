@@ -313,6 +313,7 @@ public class TaskChecklistTests
             task.Id,
             new MoveProjectTaskRequest(done.Id, 2000f),
             dbContext,
+            ContextFor(alice),
             CancellationToken.None
         );
 

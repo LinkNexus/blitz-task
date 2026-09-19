@@ -301,6 +301,7 @@ public class TaskCommentsTests
             project.Id,
             task.Id,
             dbContext,
+            ContextFor(alice),
             CancellationToken.None
         );
         dbContext.ChangeTracker.Clear();

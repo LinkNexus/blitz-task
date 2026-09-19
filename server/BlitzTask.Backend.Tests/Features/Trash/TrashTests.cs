@@ -52,6 +52,7 @@ public class TrashTests
             project.Id,
             task.Id,
             dbContext,
+            ContextFor(alice),
             CancellationToken.None
         );
 
@@ -88,6 +89,7 @@ public class TrashTests
             project.Id,
             task.Id,
             dbContext,
+            ContextFor(alice),
             CancellationToken.None
         );
 
@@ -110,6 +112,7 @@ public class TrashTests
             project.Id,
             thrownAwayEarlier.Id,
             dbContext,
+            ContextFor(alice),
             CancellationToken.None
         );
 
@@ -227,6 +230,7 @@ public class TrashTests
             project.Id,
             task.Id,
             dbContext,
+            ContextFor(viewer),
             CancellationToken.None
         );
         dbContext.ChangeTracker.Clear();
