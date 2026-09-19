@@ -1,4 +1,9 @@
-import { IconBell, IconMessage, IconUserPlus } from "@tabler/icons-react";
+import {
+  IconAt,
+  IconBell,
+  IconMessage,
+  IconUserPlus,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
@@ -18,13 +23,23 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-const ICONS = {
+// Typed against the union rather than inferred, so adding a kind to the API fails the build here
+// instead of rendering an undefined icon at runtime — which is exactly how this one was caught.
+const ICONS: Record<NotificationDetails["kind"], typeof IconBell> = {
   TASK_ASSIGNED: IconUserPlus,
   TASK_COMMENTED: IconMessage,
-} as const;
+  MENTIONED_IN_COMMENT: IconAt,
+};
 
 function sentence(n: NotificationDetails) {
-  return n.kind === "TASK_ASSIGNED" ? "assigned you" : "commented on";
+  switch (n.kind) {
+    case "TASK_ASSIGNED":
+      return "assigned you";
+    case "MENTIONED_IN_COMMENT":
+      return "mentioned you on";
+    default:
+      return "commented on";
+  }
 }
 
 function NotificationRow({

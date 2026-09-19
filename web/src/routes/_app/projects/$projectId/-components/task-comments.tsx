@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { useState } from "react";
+import { Children, type ReactNode, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -28,10 +28,68 @@ function when(iso: string) {
   return formatDistanceToNow(new Date(iso), { addSuffix: true });
 }
 
-function CommentBody({ body }: { body: string }) {
+/**
+ * Highlights the names this comment is addressing.
+ *
+ * The names come from the project's participants — the same set the server matches against, so
+ * what is highlighted here is exactly what produced a notification. Anything else would be a
+ * second definition of what counts as a mention, and the two would drift the first time the
+ * parser learned a new rule.
+ *
+ * Applied to text nodes only, so a name inside a code span or a link stays untouched.
+ */
+function highlightMentions(text: string, names: string[]): ReactNode[] {
+  if (names.length === 0) return [text];
+
+  // Longest first, mirroring the server: "@Ana Maria" must not be read as "@Ana".
+  const pattern = new RegExp(
+    `@(${[...names]
+      .sort((a, b) => b.length - a.length)
+      .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("|")})(?![\\p{L}\\p{N}])`,
+    "giu",
+  );
+
+  const out: ReactNode[] = [];
+  let last = 0;
+
+  for (const match of text.matchAll(pattern)) {
+    const at = match.index ?? 0;
+    if (at > last) out.push(text.slice(last, at));
+    out.push(
+      <span
+        key={`${at}-${match[0]}`}
+        className="rounded bg-primary/10 px-0.5 font-medium text-primary"
+      >
+        {match[0]}
+      </span>,
+    );
+    last = at + match[0].length;
+  }
+
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
+function CommentBody({ body, names }: { body: string; names: string[] }) {
   return (
     <div className="markdown-preview prose prose-sm dark:prose-invert max-w-none break-words">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          p: ({ children }) => (
+            <p>
+              {Children.map(children, (child) =>
+                typeof child === "string"
+                  ? highlightMentions(child, names)
+                  : child,
+              )}
+            </p>
+          ),
+        }}
+      >
+        {body}
+      </ReactMarkdown>
     </div>
   );
 }
@@ -40,10 +98,12 @@ function Comment({
   comment,
   projectId,
   taskId,
+  names,
 }: {
   comment: TaskCommentDetails;
   projectId: number;
   taskId: number;
+  names: string[];
 }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<string | null>(null);
@@ -126,7 +186,7 @@ function Comment({
           </div>
         ) : (
           <>
-            <CommentBody body={comment.body} />
+            <CommentBody body={comment.body} names={names} />
 
             {/* canEdit and canDelete come from the server per row and are deliberately not the
                 same answer: someone who runs the project may take a remark down, never reword
@@ -184,6 +244,7 @@ export function TaskComments({ project, taskId }: Props) {
   const [body, setBody] = useState("");
 
   const canComment = project.userPermissions?.includes("Comment") ?? false;
+  const participantNames = project.participants.map((p) => p.name);
 
   const { data: comments, isLoading } = useQuery(
     listTaskCommentsOptions({ path: { projectId, taskId } }),
@@ -221,6 +282,7 @@ export function TaskComments({ project, taskId }: Props) {
               comment={comment}
               projectId={projectId}
               taskId={taskId}
+              names={participantNames}
             />
           ))}
         </ul>
@@ -235,7 +297,7 @@ export function TaskComments({ project, taskId }: Props) {
           <Textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="Leave a comment. Markdown is supported."
+            placeholder="Leave a comment. Markdown is supported, and @name mentions someone."
             rows={3}
             className="resize-none text-sm"
           />
