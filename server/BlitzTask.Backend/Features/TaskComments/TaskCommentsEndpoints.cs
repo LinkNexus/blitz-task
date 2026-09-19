@@ -1,3 +1,5 @@
+using BlitzTask.Backend.Features.Activity;
+using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Shared.Models;
 using BlitzTask.Backend.Infrastructure.Data;
@@ -143,12 +145,14 @@ namespace BlitzTask.Backend.Features.TaskComments
         {
             var user = context.GetUser();
 
-            var taskExists = await dbContext.ProjectTasks.AnyAsync(
+            // The whole row rather than an existence check: the activity entry names the task
+            // that was commented on, and history that resolves that name later is not history.
+            var task = await dbContext.ProjectTasks.FirstOrDefaultAsync(
                 t => t.Id == taskId && t.RelatedProjectId == projectId,
                 cancellationToken
             );
 
-            if (!taskExists)
+            if (task is null)
                 return TypedResults.NotFound(new ApiMessageResponse("Task not found"));
 
             var comment = new TaskComment
@@ -159,6 +163,7 @@ namespace BlitzTask.Backend.Features.TaskComments
             };
 
             dbContext.TaskComments.Add(comment);
+            ActivityRecorder.RecordTask(dbContext, user, task, ActivityKind.COMMENT_ADDED);
             await dbContext.SaveChangesAsync(cancellationToken);
 
             var canModerate = await CanModerateAsync(dbContext, projectId, user.Id, cancellationToken);

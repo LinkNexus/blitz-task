@@ -1,3 +1,4 @@
+using BlitzTask.Backend.Features.Activity;
 using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.Projects;
@@ -691,6 +692,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             SyncRecurrence(task, request.Recurrence);
 
             dbContext.ProjectTasks.Add(task);
+            ActivityRecorder.RecordTask(dbContext, user, task, ActivityKind.TASK_CREATED);
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return TypedResults.Json(
@@ -823,6 +825,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             int taskId,
             MoveProjectTaskRequest request,
             ApplicationDbContext dbContext,
+            HttpContext context,
             CancellationToken cancellationToken
         )
         {
@@ -849,6 +852,13 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             if (column is null)
                 return TypedResults.NotFound(new ApiMessageResponse("Column not found"));
 
+            var fromColumnName = await dbContext
+                .ProjectColumns.Where(c => c.Id == task.RelatedColumnId)
+                .Select(c => c.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var changedColumn = task.RelatedColumnId != request.ColumnId;
+
             task.RelatedColumnId = request.ColumnId;
             task.Score = request.Score;
 
@@ -866,6 +876,21 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             if (isLastColumn)
                 await SpawnNextOccurrenceAsync(task, dbContext, cancellationToken);
 
+            // Reordering within a column is not news. A feed that announced every nudge up and
+            // down a list would bury the moves that mean something, and the score is exactly the
+            // detail nobody reading history cares about.
+            if (changedColumn)
+            {
+                ActivityRecorder.RecordTask(
+                    dbContext,
+                    context.GetUser(),
+                    task,
+                    isLastColumn ? ActivityKind.TASK_COMPLETED : ActivityKind.TASK_MOVED,
+                    fromColumnName,
+                    column.Name
+                );
+            }
+
             await dbContext.SaveChangesAsync(cancellationToken);
             return TypedResults.Ok(task.ToProjectTasksDetails());
         }
@@ -874,6 +899,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             int projectId,
             int taskId,
             ApplicationDbContext dbContext,
+            HttpContext context,
             CancellationToken cancellationToken
         )
         {
@@ -887,6 +913,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             // Attachments stay on disk until the purge — deleting them here would make a restore
             // hand back a task whose files are gone.
             task.DeletedAt = DateTime.UtcNow;
+            ActivityRecorder.RecordTask(dbContext, context.GetUser(), task, ActivityKind.TASK_DELETED);
             await dbContext.SaveChangesAsync(cancellationToken);
             return TypedResults.NoContent();
         }

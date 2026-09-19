@@ -1,4 +1,5 @@
 using BlitzTask.Backend.Features.Attachments;
+using BlitzTask.Backend.Features.Activity;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Shared.Models;
 using BlitzTask.Backend.Infrastructure.Data;
@@ -311,6 +312,12 @@ namespace BlitzTask.Backend.Features.Trash
             }
 
             task.DeletedAt = null;
+            ActivityRecorder.RecordTask(
+                dbContext,
+                context.GetUser(),
+                task,
+                ActivityKind.TASK_RESTORED
+            );
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return Results.Ok(new ApiMessageResponse("Task restored."));
