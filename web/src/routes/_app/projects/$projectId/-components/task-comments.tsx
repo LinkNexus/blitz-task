@@ -15,8 +15,8 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 import { getInitials } from "@/lib/utils";
+import { MentionTextarea } from "./mention-textarea";
 
 type Props = {
   project: ProjectDetails;
@@ -153,11 +153,11 @@ function Comment({
 
         {isEditing ? (
           <div className="space-y-2">
-            <Textarea
+            <MentionTextarea
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={setDraft}
+              names={names}
               rows={3}
-              className="resize-none text-sm"
             />
             <div className="flex gap-2">
               <Button
@@ -294,12 +294,12 @@ export function TaskComments({ project, taskId }: Props) {
           the two, so the read-only role stays read-only. */}
       {canComment && (
         <div className="space-y-2">
-          <Textarea
+          <MentionTextarea
             value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Leave a comment. Markdown is supported, and @name mentions someone."
+            onChange={setBody}
+            names={participantNames}
+            placeholder="Leave a comment. Markdown is supported, and @ mentions someone."
             rows={3}
-            className="resize-none text-sm"
           />
           <Button
             type="button"
