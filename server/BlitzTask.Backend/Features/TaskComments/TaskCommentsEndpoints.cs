@@ -180,12 +180,31 @@ namespace BlitzTask.Backend.Features.TaskComments
                 .Distinct()
                 .ToListAsync(cancellationToken);
 
+            var mentioned = await ResolveMentionsAsync(
+                dbContext,
+                projectId,
+                comment.Body,
+                cancellationToken
+            );
+
+            NotificationRecorder.NotifyAboutTask(
+                dbContext,
+                user,
+                task,
+                NotificationKind.MENTIONED_IN_COMMENT,
+                mentioned
+            );
+
+            // Being addressed outranks being kept informed. Someone who is mentioned *and*
+            // assigned gets the mention alone — two rows for one remark is the same noise the
+            // recorder's own de-duplication exists to avoid, and the vaguer of the two is the
+            // one worth dropping.
             NotificationRecorder.NotifyAboutTask(
                 dbContext,
                 user,
                 task,
                 NotificationKind.TASK_COMMENTED,
-                assigneeIds.Concat(priorCommenterIds)
+                assigneeIds.Concat(priorCommenterIds).Except(mentioned)
             );
 
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -236,7 +255,37 @@ namespace BlitzTask.Backend.Features.TaskComments
             if (comment.AuthorId != user.Id)
                 return Forbidden();
 
+            var previousBody = comment.Body;
             comment.Body = request.Body.Trim();
+
+            // Only the newly named. Editing a comment is how a misspelled name gets fixed, so an
+            // edit has to be able to notify — but re-notifying everyone already in it would make
+            // every typo correction a fresh round of interruptions.
+            var alreadyMentioned = await ResolveMentionsAsync(
+                dbContext,
+                projectId,
+                previousBody,
+                cancellationToken
+            );
+
+            var nowMentioned = await ResolveMentionsAsync(
+                dbContext,
+                projectId,
+                comment.Body,
+                cancellationToken
+            );
+
+            if (comment.ProjectTask is not null)
+            {
+                NotificationRecorder.NotifyAboutTask(
+                    dbContext,
+                    user,
+                    comment.ProjectTask,
+                    NotificationKind.MENTIONED_IN_COMMENT,
+                    nowMentioned.Except(alreadyMentioned)
+                );
+            }
+
             await dbContext.SaveChangesAsync(cancellationToken);
 
             var canModerate = await CanModerateAsync(dbContext, projectId, user.Id, cancellationToken);
@@ -298,13 +347,39 @@ namespace BlitzTask.Backend.Features.TaskComments
             int commentId,
             CancellationToken cancellationToken
         ) =>
-            dbContext.TaskComments.FirstOrDefaultAsync(
+            dbContext.TaskComments.Include(c => c.ProjectTask).FirstOrDefaultAsync(
                 c =>
                     c.Id == commentId
                     && c.ProjectTaskId == taskId
                     && c.ProjectTask.RelatedProjectId == projectId,
                 cancellationToken
             );
+
+        /// <summary>
+        /// Who this comment is addressing, as user ids.
+        /// <para>
+        /// The candidate set is the project's participants, which is what makes a mention safe:
+        /// a name that matches nobody in the project matches nobody at all, so a mention cannot
+        /// carry a task's name to someone who could not open it.
+        /// </para>
+        /// </summary>
+        private static async Task<List<int>> ResolveMentionsAsync(
+            ApplicationDbContext dbContext,
+            int projectId,
+            string body,
+            CancellationToken cancellationToken
+        )
+        {
+            if (!body.Contains('@'))
+                return [];
+
+            var participants = await dbContext
+                .ProjectParticipants.Where(pp => pp.ProjectId == projectId)
+                .Select(pp => new MentionCandidate(pp.UserId, pp.User.Name))
+                .ToListAsync(cancellationToken);
+
+            return MentionParser.FindMentionedUserIds(body, participants);
+        }
 
         /// <summary>
         /// Whether the caller may take down remarks that are not theirs. <c>ManageParticipants</c>

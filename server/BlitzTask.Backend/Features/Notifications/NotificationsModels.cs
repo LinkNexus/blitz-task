@@ -14,6 +14,14 @@ namespace BlitzTask.Backend.Features.Notifications
 
         /// <summary>Someone said something on a task you are part of.</summary>
         TASK_COMMENTED,
+
+        /// <summary>
+        /// Someone wrote your name in a comment. Its own kind rather than a flag on
+        /// <see cref="TASK_COMMENTED"/>, because it is a different claim on your attention —
+        /// being talked *to* rather than being kept informed — and it is the one the recipient
+        /// most needs to be able to tell apart at a glance.
+        /// </summary>
+        MENTIONED_IN_COMMENT,
     }
 
     /// <summary>
