@@ -98,18 +98,14 @@ function ItemBar({
     );
   }
 
-  // Same destination rule as the dashboard's rows: a capture belongs to the Inbox, not to the
-  // board the Inbox happens to need.
-  return item.isInbox ? (
-    <Link to="/inbox" className={className} title={item.name}>
-      {body}
-    </Link>
-  ) : (
+  // Straight to the task. The Inbox no longer needs its own branch: its board was the thing
+  // nobody should be sent to, and a task's own page is not its board.
+  return (
     <Link
-      to="/projects/$projectId"
-      params={{ projectId: String(item.projectId) }}
+      to="/tasks/$taskId"
+      params={{ taskId: String(item.taskId) }}
       className={className}
-      title={`${item.name} — ${item.projectName}`}
+      title={item.isInbox ? item.name : `${item.name} — ${item.projectName}`}
     >
       {body}
     </Link>

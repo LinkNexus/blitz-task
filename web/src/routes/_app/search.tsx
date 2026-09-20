@@ -49,38 +49,44 @@ function Section({
 const ROW_CLASS =
   "block rounded-lg border bg-card px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted";
 
-/**
- * A result that points at a project board, or at the Inbox when the thing lives there — its
- * board is hidden on purpose, so sending someone to it is a dead end.
- *
- * The two destinations are written out rather than passed as a string and cast: `Link` is typed
- * against the route tree, and an `any` here would turn a mistyped route into a dead link found
- * by a user rather than a build error. (L35.5 will make both of these the task itself.)
- */
-function Row({
-  projectId,
-  isInbox,
+/** A result that points at the task itself, which is what the search was looking for. */
+function TaskRow({
+  taskId,
   children,
 }: {
-  projectId: number | string;
-  isInbox: boolean;
+  taskId: number | string;
   children: ReactNode;
 }) {
   return (
     <li>
-      {isInbox ? (
-        <Link to="/inbox" className={ROW_CLASS}>
-          {children}
-        </Link>
-      ) : (
-        <Link
-          to="/projects/$projectId"
-          params={{ projectId: String(projectId) }}
-          className={ROW_CLASS}
-        >
-          {children}
-        </Link>
-      )}
+      <Link
+        to="/tasks/$taskId"
+        params={{ taskId: String(taskId) }}
+        className={ROW_CLASS}
+      >
+        {children}
+      </Link>
+    </li>
+  );
+}
+
+/** A project result still points at its board — that *is* the thing being looked for. */
+function ProjectRow({
+  projectId,
+  children,
+}: {
+  projectId: number | string;
+  children: ReactNode;
+}) {
+  return (
+    <li>
+      <Link
+        to="/projects/$projectId"
+        params={{ projectId: String(projectId) }}
+        className={ROW_CLASS}
+      >
+        {children}
+      </Link>
     </li>
   );
 }
@@ -149,17 +155,13 @@ function SearchPage() {
               icon={<IconSquareCheck className="size-3.5" />}
             >
               {results.tasks.map((task) => (
-                <Row
-                  key={String(task.id)}
-                  projectId={task.projectId}
-                  isInbox={task.isInbox}
-                >
+                <TaskRow key={String(task.id)} taskId={task.id}>
                   <span className="block text-sm font-medium">{task.name}</span>
                   <span className="block text-xs text-muted-foreground">
                     {task.isInbox ? "Inbox" : task.projectName} ·{" "}
                     {task.columnName}
                   </span>
-                </Row>
+                </TaskRow>
               ))}
             </Section>
           )}
@@ -170,11 +172,7 @@ function SearchPage() {
               icon={<IconFolder className="size-3.5" />}
             >
               {results.projects.map((project) => (
-                <Row
-                  key={String(project.id)}
-                  projectId={project.id}
-                  isInbox={false}
-                >
+                <ProjectRow key={String(project.id)} projectId={project.id}>
                   <span className="block text-sm font-medium">
                     {project.name}
                   </span>
@@ -183,7 +181,7 @@ function SearchPage() {
                       {project.description}
                     </span>
                   )}
-                </Row>
+                </ProjectRow>
               ))}
             </Section>
           )}
@@ -194,11 +192,7 @@ function SearchPage() {
               icon={<IconMessage className="size-3.5" />}
             >
               {results.comments.map((comment) => (
-                <Row
-                  key={String(comment.id)}
-                  projectId={comment.projectId}
-                  isInbox={comment.isInbox}
-                >
+                <TaskRow key={String(comment.id)} taskId={comment.taskId}>
                   <span className="block text-sm">{comment.excerpt}</span>
                   <span className="block text-xs text-muted-foreground">
                     {comment.authorName} on {comment.taskName} ·{" "}
@@ -206,7 +200,7 @@ function SearchPage() {
                       addSuffix: true,
                     })}
                   </span>
-                </Row>
+                </TaskRow>
               ))}
             </Section>
           )}

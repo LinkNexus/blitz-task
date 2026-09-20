@@ -128,14 +128,10 @@ function AgendaRow({ item }: { item: CalendarItem }) {
 
   const interactive = cn(ROW_CLASS, "hover:border-border hover:bg-muted/50");
 
-  return item.isInbox ? (
-    <Link to="/inbox" className={interactive}>
-      {body}
-    </Link>
-  ) : (
+  return (
     <Link
-      to="/projects/$projectId"
-      params={{ projectId: String(item.projectId) }}
+      to="/tasks/$taskId"
+      params={{ taskId: String(item.taskId) }}
       className={interactive}
     >
       {body}

@@ -139,6 +139,15 @@ export function CommandPalette() {
     [close, navigate],
   );
 
+  /** A task result means the task, not the board it happens to sit on (L35.5). */
+  const goToTask = useCallback(
+    (taskId: number | string) => {
+      close();
+      navigate({ to: "/tasks/$taskId", params: { taskId: String(taskId) } });
+    },
+    [close, navigate],
+  );
+
   const groups = useMemo<Group[]>(() => {
     const navigation: Item[] = [
       {
@@ -211,10 +220,7 @@ export function CommandPalette() {
             ? "Inbox"
             : `${task.projectName} · ${task.columnName}`,
           icon: IconSquareCheck,
-          // Lands on the board for now. L35.5 is what turns this into the task itself, and
-          // when it does, this is one of the call sites it replaces.
-          run: () =>
-            task.isInbox ? goTo("/inbox") : goToProject(task.projectId),
+          run: () => goToTask(task.id),
         })),
       });
     }
@@ -265,7 +271,7 @@ export function CommandPalette() {
     });
 
     return built;
-  }, [term, results, navigate, close, goTo, goToProject]);
+  }, [term, results, navigate, close, goTo, goToProject, goToTask]);
 
   const flat = useMemo(() => groups.flatMap((group) => group.items), [groups]);
 

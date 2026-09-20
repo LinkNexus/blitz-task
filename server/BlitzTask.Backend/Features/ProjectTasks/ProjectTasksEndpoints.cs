@@ -81,6 +81,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .Produces<List<UserTaskSummary>>();
 
             userTasks
+                .MapGet("/{taskId:int}", GetUserTask)
+                .WithName("get-user-task")
+                .Produces<UserTaskSummary>()
+                .Produces<ApiMessageResponse>(StatusCodes.Status404NotFound);
+
+            userTasks
                 .MapPatch("/{taskId:int}/project", FileTask)
                 .WithName("file-user-task")
                 .Produces<UserTaskSummary>()
@@ -368,6 +374,45 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         // A dashboard widget shows a handful of rows; the cap exists so a malformed `limit`
         // cannot turn this into a full table scan serialised over the wire.
         private const int MaxUserTaskPageSize = 200;
+
+        /// <summary>
+        /// One task, found by its id alone.
+        /// <para>
+        /// The point is the <b>missing</b> project id. A task's page is addressed as
+        /// <c>/tasks/{id}</c> rather than <c>/projects/{p}/tasks/{id}</c> because filing moves a
+        /// task between projects (L24), and these URLs are the ones that end up in a
+        /// notification or pasted into a message — a project id baked into them goes stale the
+        /// moment someone files the task. So the lookup cannot be project-scoped either, and
+        /// membership is the authorization, as in <see cref="ListUserTasks"/>.
+        /// </para>
+        /// <para>
+        /// Returns the same summary the cross-project lists use: it carries the project and
+        /// column the page needs to orient itself, and the page loads the full project from
+        /// there for everything else. A task the caller cannot see reads as <b>not found</b>
+        /// rather than forbidden, matching <see cref="RequireProjectPermissionFilter"/>.
+        /// </para>
+        /// </summary>
+        public static async Task<
+            Results<Ok<UserTaskSummary>, NotFound<ApiMessageResponse>>
+        > GetUserTask(
+            int taskId,
+            ApplicationDbContext dbContext,
+            HttpContext context,
+            CancellationToken cancellationToken
+        )
+        {
+            var user = context.GetUser();
+
+            var task = await dbContext
+                .ProjectTasks.Where(t => t.Id == taskId)
+                .SelectUserTaskSummariesFor(user.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return task is null
+                ? TypedResults.NotFound(new ApiMessageResponse("Task not found"))
+                : TypedResults.Ok(task);
+        }
+
 
         /// <summary>
         /// Moves a task to another project — what makes the Inbox a staging area rather than a
