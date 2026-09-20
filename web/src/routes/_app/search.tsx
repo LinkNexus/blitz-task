@@ -94,12 +94,15 @@ function SearchPage() {
       </div>
 
       <div className="relative">
+        {/* The icon sits inside the field, so the text has to clear it with a real gap rather
+            than a hairline: left-3 + size-4 ends at 28px, and pl-9 left only 8px of air, which
+            reads as the two touching. */}
         <IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           autoFocus
           value={q ?? ""}
           placeholder="Search…"
-          className="pl-9"
+          className="h-10 pl-11"
           onChange={(e) =>
             navigate({
               search: { q: e.target.value || undefined },
