@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import { flashMessagesStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { CommandPalette } from "./-components/command-palette";
 import { NotificationBell } from "./-components/notification-bell";
 import { QuickCapture, requestQuickCapture } from "./-components/quick-capture";
 import { AppSidebar } from "./-components/sidebar/app-sidebar";
@@ -147,6 +148,7 @@ function RouteComponent() {
       {/* Mounted in the layout, not per route: capture has to be reachable from anywhere, and
           the dialog owns its own open state via a document event. */}
       <QuickCapture />
+      <CommandPalette />
     </SidebarProvider>
   );
 }

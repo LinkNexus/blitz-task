@@ -46,26 +46,41 @@ function Section({
   );
 }
 
+const ROW_CLASS =
+  "block rounded-lg border bg-card px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted";
+
+/**
+ * A result that points at a project board, or at the Inbox when the thing lives there — its
+ * board is hidden on purpose, so sending someone to it is a dead end.
+ *
+ * The two destinations are written out rather than passed as a string and cast: `Link` is typed
+ * against the route tree, and an `any` here would turn a mistyped route into a dead link found
+ * by a user rather than a build error. (L35.5 will make both of these the task itself.)
+ */
 function Row({
-  to,
-  params,
+  projectId,
+  isInbox,
   children,
 }: {
-  to: string;
-  params?: Record<string, string>;
+  projectId: number | string;
+  isInbox: boolean;
   children: ReactNode;
 }) {
   return (
     <li>
-      <Link
-        // biome-ignore lint/suspicious/noExplicitAny: the three result kinds link to three
-        // different routes, and typing that union buys nothing a reader does not already see.
-        to={to as any}
-        params={params as any}
-        className="block rounded-lg border bg-card px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted"
-      >
-        {children}
-      </Link>
+      {isInbox ? (
+        <Link to="/inbox" className={ROW_CLASS}>
+          {children}
+        </Link>
+      ) : (
+        <Link
+          to="/projects/$projectId"
+          params={{ projectId: String(projectId) }}
+          className={ROW_CLASS}
+        >
+          {children}
+        </Link>
+      )}
     </li>
   );
 }
@@ -136,14 +151,8 @@ function SearchPage() {
               {results.tasks.map((task) => (
                 <Row
                   key={String(task.id)}
-                  // An Inbox capture links to /inbox: its board is hidden on purpose, so
-                  // sending someone there is a dead end. Same rule as the dashboard's rows.
-                  to={task.isInbox ? "/inbox" : "/projects/$projectId"}
-                  params={
-                    task.isInbox
-                      ? undefined
-                      : { projectId: String(task.projectId) }
-                  }
+                  projectId={task.projectId}
+                  isInbox={task.isInbox}
                 >
                   <span className="block text-sm font-medium">{task.name}</span>
                   <span className="block text-xs text-muted-foreground">
@@ -163,8 +172,8 @@ function SearchPage() {
               {results.projects.map((project) => (
                 <Row
                   key={String(project.id)}
-                  to="/projects/$projectId"
-                  params={{ projectId: String(project.id) }}
+                  projectId={project.id}
+                  isInbox={false}
                 >
                   <span className="block text-sm font-medium">
                     {project.name}
@@ -187,12 +196,8 @@ function SearchPage() {
               {results.comments.map((comment) => (
                 <Row
                   key={String(comment.id)}
-                  to={comment.isInbox ? "/inbox" : "/projects/$projectId"}
-                  params={
-                    comment.isInbox
-                      ? undefined
-                      : { projectId: String(comment.projectId) }
-                  }
+                  projectId={comment.projectId}
+                  isInbox={comment.isInbox}
                 >
                   <span className="block text-sm">{comment.excerpt}</span>
                   <span className="block text-xs text-muted-foreground">
