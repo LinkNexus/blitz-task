@@ -139,11 +139,18 @@ export function CommandPalette() {
     [close, navigate],
   );
 
-  /** A task result means the task, not the board it happens to sit on (L35.5). */
+  /**
+   * A task result means the task, not the board it happens to sit on (L35.5) — and a *comment*
+   * result means the remark, so it carries the anchor the search page uses.
+   */
   const goToTask = useCallback(
-    (taskId: number | string) => {
+    (taskId: number | string, commentId?: number | string) => {
       close();
-      navigate({ to: "/tasks/$taskId", params: { taskId: String(taskId) } });
+      navigate({
+        to: "/tasks/$taskId",
+        params: { taskId: String(taskId) },
+        search: commentId === undefined ? {} : { comment: Number(commentId) },
+      });
     },
     [close, navigate],
   );
@@ -245,8 +252,7 @@ export function CommandPalette() {
           label: comment.excerpt,
           hint: `${comment.authorName} on ${comment.taskName}`,
           icon: IconMessage,
-          run: () =>
-            comment.isInbox ? goTo("/inbox") : goToProject(comment.projectId),
+          run: () => goToTask(comment.taskId, comment.id),
         })),
       });
     }
