@@ -113,7 +113,7 @@ for *"buy milk"*.
 
 | # | Task | Notes |
 |---|------|-------|
-| L35 | **Global search** | Sidebar links to `/search`, route doesn't exist. Across tasks, projects, comments. SQLite FTS5 is the natural fit and avoids adding a search service — worth confirming EF Core can reach it cleanly before committing. |
+| L35 | ✅ **Global search** | `GET /api/search` plus the `/search` route the sidebar had been linking at since the beginning — the last dead end in the navigation after L15.5, and the one a user could click. Across task names, descriptions and **tags**, project names, descriptions and tags, and comment bodies. **The FTS5 question the entry asked was answered by spiking it, and the answer was "yes, and not yet".** FTS5 *is* compiled into the bundled SQLite, and — the part worth knowing — EF composes global query filters over a `FromSql`, so a raw `MATCH` query would still exclude trashed rows rather than quietly resurrecting them. It is reachable. What it costs is a virtual table per searchable kind, triggers to keep each in sync, raw SQL inside migrations, and a second way of asking the database questions, against a personal tool whose largest table is in the thousands, where `LIKE` is milliseconds. Deferred with the path left open, the same call L51 makes about server-side counts. **Using the ordinary LINQ path is a correctness argument, not only a simplicity one**: membership filters and L29's soft-delete filter apply for free, and search is the one endpoint where getting that wrong hands over other people's *text* rather than merely an id. Three smaller decisions. **Results are grouped by kind, not ranked into one list** — ranking across kinds means inventing an exchange rate between "a project named Alpha" and "a comment mentioning alpha", and the cap is per group so a flood of task hits cannot hide the project being looked for. **The query is escaped**: `%` and `_` are LIKE wildcards, so searching for "50%" or "snake_case" would otherwise return the whole database and read as the feature being broken. **A comment shows an excerpt around the match**, not its first hundred characters — a hit five paragraphs in would otherwise be a result with no visible reason for being one. The query lives in `?q=`, so a search survives a reload and can be sent to someone. 9 tests (243 in the suite), verified against real data. **Not done:** FTS5 ranking and highlighting, searching attachments' filenames, and L36's command palette, which is the other half of this being fast to reach. |
 | L36 | **Keyboard-first navigation** | Command palette (⌘K), shortcuts for capture/complete/navigate. The single biggest daily-driver quality-of-life feature and cheap relative to its impact. |
 | L37 | **Saved views / filters** | The Phase 1 toolbar state (`ToolbarState` in `toolbar-filters.ts`) is in-memory and resets on reload. Persist named filter sets per user, and put the active one in the URL so views are shareable — the route already has a `view` search param to extend. |
 | L38 | **Bulk operations** | Multi-select tasks, then move/assign/tag/delete in one action. |
@@ -170,7 +170,7 @@ Phase 1  Foundations              ██████████  12/12  done
 Phase 2  Deployable MVP           ██████████  13/13  done
 Phase 3  Personal task management ██████████  11/11  done
 Phase 4  Collaboration            ██████████   6/6  done
-Phase 5  Power features           ░░░░░░░░░░   0/11
+Phase 5  Power features           █░░░░░░░░░   1/11
 Phase 6  AI assistance            ░░░░░░░░░░   0/5
 Phase 7  Reach & polish           █░░░░░░░░░   1/8
 ```
@@ -206,10 +206,14 @@ the people it concerns are told (L32), they are told without a reload (L33), and
 addressed by name (L34). What is left of collaboration is not in this phase: the email half of
 L32, and presence.
 
-**Next:** the ordering question raised by L32.5/L39.5 — whether to pull **L45 (PWA)** forward out
-of Phase 7 — is now the real decision, since iOS delivers Web Push only to an installed web app
-and that makes L45 the gate on L32.5 rather than polish after it. Otherwise Phase 5 opens with
-L35 (global search) and L36 (command palette), the two that most change daily use.
+**Phase 5 has started** with L35, which also closed the last clickable dead end in the sidebar —
+only `/ask-ai` (L42, Phase 6) still goes nowhere.
+
+**Next:** L36 (command palette) is the natural follow-on, since search now exists and ⌘K is mostly
+a matter of reaching it in one keystroke. The ordering question raised by L32.5/L39.5 — whether to
+pull **L45 (PWA)** forward out of Phase 7 — is still open and is the larger decision, since iOS
+delivers Web Push only to an installed web app, which makes L45 the gate on push rather than polish
+after it.
 
 **One ordering change worth making deliberately.** L32.5 (native push) and L39.5 (calendar sync)
 are both about the app reaching someone who does not currently have it open — the gap between a
