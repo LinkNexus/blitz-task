@@ -87,12 +87,18 @@ function NotificationRow({
     return <div className={cn(className, "cursor-default")}>{body}</div>;
   }
 
-  // The task itself, not its board: being told you were mentioned and then handed a column of
-  // cards to search through is the gap L35.5 closed.
+  // The task itself, and — when the notification was about a remark that still exists — the
+  // remark within it. Being told you were mentioned and then left to find the sentence is the
+  // last step of the same gap L35.5 closed.
   return (
     <Link
       to="/tasks/$taskId"
       params={{ taskId: String(notification.taskId) }}
+      search={
+        notification.commentId === null
+          ? {}
+          : { comment: Number(notification.commentId) }
+      }
       className={className}
       onClick={onFollow}
     >

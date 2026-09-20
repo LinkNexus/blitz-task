@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { Children, type ReactNode, useState } from "react";
+import { Children, type ReactNode, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -15,12 +15,14 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { getInitials } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { MentionTextarea } from "./mention-textarea";
 
 type Props = {
   project: ProjectDetails;
   taskId: number;
+  /** A comment to scroll to and mark, when arriving from a permalink. */
+  highlightCommentId?: number;
 };
 
 /** Ceremony-free relative time, which is how a thread is read — "3 hours ago", not a date. */
@@ -99,11 +101,14 @@ function Comment({
   projectId,
   taskId,
   names,
+  isTarget,
 }: {
   comment: TaskCommentDetails;
   projectId: number;
   taskId: number;
   names: string[];
+  /** Arrived at from a permalink — worth pointing out, briefly. */
+  isTarget: boolean;
 }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<string | null>(null);
@@ -129,7 +134,16 @@ function Comment({
   const isEditing = draft !== null;
 
   return (
-    <li className="flex gap-3">
+    <li
+      // The anchor a notification or a search result lands on.
+      id={`comment-${comment.id}`}
+      className={cn(
+        "flex scroll-mt-24 gap-3 rounded-md transition-colors",
+        // Fades rather than persists: it answers "which one" on arrival and then stops being
+        // a piece of state the reader has to dismiss.
+        isTarget && "bg-primary/5 ring-1 ring-primary/30",
+      )}
+    >
       <Avatar className="size-7 shrink-0">
         <AvatarFallback className="text-[11px]">
           {getInitials(comment.authorName)}
@@ -238,17 +252,28 @@ function Comment({
  * Note there is no `<form>` here, deliberately — this renders *inside* the task sheet's own
  * form, and a nested one would make the composer's button save the task instead.
  */
-export function TaskComments({ project, taskId }: Props) {
+export function TaskComments({ project, taskId, highlightCommentId }: Props) {
   const projectId = Number(project.id);
   const queryClient = useQueryClient();
   const [body, setBody] = useState("");
 
   const canComment = project.userPermissions?.includes("Comment") ?? false;
+  const highlighted = highlightCommentId ?? -1;
   const participantNames = project.participants.map((p) => p.name);
 
   const { data: comments, isLoading } = useQuery(
     listTaskCommentsOptions({ path: { projectId, taskId } }),
   );
+
+  // Scrolls once the thread has actually rendered — the anchor does not exist before the query
+  // resolves, so the browser's own hash handling would have nothing to find. That is also why
+  // this is a search param rather than a #hash.
+  useEffect(() => {
+    if (!highlightCommentId || !comments?.length) return;
+    document
+      .getElementById(`comment-${highlightCommentId}`)
+      ?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [highlightCommentId, comments]);
 
   const create = useMutation({
     ...createTaskCommentMutation(),
@@ -283,6 +308,7 @@ export function TaskComments({ project, taskId }: Props) {
               projectId={projectId}
               taskId={taskId}
               names={participantNames}
+              isTarget={Number(comment.id) === highlighted}
             />
           ))}
         </ul>

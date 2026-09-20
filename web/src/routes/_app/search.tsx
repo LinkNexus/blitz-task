@@ -49,12 +49,18 @@ function Section({
 const ROW_CLASS =
   "block rounded-lg border bg-card px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted";
 
-/** A result that points at the task itself, which is what the search was looking for. */
+/**
+ * A result that points at the task itself, which is what the search was looking for — and at
+ * the matching comment within it when that is what matched, so a hit five paragraphs into a
+ * thread does not land the reader at the top of it.
+ */
 function TaskRow({
   taskId,
+  commentId,
   children,
 }: {
   taskId: number | string;
+  commentId?: number | string;
   children: ReactNode;
 }) {
   return (
@@ -62,6 +68,7 @@ function TaskRow({
       <Link
         to="/tasks/$taskId"
         params={{ taskId: String(taskId) }}
+        search={commentId === undefined ? {} : { comment: Number(commentId) }}
         className={ROW_CLASS}
       >
         {children}
@@ -192,7 +199,11 @@ function SearchPage() {
               icon={<IconMessage className="size-3.5" />}
             >
               {results.comments.map((comment) => (
-                <TaskRow key={String(comment.id)} taskId={comment.taskId}>
+                <TaskRow
+                  key={String(comment.id)}
+                  taskId={comment.taskId}
+                  commentId={comment.id}
+                >
                   <span className="block text-sm">{comment.excerpt}</span>
                   <span className="block text-xs text-muted-foreground">
                     {comment.authorName} on {comment.taskName} ·{" "}

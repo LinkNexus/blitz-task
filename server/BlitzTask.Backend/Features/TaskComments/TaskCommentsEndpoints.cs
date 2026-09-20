@@ -192,7 +192,8 @@ namespace BlitzTask.Backend.Features.TaskComments
                 user,
                 task,
                 NotificationKind.MENTIONED_IN_COMMENT,
-                mentioned
+                mentioned,
+                comment
             );
 
             // Being addressed outranks being kept informed. Someone who is mentioned *and*
@@ -204,7 +205,8 @@ namespace BlitzTask.Backend.Features.TaskComments
                 user,
                 task,
                 NotificationKind.TASK_COMMENTED,
-                assigneeIds.Concat(priorCommenterIds).Except(mentioned)
+                assigneeIds.Concat(priorCommenterIds).Except(mentioned),
+                comment
             );
 
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -282,7 +284,8 @@ namespace BlitzTask.Backend.Features.TaskComments
                     user,
                     comment.ProjectTask,
                     NotificationKind.MENTIONED_IN_COMMENT,
-                    nowMentioned.Except(alreadyMentioned)
+                    nowMentioned.Except(alreadyMentioned),
+                    comment
                 );
             }
 
