@@ -63,6 +63,7 @@ namespace BlitzTask.Backend.Features.Notifications
                     n.ProjectId,
                     n.TaskId,
                     n.TaskName,
+                    n.CommentId,
                     n.CreatedAt,
                     n.ReadAt != null
                 ))
@@ -122,6 +123,7 @@ namespace BlitzTask.Backend.Features.Notifications
                     notification.ProjectId,
                     notification.TaskId,
                     notification.TaskName,
+                    notification.CommentId,
                     notification.CreatedAt,
                     IsRead: true
                 )

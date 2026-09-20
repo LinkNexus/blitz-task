@@ -9,6 +9,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import z from "zod";
 import type { ProjectTaskDetails } from "@/api";
 import {
   getProjectOptions,
@@ -22,7 +23,17 @@ import { getInitials } from "@/lib/utils";
 import { TaskComments } from "../projects/$projectId/-components/task-comments";
 import { TaskSheet } from "../projects/$projectId/-components/task-sheet";
 
+/**
+ * `?comment=` rather than a `#hash`: the thread is fetched by the component, so the anchor does
+ * not exist when the browser would act on a hash, and the scroll has to be driven after the
+ * query resolves anyway. A search param is also what the router validates and round-trips.
+ */
+const searchSchema = z.object({
+  comment: z.coerce.number().optional(),
+});
+
 export const Route = createFileRoute("/_app/tasks/$taskId")({
+  validateSearch: searchSchema,
   loader: async ({ context, params }) => {
     // Two requests, deliberately sequential: the URL carries no project id — that is the whole
     // point of the route, since filing a task moves it between projects — so the first call is
@@ -83,6 +94,7 @@ const PRIORITY_TONE: Record<string, string> = {
 
 function TaskPage() {
   const { taskId } = Route.useParams();
+  const { comment } = Route.useSearch();
   const id = Number(taskId);
 
   const { data: summary } = useSuspenseQuery(
@@ -244,7 +256,11 @@ function TaskPage() {
         </div>
       )}
 
-      <TaskComments project={project} taskId={id} />
+      <TaskComments
+        project={project}
+        taskId={id}
+        highlightCommentId={comment}
+      />
 
       {/* Mounted here so the Edit button has something to open — the same component the board
           mounts, given the same project. */}

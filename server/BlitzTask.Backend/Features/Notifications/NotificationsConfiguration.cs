@@ -36,6 +36,14 @@ namespace BlitzTask.Backend.Features.Notifications
                 .HasForeignKey(n => n.TaskId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // Same rule as the task: deleting the remark does not un-tell anyone, it only takes
+            // away the thing the notification could scroll to.
+            builder
+                .HasOne(n => n.Comment)
+                .WithMany()
+                .HasForeignKey(n => n.CommentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Every read is one person's, newest first, and the bell asks for the unread count
             // far more often than for the list.
             builder.HasIndex(n => new { n.UserId, n.CreatedAt });

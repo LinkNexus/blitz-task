@@ -315,3 +315,128 @@ public class NotificationsTests
         Assert.Equal("Ship it", item.TaskName);
     }
 }
+
+/// <summary>
+/// The anchor a notification points at. Without it "X mentioned you on Y" lands on the task and
+/// leaves the reader scrolling for the sentence that named them.
+/// </summary>
+public class NotificationCommentAnchorTests
+{
+    private static DefaultHttpContext ContextFor(User user)
+    {
+        var context = new DefaultHttpContext();
+        context.Items["CurrentUser"] = user;
+        return context;
+    }
+
+    private static Task CommentAsync(
+        ApplicationDbContext dbContext,
+        User user,
+        int projectId,
+        int taskId,
+        string body
+    ) =>
+        TaskCommentsEndpoints.CreateComment(
+            projectId,
+            taskId,
+            new CreateTaskCommentRequest(body),
+            dbContext,
+            ContextFor(user),
+            CancellationToken.None
+        );
+
+    [Fact]
+    public async Task ACommentNotificationPointsAtTheComment()
+    {
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var bob = await TestsUtils.SeedUserAsync(dbContext, "bob@example.com");
+        var (project, todo, _) = await SeedProjectAsync(
+            dbContext,
+            "Alpha",
+            alice.Id,
+            (bob.Id, ProjectRole.Contributor)
+        );
+        var task = await SeedTaskAsync(dbContext, project, todo, "Ship it", assignees: bob);
+
+        await CommentAsync(dbContext, alice, project.Id, task.Id, "Have a look");
+
+        var comment = await dbContext.TaskComments.SingleAsync();
+        var notification = await dbContext.Notifications.SingleAsync(n => n.UserId == bob.Id);
+
+        // The id is set in the same save that inserts the comment, through the navigation —
+        // there is no id to copy until then.
+        Assert.Equal(comment.Id, notification.CommentId);
+    }
+
+    [Fact]
+    public async Task AnAssignmentHasNoCommentToPointAt()
+    {
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var bob = await TestsUtils.SeedUserAsync(dbContext, "bob@example.com");
+        var (project, todo, _) = await SeedProjectAsync(
+            dbContext,
+            "Alpha",
+            alice.Id,
+            (bob.Id, ProjectRole.Contributor)
+        );
+        var task = await SeedTaskAsync(dbContext, project, todo, "Ship it");
+
+        await ProjectTasksEndpoints.UpdateTask(
+            project.Id,
+            task.Id,
+            new UpdateProjectTaskRequest
+            {
+                Name = task.Name,
+                Description = task.Description,
+                Priority = task.Priority,
+                AssigneeIds = [bob.Id],
+            },
+            dbContext,
+            ContextFor(alice),
+            Mock.Of<IFileService>(),
+            CancellationToken.None
+        );
+
+        var notification = await dbContext.Notifications.SingleAsync(n => n.UserId == bob.Id);
+
+        Assert.Equal(NotificationKind.TASK_ASSIGNED, notification.Kind);
+        Assert.Null(notification.CommentId);
+    }
+
+    [Fact]
+    public async Task DeletingTheCommentLeavesTheNotificationStandingWithNothingToScrollTo()
+    {
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var bob = await TestsUtils.SeedUserAsync(dbContext, "bob@example.com");
+        var (project, todo, _) = await SeedProjectAsync(
+            dbContext,
+            "Alpha",
+            alice.Id,
+            (bob.Id, ProjectRole.Contributor)
+        );
+        var task = await SeedTaskAsync(dbContext, project, todo, "Ship it", assignees: bob);
+
+        await CommentAsync(dbContext, alice, project.Id, task.Id, "Have a look");
+        var comment = await dbContext.TaskComments.SingleAsync();
+
+        await TaskCommentsEndpoints.DeleteComment(
+            project.Id,
+            task.Id,
+            comment.Id,
+            dbContext,
+            ContextFor(alice),
+            CancellationToken.None
+        );
+        dbContext.ChangeTracker.Clear();
+
+        var notification = await dbContext.Notifications.SingleAsync(n => n.UserId == bob.Id);
+
+        // Retracting a remark does not un-tell anyone it was made; it only takes away the thing
+        // the notification could scroll to. SetNull rather than cascade.
+        Assert.Null(notification.CommentId);
+        Assert.Equal("Ship it", notification.TaskName);
+    }
+}

@@ -32,7 +32,8 @@ namespace BlitzTask.Backend.Features.Notifications
             User actor,
             ProjectTask task,
             NotificationKind kind,
-            IEnumerable<int> recipients
+            IEnumerable<int> recipients,
+            TaskComments.TaskComment? comment = null
         )
         {
             foreach (var userId in recipients.Where(id => id != actor.Id).Distinct())
@@ -47,6 +48,10 @@ namespace BlitzTask.Backend.Features.Notifications
                         ProjectId = task.RelatedProjectId,
                         Task = task,
                         TaskName = task.Name,
+                        // Passed as the entity rather than an id for the same reason L31's
+                        // recorder takes one: a comment being inserted has no id until the save
+                        // this event shares, and the navigation lets EF fix the key up.
+                        Comment = comment,
                     }
                 );
             }

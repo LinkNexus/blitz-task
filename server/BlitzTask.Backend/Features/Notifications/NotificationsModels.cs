@@ -61,6 +61,17 @@ namespace BlitzTask.Backend.Features.Notifications
         public int? TaskId { get; set; }
         public string? TaskName { get; set; }
 
+        /// <summary>
+        /// The remark this is about, when there is one — so "mentioned you on X" can land on the
+        /// sentence rather than on the task and leave you scrolling for it.
+        /// <para>
+        /// Nullable twice over: an assignment has no comment at all, and a comment that has since
+        /// been deleted leaves the notification standing (it is still true that you were told)
+        /// while the anchor it pointed at goes away.
+        /// </para>
+        /// </summary>
+        public int? CommentId { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
         /// <summary>
@@ -68,6 +79,8 @@ namespace BlitzTask.Backend.Features.Notifications
         /// an event with a time, and the cheap version throws that away for nothing.
         /// </summary>
         public DateTime? ReadAt { get; set; }
+
+        public TaskComments.TaskComment? Comment { get; set; }
 
         public User User { get; set; } = null!;
         public User Actor { get; set; } = null!;
@@ -83,6 +96,8 @@ namespace BlitzTask.Backend.Features.Notifications
         int ProjectId,
         int? TaskId,
         string? TaskName,
+        /// <summary>The comment to scroll to, when this was about one that still exists.</summary>
+        int? CommentId,
         DateTime CreatedAt,
         bool IsRead
     );
