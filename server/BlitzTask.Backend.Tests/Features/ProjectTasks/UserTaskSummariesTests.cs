@@ -1,7 +1,12 @@
+using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.ProjectTasks;
+using BlitzTask.Backend.Features.Shared.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using static BlitzTask.Backend.Tests.Features.ProjectTasks.UserTasksTestData;
 
 namespace BlitzTask.Backend.Tests.Features.ProjectTasks;
 
@@ -244,5 +249,93 @@ public class UserTaskSummariesTests
         await UserTasksTestData.SeedTaskAsync(dbContext, project, todo, "Alice task");
 
         Assert.Empty(await dbContext.ProjectTasks.SelectUserTaskSummariesFor(loner.Id).ToListAsync());
+    }
+}
+
+/// <summary>
+/// GET /api/tasks/{id} — the lookup a task's own page is built on. Its whole reason for
+/// existing is the project id it does *not* take.
+/// </summary>
+public class GetUserTaskTests
+{
+    private static DefaultHttpContext ContextFor(User user)
+    {
+        var context = new DefaultHttpContext();
+        context.Items["CurrentUser"] = user;
+        return context;
+    }
+
+    [Fact]
+    public async Task FindsATaskWithoutBeingToldWhichProjectItIsIn()
+    {
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var (project, todo, _) = await SeedProjectAsync(dbContext, "Alpha", alice.Id);
+        var task = await SeedTaskAsync(dbContext, project, todo, "Ship it");
+
+        var result = await ProjectTasksEndpoints.GetUserTask(
+            task.Id,
+            dbContext,
+            ContextFor(alice),
+            CancellationToken.None
+        );
+
+        var summary = Assert.IsType<Ok<UserTaskSummary>>(result.Result).Value!;
+
+        // The caller supplies an id and gets back where it lives — which is what lets a task URL
+        // survive being filed into another project.
+        Assert.Equal("Ship it", summary.Name);
+        Assert.Equal(project.Id, summary.ProjectId);
+        Assert.Equal("Todo", summary.ColumnName);
+    }
+
+    [Fact]
+    public async Task ATaskInAProjectTheCallerIsNotInReadsAsNotFound()
+    {
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var bob = await TestsUtils.SeedUserAsync(dbContext, "bob@example.com");
+        var (bobs, todo, _) = await SeedProjectAsync(dbContext, "Bob's", bob.Id);
+        var task = await SeedTaskAsync(dbContext, bobs, todo, "Private");
+
+        var result = await ProjectTasksEndpoints.GetUserTask(
+            task.Id,
+            dbContext,
+            ContextFor(alice),
+            CancellationToken.None
+        );
+
+        // There is no route projectId for a permission filter to read, so membership inside the
+        // query is the authorization — and non-membership must not be distinguishable from
+        // non-existence, or this endpoint enumerates task ids.
+        Assert.IsType<NotFound<ApiMessageResponse>>(result.Result);
+    }
+
+    [Fact]
+    public async Task ATrashedTaskIsNotFound()
+    {
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var (project, todo, _) = await SeedProjectAsync(dbContext, "Alpha", alice.Id);
+        var task = await SeedTaskAsync(dbContext, project, todo, "Deleted");
+
+        await ProjectTasksEndpoints.DeleteTask(
+            project.Id,
+            task.Id,
+            dbContext,
+            ContextFor(alice),
+            CancellationToken.None
+        );
+        dbContext.ChangeTracker.Clear();
+
+        // A link to a task that has since been thrown away has to land somewhere honest.
+        var result = await ProjectTasksEndpoints.GetUserTask(
+            task.Id,
+            dbContext,
+            ContextFor(alice),
+            CancellationToken.None
+        );
+
+        Assert.IsType<NotFound<ApiMessageResponse>>(result.Result);
     }
 }

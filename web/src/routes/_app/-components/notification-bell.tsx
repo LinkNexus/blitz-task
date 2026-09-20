@@ -87,10 +87,12 @@ function NotificationRow({
     return <div className={cn(className, "cursor-default")}>{body}</div>;
   }
 
+  // The task itself, not its board: being told you were mentioned and then handed a column of
+  // cards to search through is the gap L35.5 closed.
   return (
     <Link
-      to="/projects/$projectId"
-      params={{ projectId: String(notification.projectId) }}
+      to="/tasks/$taskId"
+      params={{ taskId: String(notification.taskId) }}
       className={className}
       onClick={onFollow}
     >

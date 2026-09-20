@@ -60,17 +60,12 @@ export function TaskRow({ task }: { task: UserTaskSummary }) {
     </>
   );
 
-  // A capture links to the Inbox, not to the Inbox's board: that board exists only because
-  // tasks need columns, and sending someone there invites them to manage a project that is
-  // supposed to be invisible.
-  return task.isInbox ? (
-    <Link to="/inbox" className={ROW_CLASS}>
-      {body}
-    </Link>
-  ) : (
+  // The task itself, whichever project it lives in — including the Inbox, whose board exists
+  // only because tasks need columns and was never meant to be somewhere you are sent (L35.5).
+  return (
     <Link
-      to="/projects/$projectId"
-      params={{ projectId: String(task.projectId) }}
+      to="/tasks/$taskId"
+      params={{ taskId: String(task.id) }}
       className={ROW_CLASS}
     >
       {body}
