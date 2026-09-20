@@ -61,6 +61,7 @@ The backend **serves the built frontend**: `vite build` outputs into
 ```bash
 # Backend (from repo root)
 dotnet run --project server/BlitzTask.Backend      # http://localhost:5121
+dotnet run --project server/BlitzTask.Backend -- --seed   # fill a dev database with fixtures
 dotnet test server/BlitzTask.Backend.Tests
 dotnet ef migrations add <Name> --project server/BlitzTask.Backend
 dotnet ef database update --project server/BlitzTask.Backend
