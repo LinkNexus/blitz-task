@@ -7,6 +7,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar.tsx";
+import { requestCommandPalette } from "../command-palette";
 import { getMainItems } from "./sidebar-config.ts";
 
 export const NavMain = memo(() => {
@@ -46,7 +47,21 @@ export const NavMain = memo(() => {
               }}
               className="relative"
             >
-              <Link to={item.href}>
+              {/* Search opens the palette instead of travelling to a page — being sent
+                  elsewhere to type a query means leaving whatever you were looking at in
+                  order to go and find something else. It stays an anchor so ⌘-click and
+                  "open in new tab" still reach /search, which remains the shareable form
+                  of a query. */}
+              <Link
+                to={item.href}
+                onClick={(e) => {
+                  if (item.id !== "search") return;
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0)
+                    return;
+                  e.preventDefault();
+                  requestCommandPalette();
+                }}
+              >
                 <item.icon className="h-4 w-4 shrink-0" />
                 <span className="truncate text-sm font-medium">
                   {item.title}
