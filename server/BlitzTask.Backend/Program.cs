@@ -1,6 +1,7 @@
 using BlitzTask.Backend.Features.Activity;
 using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.Realtime;
+using BlitzTask.Backend.Features.Search;
 using BlitzTask.Backend.Features.Notifications;
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
@@ -257,6 +258,7 @@ public class Program
             .MapTaskCommentsEndpoints()
             .MapActivityEndpoints()
             .MapNotificationsEndpoints()
+            .MapSearchEndpoints()
             .MapTrashEndpoints()
             .MapCalendarEndpoints();
 
