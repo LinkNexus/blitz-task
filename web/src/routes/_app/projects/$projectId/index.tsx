@@ -1,7 +1,11 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { z } from "zod";
+import {
+  createFileRoute,
+  Navigate,
+  stripSearchParams,
+  useNavigate,
+} from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo } from "react";
 import { getProjectOptions } from "@/api/@tanstack/react-query.gen";
 import { flashMessagesStore } from "@/lib/store";
 import { ColumnDialog } from "./-components/column-dialog";
@@ -11,28 +15,28 @@ import { ProjectPageSkeleton } from "./-components/project-page-skeleton";
 import { TableView } from "./-components/table-view/index";
 import { TaskSheet } from "./-components/task-sheet";
 import { KanbanToolbar } from "./-components/toolbar";
-import {
-  DEFAULT_TOOLBAR_STATE,
-  type ToolbarState,
-} from "./-components/toolbar-filters";
+import type { ToolbarState } from "./-components/toolbar-filters";
 import { useDragNDrop } from "./-components/use-drag-n-drop";
-
-const searchSchema = z.object({
-  // `default` keeps `view` optional for callers that just want to land on the
-  // project (they get the board); `catch` still coerces a malformed ?view= back
-  // to a valid one instead of throwing.
-  view: z.enum(["board", "table"]).default("board").catch("board"),
-});
+import {
+  BOARD_SEARCH_DEFAULTS,
+  boardSearchSchema,
+  searchFromToolbarState,
+  toolbarStateFromSearch,
+} from "./-components/view-search";
 
 export const Route = createFileRoute("/_app/projects/$projectId/")({
-  validateSearch: searchSchema,
+  validateSearch: boardSearchSchema,
+  // Without this the router writes the *validated* search back to the URL, defaults and all, so
+  // every link to a board came out as `?view=board&q=&priority=%5B%5D&due=%5B%5D&…&sort=null`.
+  // It still worked — it is just the whole state spelled out — but a filter set is meant to be
+  // shareable, and that is the link someone would be pasting.
+  search: { middlewares: [stripSearchParams(BOARD_SEARCH_DEFAULTS)] },
   // A different project is a different page, so give it a fresh component instance. Only the
   // param changes when you navigate between two projects, and React keeps the same instance
-  // alive, so every piece of state below this point silently carries over: the settings sheet's
-  // form reads `defaultValues` once and would keep showing the project you opened first, and
-  // `toolbarState` would apply one project's filters to another — worst of all its
-  // `assigneeIds` hold user ids from the previous project, which match nobody here and empty
-  // the board with no visible reason why.
+  // alive, so every piece of state below this point silently carries over — the settings
+  // sheet's form reads `defaultValues` once and would keep showing the project you opened
+  // first. The toolbar's filters used to be the worst of these and no longer are: they live in
+  // the URL now, and a link to another project carries no search, so they reset on their own.
   remountDeps: ({ params }) => params.projectId,
   loader: async ({ params, context }) => {
     return await context.queryClient.ensureQueryData(
@@ -60,7 +64,9 @@ export const Route = createFileRoute("/_app/projects/$projectId/")({
 
 function SingleProjectPage() {
   const { projectId } = Route.useParams();
-  const { view } = Route.useSearch();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const { view } = search;
 
   const { data: project } = useSuspenseQuery(
     getProjectOptions({
@@ -68,9 +74,33 @@ function SingleProjectPage() {
     }),
   );
 
-  const [toolbarState, setToolbarState] = useState<ToolbarState>(
-    DEFAULT_TOOLBAR_STATE,
+  // Memoised on the search object, which TanStack keeps referentially stable across renders
+  // that did not change it. Rebuilding the state inline would hand `useDragNDrop` a new
+  // `ToolbarState` — and new `Set`s — every render, re-running the filter and sort of every
+  // task in the project on each keystroke elsewhere on the page.
+  const toolbarState = useMemo(() => toolbarStateFromSearch(search), [search]);
+
+  // The URL is the state, so a toolbar change is a navigation. `replace` because the filters
+  // are one continuous adjustment rather than a series of places to go back to — without it,
+  // typing eight characters into the search box would put eight entries in the history and
+  // leave Back walking them one keystroke at a time.
+  const setToolbarState = useCallback(
+    (update: ToolbarState | ((previous: ToolbarState) => ToolbarState)) => {
+      const next =
+        typeof update === "function"
+          ? update(toolbarStateFromSearch(search))
+          : update;
+
+      navigate({
+        to: "/projects/$projectId",
+        params: { projectId },
+        search: searchFromToolbarState(next, search.view),
+        replace: true,
+      });
+    },
+    [navigate, projectId, search],
   );
+
   const dndProps = useDragNDrop(project, toolbarState);
 
   return (

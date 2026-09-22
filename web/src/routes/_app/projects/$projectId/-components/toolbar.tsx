@@ -26,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { requestColumnCreate } from "./column-dialog";
+import { SavedViews } from "./saved-views";
 import {
   type DueBucket,
   type GroupByField,
@@ -127,6 +128,11 @@ export function KanbanToolbar({ project, view, state, onStateChange }: Props) {
             className="pl-8 h-8 text-sm bg-muted/50 border-transparent focus-visible:bg-background focus-visible:border-input"
           />
         </div>
+
+        <Separator orientation="vertical" className="h-5 shrink-0" />
+
+        {/* Saved views */}
+        <SavedViews projectId={Number(project.id)} state={state} view={view} />
 
         <Separator orientation="vertical" className="h-5 shrink-0" />
 
@@ -276,7 +282,9 @@ export function KanbanToolbar({ project, view, state, onStateChange }: Props) {
                   params: {
                     projectId: project.id.toString(),
                   },
-                  search: { view: "board" },
+                  // Updater rather than a literal: the filters live in the search too now, and
+                  // replacing the object wholesale would clear them on every view switch.
+                  search: (previous) => ({ ...previous, view: "board" }),
                 })
               }
               title="Board view"
@@ -293,7 +301,7 @@ export function KanbanToolbar({ project, view, state, onStateChange }: Props) {
                   params: {
                     projectId: project.id.toString(),
                   },
-                  search: { view: "table" },
+                  search: (previous) => ({ ...previous, view: "table" }),
                 })
               }
               title="Table view"

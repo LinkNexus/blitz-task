@@ -21,6 +21,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectParticipant> ProjectParticipants => Set<ProjectParticipant>();
     public DbSet<ProjectInvitation> ProjectInvitations => Set<ProjectInvitation>();
+    public DbSet<SavedView> SavedViews => Set<SavedView>();
     public DbSet<ProjectColumn> ProjectColumns => Set<ProjectColumn>();
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
     public DbSet<TaskReminder> TaskReminders => Set<TaskReminder>();
