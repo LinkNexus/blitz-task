@@ -16,6 +16,7 @@ using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Auth;
 using BlitzTask.Backend.Infrastructure;
 using BlitzTask.Backend.Infrastructure.Data;
+using BlitzTask.Backend.Infrastructure.Seeding;
 using BlitzTask.Backend.Infrastructure.Extensions;
 using BlitzTask.Backend.Infrastructure.Scheduling;
 using System.IO.Compression;
@@ -36,9 +37,19 @@ namespace BlitzTask.Backend;
 
 public class Program
 {
+    private const string SeedFlag = "--seed";
+
     public static void Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);
+        // `--seed` is stripped before configuration sees it. The command-line provider parses
+        // `--key value` pairs, so a valueless flag does not get rejected — it silently eats the
+        // *next* argument as its value, and `--seed --ConnectionStrings:...=x` quietly drops the
+        // connection string, leaving the command pointed at whatever the default is. Which, for
+        // a seeder, is the one mistake worth engineering out.
+        var seedRequested = args.Contains(SeedFlag);
+        var builder = WebApplication.CreateBuilder(
+            [.. args.Where(arg => arg != SeedFlag)]
+        );
 
         builder.Services.AddHttpContextAccessor();
 
@@ -227,6 +238,30 @@ public class Program
                 >()
                 .Value.UploadDirectory;
             Directory.CreateDirectory(Path.GetFullPath(uploadDirectory));
+        }
+
+        // `--seed` is a command, not a mode: it fills an empty development database with a
+        // project that looks used, prints how to sign in, and exits without serving anything.
+        // Read straight from args rather than through configuration because a bare flag with no
+        // value is not something the command-line provider accepts.
+        if (seedRequested)
+        {
+            using var seedScope = app.Services.CreateScope();
+
+            // Blocked rather than awaited: Main stays synchronous, because the entry point is
+            // what DesignTime.IsDocumentGeneration inspects and this is not the place to
+            // discover that changing its shape moved something.
+            Console.WriteLine(
+                DevelopmentSeeder
+                    .RunAsync(
+                        seedScope.ServiceProvider.GetRequiredService<ApplicationDbContext>(),
+                        app.Environment
+                    )
+                    .GetAwaiter()
+                    .GetResult()
+            );
+
+            return;
         }
 
         // First in the pipeline, deliberately: it rewrites Scheme, Host and RemoteIpAddress

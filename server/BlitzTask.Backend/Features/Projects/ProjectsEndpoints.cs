@@ -70,7 +70,12 @@ namespace BlitzTask.Backend.Features.Projects
             return app;
         }
 
-        private static ProjectColumn[] CreateDefaultColumns()
+        /// <summary>
+        /// The columns every new project starts with. <c>internal</c> so the development seeder
+        /// can use the same set rather than keeping a second opinion about what a board looks
+        /// like when it is created.
+        /// </summary>
+        internal static ProjectColumn[] CreateDefaultColumns()
         {
             var colNames = new string[] { "Backlog", "In Progress", "Review", "Done" };
             var colorNames = new string[] { "#FF0000", "#00FF00", "#0000FF", "#FFFF00" };
