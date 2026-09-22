@@ -289,6 +289,7 @@ public class Program
             .MapProjectMembersEndpoints()
             .MapProjectColumnsEndpoints()
             .MapProjectTasksEndpoints()
+            .MapBulkTasksEndpoints()
             .MapTaskRemindersEndpoints()
             .MapTaskChecklistEndpoints()
             .MapTaskCommentsEndpoints()

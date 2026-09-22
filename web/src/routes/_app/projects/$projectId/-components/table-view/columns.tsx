@@ -17,9 +17,11 @@ import {
   AvatarGroupCount,
 } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn, getInitials } from "@/lib/utils";
 import { getPriorityIcon, getPriorityPillClass } from "../kanban-view/lib";
 import { ProjectMenu } from "../kanban-view/task-card/menu";
+import { useTaskSelection } from "../task-selection";
 
 export type TaskRow = ProjectTaskDetails & {
   col: ProjectColumnDetails;
@@ -37,7 +39,42 @@ const columnHelper = createColumnHelper<typeof features, TaskRow>();
 
 const empty = <span className="text-xs text-muted-foreground/30">—</span>;
 
+/**
+ * Components rather than inline `cell`/`header` functions, because both read the selection from
+ * context — a hook cannot be called from the plain function a column definition holds.
+ */
+function SelectHeader() {
+  const selection = useTaskSelection();
+  return (
+    <Checkbox
+      checked={selection.allVisibleSelected}
+      onCheckedChange={(checked) =>
+        selection.setMany(selection.visibleTaskIds, checked === true)
+      }
+      aria-label="Select all tasks"
+    />
+  );
+}
+
+function SelectCell({ task }: { task: TaskRow }) {
+  const selection = useTaskSelection();
+  return (
+    <Checkbox
+      checked={selection.isSelected(task.id)}
+      onCheckedChange={() => selection.toggle(task.id)}
+      aria-label={`Select ${task.name}`}
+      onPointerDown={(e) => e.stopPropagation()}
+    />
+  );
+}
+
 export const columns = columnHelper.columns([
+  columnHelper.display({
+    id: "select",
+    header: () => <SelectHeader />,
+    cell: (info) => <SelectCell task={info.row.original} />,
+  }),
+
   columnHelper.display({
     id: "drag",
     header: "",

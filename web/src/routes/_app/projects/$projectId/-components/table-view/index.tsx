@@ -102,6 +102,7 @@ export function TableView({ project, dndProps, groupBy }: Props) {
                       key={header.id}
                       className={cn(
                         "text-left text-xs font-medium text-muted-foreground/70 whitespace-nowrap",
+                        header.column.id === "select" && "w-8 pr-0",
                         header.column.id === "drag" && "w-8 pr-0",
                         header.column.id === "tags" && "w-fit max-w-[200px]",
                         header.column.id === "name" && "min-w-[220px] w-full",

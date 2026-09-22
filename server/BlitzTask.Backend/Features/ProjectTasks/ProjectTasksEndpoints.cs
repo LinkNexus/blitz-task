@@ -284,7 +284,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         /// whose deletion is reference-counted nowhere.
         /// </para>
         /// </summary>
-        private static async Task<ProjectTask?> SpawnNextOccurrenceAsync(
+        /// <summary>
+        /// Internal rather than private because the bulk move (L38) is the other way a task can
+        /// reach the last column, and a series that advances on a drag but not on a bulk
+        /// complete would be the kind of divergence a second copy of this always produces.
+        /// </summary>
+        internal static async Task<ProjectTask?> SpawnNextOccurrenceAsync(
             ProjectTask completed,
             ApplicationDbContext dbContext,
             CancellationToken cancellationToken
@@ -317,12 +322,26 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             // deadline still does.
             var shift = nextDue - completed.DueDate.Value;
 
-            var maxScore =
+            var storedMax =
                 await dbContext
                     .ProjectTasks.Where(t => t.RelatedColumnId == firstColumn.Id)
                     .Select(t => (float?)t.Score)
                     .MaxAsync(cancellationToken)
                 ?? 0f;
+
+            // `Local` matters only under a bulk complete, and then it matters a lot: several
+            // series can advance inside one SaveChanges, and a successor that has not been
+            // written yet is invisible to the query above — so every one of them would be scored
+            // against the same stored maximum and land on an identical score. Ties are not fatal
+            // (the board still renders) but they make the order arbitrary and the next drop
+            // interpolate between two equal neighbours, which mints another tie.
+            var pendingMax = dbContext
+                .ProjectTasks.Local.Where(t => t.RelatedColumnId == firstColumn.Id)
+                .Select(t => t.Score)
+                .DefaultIfEmpty(0f)
+                .Max();
+
+            var maxScore = Math.Max(storedMax, pendingMax);
 
             var next = new ProjectTask
             {
