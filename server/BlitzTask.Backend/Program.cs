@@ -285,6 +285,7 @@ public class Program
         app.MapAuthEndpoints()
             .MapProjectsEndpoints()
             .MapInboxEndpoints()
+            .MapSavedViewsEndpoints()
             .MapProjectMembersEndpoints()
             .MapProjectColumnsEndpoints()
             .MapProjectTasksEndpoints()

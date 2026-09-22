@@ -218,6 +218,20 @@ Conventions in `web/src/routes/`:
   set, dnd-kit's sortable indices, the optimistic order and the drop-score neighbours must all
   derive from the same list; filtering in a view would leave dnd computing indices against the
   unfiltered set. `toolbar-filters.ts` holds `ToolbarState`, `taskMatchesFilters`, `sortTasks`.
+- **The toolbar's state is the URL, and `view-search.ts` is the only translator.** `ToolbarState`
+  holds sets; the route's search params hold arrays. Three things there are load-bearing and look
+  like tidiness. `searchFromToolbarState` **sorts** each array, because a set has no order and the
+  saved-views menu compares canonical strings to decide which view is active. It **drops
+  defaults**, and `stripSearchParams` (fed defaults derived from the schema, not a second list)
+  keeps the router from writing them back — without it every board link reads
+  `?view=board&q=&priority=%5B%5D&…&sort=null`. And every param needs a **`catch` as well as a
+  `default`**, or a hand-edited link throws in the loader and renders a blank page.
+- **Navigating with a literal `search` object wipes the filters.** They live in the search now, so
+  anything changing one param — the board/table toggle is the live example — must use the updater
+  form, `search: (previous) => ({ ...previous, view })`.
+- **Derive `ToolbarState` from search with `useMemo`.** `useDragNDrop` memoises its filtered task
+  map on `[columns, toolbarState]`, so rebuilding the state inline hands it new `Set`s every
+  render and re-filters and re-sorts every task in the project on each unrelated keystroke.
 - When a manual sort is active, `dragDisabled` is true — rendered order no longer follows
   `score`, so a drop's neighbours would produce a score that doesn't match where the task
   visually landed.
@@ -478,6 +492,18 @@ on the wrong branch.
   definition of when a series falls, and a TypeScript copy would be a second one. Its date filter
   tests **overlap** (`start <= to && due >= from`), not containment, or every task spanning the
   window disappears from it.
+- **A saved view stores JSON, not the URL's query string.** Tempting to store the link, since a
+  view *is* its link — but the encoding of params into a URL is TanStack's business (arrays go in
+  JSON-encoded today), and an upgrade changing it would silently redefine every view saved before.
+  Both come back through the same zod schema, so keeping the stored form independent costs
+  nothing. The column is opaque to the server on purpose: every filter in it is frontend
+  vocabulary (a due bucket of "this week" is computed against the *viewer's* clock), so typed
+  columns would be a second, drifting copy and a migration per filter.
+- **Saved views are private, and `UserId` in the query is the whole boundary.** The endpoints sit
+  behind a membership-only `RequireProjectPermissionFilter()` — a Viewer may keep one, same
+  reasoning as a reminder — so another member's view must read as **404, not 403**, and name
+  uniqueness is per person. `SavedView` is deliberately absent from `RealtimePublishInterceptor`'s
+  switch: saving a private view must not make everyone else's board refetch.
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,
