@@ -26,6 +26,45 @@ import { useMoveTask } from "./use-move-task";
 
 export const colDndId = (id: ProjectColumnDetails["id"]) => `column:${id}`;
 export const taskDndId = (id: ProjectTaskDetails["id"]) => `task:${id}`;
+
+/**
+ * The lane key for a board that is not split into swimlanes: one lane holding everything.
+ *
+ * Keeping it as a real key rather than a special case is what makes the ordinary board the
+ * degenerate version of the swimlane board — one cell per column — so there is a single code
+ * path through the order map, the optimistic order and the drop-score neighbours.
+ */
+export const ALL_LANES = "all";
+
+/** The lane for tasks that belong to no section — or to one this board no longer has. */
+export const NO_SECTION_LANE = "none";
+
+/**
+ * A **cell**: one column within one lane, and the unit the whole drag model is keyed by. With
+ * swimlanes off there is exactly one cell per column, so this reduces to the old behaviour.
+ */
+export const cellDndId = (
+  columnId: ProjectColumnDetails["id"],
+  laneKey: string,
+) => `cell:${columnId}:${laneKey}`;
+
+const parseCellDndId = (dndId: string) => {
+  const [, columnId, laneKey] = dndId.split(":");
+  return { columnId: Number(columnId), laneKey };
+};
+
+/**
+ * Which lane a task belongs in. A section the board no longer has falls into "no section"
+ * rather than nowhere — someone can delete a section while another person holds the board open,
+ * and a task that matches no lane would simply vanish off it.
+ */
+export const laneKeyOf = (
+  task: ProjectTaskDetails,
+  knownSectionIds: ReadonlySet<string>,
+) =>
+  task.sectionId != null && knownSectionIds.has(String(task.sectionId))
+    ? String(task.sectionId)
+    : NO_SECTION_LANE;
 // A column is both a task drop target (`colDndId`) and a reorderable item
 // (`colSortDndId`); the two need distinct ids so dnd-kit's registry keeps them
 // apart.
@@ -81,7 +120,16 @@ export function columnScoreBetween(before?: number, after?: number): number {
   return (a + b) / 2;
 }
 
+/** Keyed by {@link cellDndId}: every (column, lane) pair the board is currently showing. */
 type TasksOrder = Record<string, string[]>;
+
+/** One swimlane: a section (or the catch-all) and the columns as seen from inside it. */
+export type BoardLane = {
+  key: string;
+  label: string;
+  color: string | null;
+  columns: ProjectColumnDetails[];
+};
 type ColumnsOrder = string[];
 
 export type DndReturnValue = {
@@ -89,6 +137,12 @@ export type DndReturnValue = {
   handleDragOver: (event: DragOverEvent) => void;
   handleDragEnd: (event: DragEndEvent) => void;
   effectiveColumns: ProjectColumnDetails[];
+  /**
+   * The Section x Column grid, empty unless the toolbar is grouping by section. Derived from the
+   * same order map as `effectiveColumns`, so the two can never disagree about where a task is.
+   */
+  lanes: BoardLane[];
+  swimlanes: boolean;
   /**
    * Task drag is meaningless while a manual sort is active: the rendered order
    * no longer follows `score`, so the neighbours a drop lands between would
@@ -133,6 +187,31 @@ export function useDragNDrop(
   // that the rendered task set, dnd-kit's sortable indices, the optimistic order
   // and the neighbours used to compute a drop score are all derived from the
   // same list — reconciling them separately per view would desync them.
+  // Grouping by section is what turns the board into swimlanes — the same toolbar control that
+  // groups the table, rather than a second concept meaning the same thing.
+  const swimlanes = toolbarState.groupBy === "section";
+
+  const sections = useMemo(
+    () =>
+      [...project.sections].sort((a, b) => Number(a.score) - Number(b.score)),
+    [project.sections],
+  );
+
+  const knownSectionIds = useMemo(
+    () => new Set(sections.map((s) => String(s.id))),
+    [sections],
+  );
+
+  // The lanes the board is split into, in render order. Off, it is the single catch-all lane,
+  // which is what keeps one code path below.
+  const laneKeys = useMemo(
+    () =>
+      swimlanes
+        ? [...sections.map((s) => String(s.id)), NO_SECTION_LANE]
+        : [ALL_LANES],
+    [swimlanes, sections],
+  );
+
   const tasksMap = useMemo(
     () =>
       columns.reduce((acc, col) => {
@@ -142,10 +221,20 @@ export function useDragNDrop(
         const ordered = toolbarState.sort
           ? sortTasks(visible, toolbarState.sort)
           : visible.sort((a, b) => Number(b.score) - Number(a.score));
-        acc[colDndId(col.id)] = ordered.map((t) => taskDndId(t.id));
+
+        for (const laneKey of laneKeys) {
+          acc[cellDndId(col.id, laneKey)] = ordered
+            .filter(
+              (t) =>
+                laneKey === ALL_LANES ||
+                laneKeyOf(t, knownSectionIds) === laneKey,
+            )
+            .map((t) => taskDndId(t.id));
+        }
+
         return acc;
       }, {} as TasksOrder),
-    [columns, toolbarState],
+    [columns, toolbarState, laneKeys, knownSectionIds],
   );
 
   // Base column order is derived purely from `score` (lowest first). During a
@@ -161,24 +250,82 @@ export function useDragNDrop(
   // Column order and task order are independent: a drag reorders one or the
   // other, never both, so each optimistic layer falls back to its score-sorted
   // base when idle.
+  // One place resolves a cell's ids into tasks, so `effectiveColumns` and `lanes` cannot drift.
+  const readCell = useCallback(
+    (
+      taskOrder: TasksOrder,
+      columnId: ProjectColumnDetails["id"],
+      laneKey: string,
+    ) =>
+      (taskOrder[cellDndId(columnId, laneKey)] ?? []).map(
+        (taskId) => tasksByIds.get(parseTaskDndId(taskId))!,
+      ),
+    [tasksByIds],
+  );
+
+  const orderedColumns = useCallback(
+    (columnOrder: ColumnsOrder) =>
+      columnOrder.map(
+        (sortId) => columns.find((c) => colSortDndId(c.id) === sortId)!,
+      ),
+    [columns],
+  );
+
+  /**
+   * Every visible task, still grouped by column. In swimlane mode this concatenates the lanes,
+   * because the table and the column drag both need the whole column — only the board's
+   * swimlane layout cares which lane a task sits in.
+   */
   const effectiveColumns = useMemo(() => {
     const taskOrder = optimisticOrder ?? tasksMap;
     const columnOrder = optimisticColumns ?? baseColumnOrder;
-    return columnOrder.map((sortId): ProjectColumnDetails => {
-      const col = columns.find((c) => colSortDndId(c.id) === sortId)!;
-      const taskIds = taskOrder[colDndId(col.id)] ?? [];
-      return {
+    return orderedColumns(columnOrder).map(
+      (col): ProjectColumnDetails => ({
         ...col,
-        tasks: taskIds.map((taskId) => tasksByIds.get(parseTaskDndId(taskId))!),
-      };
-    });
+        tasks: laneKeys.flatMap((laneKey) =>
+          readCell(taskOrder, col.id, laneKey),
+        ),
+      }),
+    );
   }, [
     optimisticOrder,
     optimisticColumns,
     tasksMap,
     baseColumnOrder,
-    columns,
-    tasksByIds,
+    laneKeys,
+    orderedColumns,
+    readCell,
+  ]);
+
+  const lanes = useMemo((): BoardLane[] => {
+    if (!swimlanes) return [];
+
+    const taskOrder = optimisticOrder ?? tasksMap;
+    const columnOrder = optimisticColumns ?? baseColumnOrder;
+    const byId = new Map(sections.map((s) => [String(s.id), s]));
+
+    return laneKeys.map((laneKey) => {
+      const section = byId.get(laneKey);
+      return {
+        key: laneKey,
+        label: section?.name ?? "No section",
+        color: section?.color ?? null,
+        columns: orderedColumns(columnOrder).map((col) => ({
+          ...col,
+          tasks: readCell(taskOrder, col.id, laneKey),
+        })),
+      };
+    });
+  }, [
+    swimlanes,
+    optimisticOrder,
+    optimisticColumns,
+    tasksMap,
+    baseColumnOrder,
+    laneKeys,
+    sections,
+    orderedColumns,
+    readCell,
   ]);
 
   const handleDragStart = useCallback(
@@ -314,17 +461,17 @@ export function useDragNDrop(
       const sourceId = parseTaskDndId(String(source.id));
       const sourceDndId = String(source.id);
 
-      // The destination is whichever column now holds the source after `move`,
-      // regardless of whether it was dropped onto a task or an empty column.
+      // The destination is whichever *cell* now holds the source after `move`, regardless of
+      // whether it was dropped onto a task or an empty one. In swimlane mode that cell names
+      // both the column and the lane, which is how a drop across lanes becomes a section change.
       const destEntry = Object.entries(newOrder).find(([, ids]) =>
         ids.includes(sourceDndId),
       );
       if (!destEntry) return cleanup();
 
-      const [destColDndId, destIds] = destEntry;
-      const destinationCol = columns.find(
-        (c) => colDndId(c.id) === destColDndId,
-      );
+      const [destCellDndId, destIds] = destEntry;
+      const { columnId: destColumnId, laneKey } = parseCellDndId(destCellDndId);
+      const destinationCol = columns.find((c) => Number(c.id) === destColumnId);
       if (!destinationCol) return cleanup();
 
       // Score is computed from the source's real neighbours at its landing
@@ -341,15 +488,34 @@ export function useDragNDrop(
         getTaskScore(destIds[srcIdx + 1]),
       );
 
-      moveTask(tasksByIds.get(sourceId)!, Number(destinationCol.id), newScore, {
-        onSettled: cleanup,
-      });
+      const movedTask = tasksByIds.get(sourceId)!;
+
+      // Always the intended final section, never "leave it alone" — the request has no way to
+      // express the difference, so the catch-all lane resends what the task already had.
+      const destinationSectionId =
+        laneKey === ALL_LANES
+          ? movedTask.sectionId == null
+            ? null
+            : Number(movedTask.sectionId)
+          : laneKey === NO_SECTION_LANE
+            ? null
+            : Number(laneKey);
+
+      moveTask(
+        movedTask,
+        Number(destinationCol.id),
+        newScore,
+        destinationSectionId,
+        { onSettled: cleanup },
+      );
     },
     [columns, moveColumnMut, moveTask, project, queryClient, tasksByIds],
   );
 
   return {
     effectiveColumns,
+    lanes,
+    swimlanes,
     handleDragStart,
     handleDragOver,
     handleDragEnd,

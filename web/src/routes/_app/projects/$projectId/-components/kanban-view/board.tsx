@@ -4,6 +4,7 @@ import type { ProjectDetails } from "@/api";
 import { requestColumnCreate } from "../column-dialog";
 import type { DndReturnValue } from "../use-drag-n-drop";
 import { ProjectColumn } from "./column";
+import { Swimlanes } from "./swimlanes";
 
 type Props = {
   project: ProjectDetails;
@@ -22,26 +23,34 @@ export function KanbanBoard({ project, dndProps }: Props) {
       onDragOver={dndProps.handleDragOver}
       onDragEnd={dndProps.handleDragEnd}
     >
-      <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px]">
-        {columns.map((column, index) => (
-          <ProjectColumn
-            key={column.id}
-            index={index}
-            column={column}
-            project={project}
-            dragDisabled={dndProps.dragDisabled}
-          />
-        ))}
+      {dndProps.swimlanes ? (
+        <Swimlanes
+          project={project}
+          lanes={dndProps.lanes}
+          dragDisabled={dndProps.dragDisabled}
+        />
+      ) : (
+        <div className="flex gap-3 sm:gap-6 min-h-[500px] sm:min-h-[600px]">
+          {columns.map((column, index) => (
+            <ProjectColumn
+              key={column.id}
+              index={index}
+              column={column}
+              project={project}
+              dragDisabled={dndProps.dragDisabled}
+            />
+          ))}
 
-        <button
-          type="button"
-          onClick={() => requestColumnCreate(maxScore + 1000)}
-          className="flex min-w-[272px] w-[272px] shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/60 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-        >
-          <IconPlus className="size-4" />
-          Add column
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => requestColumnCreate(maxScore + 1000)}
+            className="flex min-w-[272px] w-[272px] shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/60 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          >
+            <IconPlus className="size-4" />
+            Add column
+          </button>
+        </div>
+      )}
     </DragDropProvider>
   );
 }

@@ -114,10 +114,19 @@ export function ProjectMenu({ task, project }: Props) {
                 <DropdownMenuItem
                   key={c.id}
                   onClick={() =>
-                    moveTask(task, Number(c.id), scoreAtTopOf(c), {
-                      onSuccess: () => toast.success(`Moved to ${c.name}`),
-                      onError: () => toast.error("Failed to move task"),
-                    })
+                    // Resend the section the task already has: the move request always carries
+                    // the *final* section, so omitting it would unsection the task as a
+                    // side effect of moving it between columns.
+                    moveTask(
+                      task,
+                      Number(c.id),
+                      scoreAtTopOf(c),
+                      task.sectionId == null ? null : Number(task.sectionId),
+                      {
+                        onSuccess: () => toast.success(`Moved to ${c.name}`),
+                        onError: () => toast.error("Failed to move task"),
+                      },
+                    )
                   }
                 >
                   <div
