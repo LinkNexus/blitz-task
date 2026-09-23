@@ -990,6 +990,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
 
             task.RelatedColumnId = request.ColumnId;
             task.Score = request.Score;
+            task.SectionId = await ResolveSectionAsync(
+                request.SectionId,
+                projectId,
+                dbContext,
+                cancellationToken
+            );
 
             // Completion is a position, not a flag — a task is done once it sits in its project's
             // last column — so this drop is the only moment the app can notice that a recurring

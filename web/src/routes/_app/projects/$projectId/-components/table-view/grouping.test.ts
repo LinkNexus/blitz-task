@@ -28,6 +28,10 @@ const row = (over: Partial<TaskRow> & { id: number }): TaskRows[number] =>
       assigneeIds: [],
       attachments: [],
       columnId: 1,
+      sectionId: null,
+      // The *effective* column, which is what the section grouping buckets by — set in
+      // `flatTasks` so a task mid-drag groups under where it is going.
+      col: { id: over.columnId ?? 1, name: `Column ${over.columnId ?? 1}` },
       isOverdue: false,
       isCompleted: false,
       ...over,
@@ -37,8 +41,13 @@ const row = (over: Partial<TaskRow> & { id: number }): TaskRows[number] =>
 const project = (
   participants: { userId: number; name: string }[],
   sections: { id: number; name: string }[] = [],
+  columns: { id: number; name: string }[] = [
+    { id: 1, name: "Column 1" },
+    { id: 2, name: "Column 2" },
+  ],
 ) =>
   ({
+    columns: columns.map((c, i) => ({ ...c, score: i * 1000, color: "#fff" })),
     participants: participants.map((p, i) => ({
       id: i + 1,
       userId: p.userId,
@@ -246,5 +255,66 @@ describe("groupRows — section", () => {
     expect(
       groups.find((g) => g.key === "section:none")?.rows[0].original.name,
     ).toBe("Task 1");
+  });
+});
+
+describe("groupRows — section, nested by column", () => {
+  const withSections = project(
+    [],
+    [
+      { id: 10, name: "frontend" },
+      { id: 20, name: "backend" },
+    ],
+  );
+
+  test("splits each section by column, in board order", () => {
+    const groups = groupRows(
+      [
+        row({ id: 1, sectionId: 10, columnId: 2 }),
+        row({ id: 2, sectionId: 10, columnId: 1 }),
+      ],
+      "section",
+      withSections,
+    );
+
+    // A section crosses the columns rather than replacing them — the table's answer to the
+    // board's swimlanes.
+    expect(groups[0].subGroups?.map((g) => g.label)).toEqual([
+      "Column 1",
+      "Column 2",
+    ]);
+    expect(groups[0].subGroups?.[0].rows.map((r) => r.original.name)).toEqual([
+      "Task 2",
+    ]);
+  });
+
+  test("hides columns a section has nothing in", () => {
+    const groups = groupRows(
+      [row({ id: 1, sectionId: 10, columnId: 1 })],
+      "section",
+      withSections,
+    );
+
+    // Unlike the sections themselves, an empty column inside one is noise: five columns and
+    // four sections would otherwise render twenty headers for nothing.
+    expect(groups[0].subGroups?.map((g) => g.label)).toEqual(["Column 1"]);
+  });
+
+  test("the unsectioned bucket is split by column too", () => {
+    const groups = groupRows(
+      [row({ id: 1, sectionId: null, columnId: 2 })],
+      "section",
+      withSections,
+    );
+
+    const none = groups.find((g) => g.key === "section:none");
+    expect(none?.subGroups?.map((g) => g.label)).toEqual(["Column 2"]);
+  });
+
+  test("groupings other than section have no second level", () => {
+    // Every other grouping replaces the column axis outright, so a sub-level would be a
+    // different question than the one the user asked.
+    const groups = groupRows([row({ id: 1 })], "priority", withSections);
+    expect(groups.every((g) => g.subGroups === undefined)).toBe(true);
   });
 });

@@ -119,7 +119,14 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public RecurrenceInput? Recurrence { get; set; }
     }
 
-    public record MoveProjectTaskRequest(int ColumnId, float Score);
+    /// <param name="SectionId">
+    /// The section the task should end up in — <b>always</b> the intended final value, never
+    /// "leave it alone". A swimlane drop sends the lane it landed in; every other caller sends
+    /// the section the task already had. That is what lets <c>null</c> mean "no section" without
+    /// ambiguity, and it is why the card's "Move to" menu has to pass the current one: sending
+    /// nothing would quietly unsection the task.
+    /// </param>
+    public record MoveProjectTaskRequest(int ColumnId, float Score, int? SectionId = null);
 
     public record UpdateProjectTaskRequest
     {
