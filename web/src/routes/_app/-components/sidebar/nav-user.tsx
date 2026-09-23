@@ -1,6 +1,7 @@
 import {
   IconCheck,
   IconDeviceLaptop,
+  IconDownload,
   IconLogout,
   IconMoon,
   IconPalette,
@@ -107,6 +108,27 @@ export const NavUser = memo(() => {
             <span>Profile Settings</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="cursor-pointer">
+            <IconDownload className="h-4 w-4" />
+            <span>Export data</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            {/* Plain links rather than a mutation: these are GETs, the auth cookie rides along
+                and Content-Disposition names the file, so the browser already does this job. */}
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <a href="/api/export?format=json" download>
+                <span>Everything (JSON)</span>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <a href="/api/export?format=csv" download>
+                <span>Everything (CSV)</span>
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
         <DropdownMenuSeparator />
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="cursor-pointer">

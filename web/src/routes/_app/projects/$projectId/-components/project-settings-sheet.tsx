@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   IconActivity,
   IconAlertTriangle,
+  IconDownload,
   IconSettings2,
   IconUsers,
 } from "@tabler/icons-react";
@@ -364,6 +365,46 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
                   </div>
                 </FieldGroup>
               </form>
+
+              {/* ── Export ── */}
+              <div className="mt-8 space-y-3 border-t pt-6">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Export this project</p>
+                  <p className="text-xs text-muted-foreground">
+                    JSON keeps everything — columns, checklists, comments and
+                    who is assigned. CSV is one row per task, for a spreadsheet.
+                    Attached files are not included; they are backed up
+                    separately.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  {/* Plain links, not fetch-and-blob: these are GETs, the auth cookie rides
+                      along, and Content-Disposition already names the file. Anything cleverer
+                      would be reimplementing the browser's download. */}
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                  >
+                    <a href={`/api/${project.id}/export?format=json`} download>
+                      <IconDownload className="size-3.5" />
+                      JSON
+                    </a>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                  >
+                    <a href={`/api/${project.id}/export?format=csv`} download>
+                      <IconDownload className="size-3.5" />
+                      CSV
+                    </a>
+                  </Button>
+                </div>
+              </div>
             </div>
 
             {/* Footer lives inside the General tab so it disappears on other tabs */}

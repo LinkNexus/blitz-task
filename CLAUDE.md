@@ -524,6 +524,16 @@ on the wrong branch.
   reasoning as a reminder — so another member's view must read as **404, not 403**, and name
   uniqueness is per person. `SavedView` is deliberately absent from `RealtimePublishInterceptor`'s
   switch: saving a private view must not make everyone else's board refetch.
+- **An export is a security boundary, not just a projection.** `Features/Export` has its own
+  shape rather than reusing `ProjectDetails`, because that record carries `Invitations` as the
+  entity — `Token` included, a live credential — and `UserPermissions`, which describes the
+  caller. Fine in a response to a member; a leak in a file that gets downloaded and forwarded.
+  Anything added to `ProjectDetails` later does **not** automatically belong in the export.
+- **CSV from user text needs a formula guard, not just quoting.** A cell starting with `=`, `+`,
+  `-`, `@`, tab or CR executes on open in Excel and Sheets, and every value in an export is text
+  someone typed into a shared board. `CsvWriter.Field` prefixes an apostrophe and then quotes;
+  both, in that order. The UTF-8 BOM is not decoration either — without it Excel renders every
+  accented name as mojibake.
 - An endpoint with a `ValidationFilter` must also declare
   `.Produces<ValidationErrors>(StatusCodes.Status422UnprocessableEntity)`. The filter returns
   422 at runtime regardless, but without the declaration it is absent from the OpenAPI document,
