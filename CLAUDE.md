@@ -529,6 +529,19 @@ on the wrong branch.
   entity — `Token` included, a live credential — and `UserPermissions`, which describes the
   caller. Fine in a response to a member; a leak in a file that gets downloaded and forwarded.
   Anything added to `ProjectDetails` later does **not** automatically belong in the export.
+- **An import only ever creates, and the importer always owns the result.** `POST /api/import`
+  never merges, updates or deletes — the worst a mistaken import does is leave a duplicate. Roles
+  come across but an `Owner` in the file becomes a `Collaborator`, because a file is not evidence
+  that somebody agreed to own a project. People and comment authors with no account here are
+  counted in `ImportResult` rather than invited or reattributed, and an `IsInbox` project merges
+  into the caller's Inbox via `InboxEndpoints.GetOrCreateAsync` — creating a second one trips
+  `IX_Projects_InboxPerUser`. `CreatedAt` is the moment of import, not the original:
+  `UpdateTimeStamps` stamps every inserted row, and that invariant is worth more than a faithful
+  creation date.
+- **A new `ProjectTask` needs *both* navigations set, not just its column.** Adding to
+  `column.Tasks` is what makes EF discover the task, but `RelatedProjectId` is a second foreign
+  key the column relationship says nothing about — leave it to fixup and EF writes a zero, which
+  SQLite rejects with `FOREIGN KEY constraint failed`. Set `RelatedProject` as well.
 - **CSV from user text needs a formula guard, not just quoting.** A cell starting with `=`, `+`,
   `-`, `@`, tab or CR executes on open in Excel and Sheets, and every value in an export is text
   someone typed into a shared board. `CsvWriter.Field` prefixes an apostrophe and then quotes;

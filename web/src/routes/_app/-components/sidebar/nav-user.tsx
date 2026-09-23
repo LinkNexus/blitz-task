@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu.tsx";
 import { SidebarMenuButton } from "@/components/ui/sidebar.tsx";
 import { useAccount } from "@/hooks/use-current-user";
+import { requestImport } from "../import-dialog";
 
 export const NavUser = memo(() => {
   const { user } = useAccount();
@@ -126,6 +127,13 @@ export const NavUser = memo(() => {
               <a href="/api/export?format=csv" download>
                 <span>Everything (CSV)</span>
               </a>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={requestImport}
+              className="cursor-pointer"
+            >
+              <span>Import from a file…</span>
             </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuSub>

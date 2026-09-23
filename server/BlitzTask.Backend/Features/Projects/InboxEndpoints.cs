@@ -41,18 +41,35 @@ namespace BlitzTask.Backend.Features.Projects
         )
         {
             var user = context.GetUser();
-
-            var inbox = await dbContext
-                .Projects.Include(p => p.Columns)
-                .FirstOrDefaultAsync(p => p.IsInbox && p.CreatedById == user.Id, cancellationToken);
-
-            inbox ??= await CreateInboxAsync(user, dbContext, cancellationToken);
+            var inbox = await GetOrCreateAsync(user, dbContext, cancellationToken);
 
             // Lowest score is where the board renders the first column, and where a capture with
             // no opinion about status belongs.
             var captureColumn = inbox.Columns.OrderBy(c => c.Score).First();
 
             return TypedResults.Ok(new InboxSummary(inbox.Id, captureColumn.Id));
+        }
+
+        /// <summary>
+        /// The caller's Inbox as an entity, created if it is not there yet.
+        /// <para>
+        /// <c>internal</c> for the importer (L39), which has the one other reason to need it: a
+        /// file can contain an Inbox, and importing that as an ordinary project would both leave
+        /// a stray board called "Inbox" and trip <c>IX_Projects_InboxPerUser</c>. Its captures
+        /// have to land in the Inbox that already exists.
+        /// </para>
+        /// </summary>
+        internal static async Task<Project> GetOrCreateAsync(
+            User user,
+            ApplicationDbContext dbContext,
+            CancellationToken cancellationToken
+        )
+        {
+            var inbox = await dbContext
+                .Projects.Include(p => p.Columns)
+                .FirstOrDefaultAsync(p => p.IsInbox && p.CreatedById == user.Id, cancellationToken);
+
+            return inbox ?? await CreateInboxAsync(user, dbContext, cancellationToken);
         }
 
         private static async Task<Project> CreateInboxAsync(

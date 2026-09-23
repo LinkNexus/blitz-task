@@ -299,7 +299,8 @@ public class Program
             .MapSearchEndpoints()
             .MapTrashEndpoints()
             .MapCalendarEndpoints()
-            .MapExportEndpoints();
+            .MapExportEndpoints()
+            .MapImportEndpoints();
 
         app.MapGet(
             "/api/csrf-token",
