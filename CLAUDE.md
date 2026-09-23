@@ -462,6 +462,26 @@ on the wrong branch.
   corollary is that **every handler returning `ProjectTaskDetails` must `Include` the checklist**
   — `MoveTask` especially, since the board writes its response straight into the project cache
   and a missing projection reads on screen as the drag having wiped the list.
+- **Anything that can reach the last column must advance a recurrence.** `MoveTask` is no longer
+  the only one — L38's bulk move is the other, and it calls the same
+  `ProjectTasksEndpoints.SpawnNextOccurrenceAsync` rather than carrying a copy, because a series
+  that advances on a drag but not on a bulk complete is exactly the divergence a second copy
+  produces. A third write path would need the same call. Note what batching exposed there: the
+  successor's score is a `MAX` over the column, and inside one `SaveChanges` **none of the
+  successors is written yet**, so several series advancing together all read the same stored
+  maximum and land on identical scores. It consults `ChangeTracker`'s `Local` for that reason.
+- **Bulk endpoints report counts and ignore unmatched ids.** `/api/{projectId}/tasks/bulk/*` is
+  one `SaveChanges` per request — so one transaction and one realtime publish — and an id naming
+  a task in another project or already in the trash is simply not matched. A selection is made
+  against what was on screen and submitted later, so failing the whole batch over one stale id is
+  the wrong trade; `BulkTaskResult(Affected, Skipped)` is how the caller finds out. `Skipped`
+  today means only "already at `MaxTagsCount`" — a bulk tag add refuses rather than truncating,
+  since truncating drops a tag the request never mentioned.
+- **A bulk selection is intersected with the rendered task set, not stored pruned.** `visibleSelection`
+  in `task-selection.tsx` filters at read time, which is what keeps a bulk action from ever
+  touching a task the toolbar is hiding while letting a narrowed-then-widened filter give the
+  selection back. The selection lives in context because the board reaches a card through a
+  column and the table through a row model.
 - **A recurring task advances on the drop, in `MoveTask`, and only once.** Completion is a
   position — the last column — so a drop is the only moment the app can see a series advance;
   `SpawnNextOccurrenceAsync` runs there and shares the move's `SaveChanges`. Dragging out of the

@@ -10,7 +10,9 @@ import type { ProjectDetails, ProjectTaskDetails } from "@/api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { useTaskSelection } from "../../task-selection";
 import { colDndId, sortablePlugins, taskDndId } from "../../use-drag-n-drop";
 import { getPriorityIcon, getPriorityPillClass } from "../lib";
 import { ProjectMenu } from "./menu";
@@ -39,6 +41,9 @@ export function TaskCard({
     plugins: sortablePlugins,
     disabled: dragDisabled,
   });
+
+  const selection = useTaskSelection();
+  const isSelected = selection.isSelected(task.id);
 
   const currentColumn = useMemo(
     () => project.columns.find((c) => Number(c.id) === Number(task.columnId)),
@@ -71,11 +76,30 @@ export function TaskCard({
         "rounded-xl border bg-card",
         "transition-all duration-200",
         isDragging ? "shadow-xl" : "hover:border-primary/30 hover:shadow-md",
+        isSelected && "border-primary ring-1 ring-primary",
       )}
     >
       <div className="p-4 space-y-3">
         {/* Name + menu */}
         <div className="flex items-start justify-between gap-2">
+          {/* `onPointerDown` stops here or the checkbox starts a drag instead of ticking, the
+              same guard the title and the menu already use. Hidden until hover unless something
+              is selected — once a selection exists, every card needs a visible target. */}
+          <div
+            className={cn(
+              "shrink-0 pt-0.5 transition-opacity",
+              isSelected || selection.count > 0
+                ? "opacity-100"
+                : "opacity-0 group-hover:opacity-100",
+            )}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => selection.toggle(task.id)}
+              aria-label={`Select ${task.name}`}
+            />
+          </div>
           <button
             type="button"
             className="line-clamp-3 text-[14px] font-semibold leading-snug flex-1 text-left hover:underline cursor-pointer"

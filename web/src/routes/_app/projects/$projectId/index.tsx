@@ -8,11 +8,13 @@ import {
 import { useCallback, useEffect, useMemo } from "react";
 import { getProjectOptions } from "@/api/@tanstack/react-query.gen";
 import { flashMessagesStore } from "@/lib/store";
+import { BulkActionBar } from "./-components/bulk-action-bar";
 import { ColumnDialog } from "./-components/column-dialog";
 import { KanbanBoard } from "./-components/kanban-view/board";
 import { ProjectHeader } from "./-components/project-header";
 import { ProjectPageSkeleton } from "./-components/project-page-skeleton";
 import { TableView } from "./-components/table-view/index";
+import { TaskSelectionProvider } from "./-components/task-selection";
 import { TaskSheet } from "./-components/task-sheet";
 import { KanbanToolbar } from "./-components/toolbar";
 import type { ToolbarState } from "./-components/toolbar-filters";
@@ -103,6 +105,17 @@ function SingleProjectPage() {
 
   const dndProps = useDragNDrop(project, toolbarState);
 
+  // Taken from the hook's own render order rather than from `project`, so a task the toolbar is
+  // filtering out is not selectable — and a selection made before a filter narrowed cannot be
+  // acted on while it is hidden. See `visibleSelection`.
+  const visibleTaskIds = useMemo(
+    () =>
+      dndProps.effectiveColumns.flatMap((column) =>
+        column.tasks.map((task) => Number(task.id)),
+      ),
+    [dndProps.effectiveColumns],
+  );
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <TaskSheet project={project} />
@@ -116,19 +129,27 @@ function SingleProjectPage() {
         onStateChange={setToolbarState}
       />
 
-      <div className="flex-1 overflow-auto">
-        <div className="p-4 sm:p-6">
-          {view === "table" ? (
-            <TableView
-              dndProps={dndProps}
-              project={project}
-              groupBy={toolbarState.groupBy}
-            />
-          ) : (
-            <KanbanBoard dndProps={dndProps} project={project} />
-          )}
+      <TaskSelectionProvider visibleTaskIds={visibleTaskIds}>
+        <div className="flex-1 overflow-auto">
+          <div className="p-4 sm:p-6">
+            {view === "table" ? (
+              <TableView
+                dndProps={dndProps}
+                project={project}
+                groupBy={toolbarState.groupBy}
+              />
+            ) : (
+              <KanbanBoard dndProps={dndProps} project={project} />
+            )}
+          </div>
         </div>
-      </div>
+
+        {/* Positioned against the viewport rather than placed in the layout. The board's
+            container scrolls horizontally and not vertically, so a `sticky bottom` bar inside it
+            never pins, and a flex row below it drops off the bottom of a short window — in both
+            cases with no way to scroll to it. */}
+        <BulkActionBar project={project} />
+      </TaskSelectionProvider>
     </div>
   );
 }
