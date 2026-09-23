@@ -59,12 +59,21 @@ function SelectHeader() {
 function SelectCell({ task }: { task: TaskRow }) {
   const selection = useTaskSelection();
   return (
-    <Checkbox
-      checked={selection.isSelected(task.id)}
-      onCheckedChange={() => selection.toggle(task.id)}
-      aria-label={`Select ${task.name}`}
+    // Two different events to stop, for two different reasons: `pointerdown` or the row starts
+    // dragging instead of the box ticking, and `click` or the row's own handler opens the task
+    // sheet on top of the selection. The actions cell below wraps its menu for the same reason.
+    // biome-ignore lint/a11y/noStaticElementInteractions: not interactive — it only keeps the row's handlers from firing when the box inside is used.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard users reach the checkbox directly; this wrapper is mouse-only propagation control.
+    <div
+      onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
-    />
+    >
+      <Checkbox
+        checked={selection.isSelected(task.id)}
+        onCheckedChange={() => selection.toggle(task.id)}
+        aria-label={`Select ${task.name}`}
+      />
+    </div>
   );
 }
 
