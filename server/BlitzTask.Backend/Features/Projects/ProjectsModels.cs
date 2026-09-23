@@ -3,6 +3,7 @@ using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.ProjectMembers;
+using BlitzTask.Backend.Features.ProjectSections;
 using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.Shared.Models;
 
@@ -116,6 +117,7 @@ namespace BlitzTask.Backend.Features.Projects
         public Attachment? Image { get; set; }
         public ICollection<ProjectInvitation> Invitations { get; set; } = [];
         public ICollection<ProjectColumn> Columns { get; set; } = [];
+        public ICollection<ProjectSection> Sections { get; set; } = [];
         public ICollection<ProjectTask> Tasks { get; set; } = [];
     }
 
@@ -142,6 +144,25 @@ namespace BlitzTask.Backend.Features.Projects
 
         public const int MaxImageSizeInBytes = 400 * 1024;
     }
+
+    /// <summary>
+    /// A pending invitation, as much of one as a project member has any business seeing.
+    /// <para>
+    /// A projection rather than the <c>ProjectInvitation</c> entity, which is what
+    /// <see cref="ProjectDetails"/> used to carry. Two things came with that entity and neither
+    /// should have: its <c>Token</c> — a live credential admitting whoever holds it to the
+    /// project, shipped to every member on every board load — and its <c>Project</c> navigation,
+    /// which dragged the whole entity graph into the generated OpenAPI schema. The second is how
+    /// this was found: adding <c>Project.Sections</c> (L40.5) closed a cycle through that
+    /// navigation and the document generator hit its 64-level depth limit, failing the build.
+    /// </para>
+    /// </summary>
+    public record ProjectInvitationInfo(
+        int Id,
+        string GuestEmail,
+        ProjectRole Role,
+        DateTime CreatedAt
+    );
 
     public record ProjectParticipantInfo(
         int Id,
@@ -188,8 +209,9 @@ namespace BlitzTask.Backend.Features.Projects
         int CreatedBy,
         List<ProjectParticipantInfo> Participants,
         Guid? ImageId,
-        List<ProjectInvitation> Invitations,
-        List<ProjectColumnDetails> Columns
+        List<ProjectInvitationInfo> Invitations,
+        List<ProjectColumnDetails> Columns,
+        List<ProjectSections.ProjectSectionDetails> Sections
     )
     {
         public List<ProjectPermission> UserPermissions { get; init; } = [];

@@ -53,6 +53,7 @@ import { cn, getInitials, imageFormats } from "@/lib/utils";
 import { MAX_PROJECT_IMAGE_SIZE, ProjectSchema } from "../-schemas";
 import { ProjectActivity } from "./project-activity";
 import { ProjectMembersSection } from "./project-members";
+import { ProjectSections } from "./project-sections";
 
 type Props = {
   project: ProjectDetails;
@@ -365,6 +366,8 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
                   </div>
                 </FieldGroup>
               </form>
+
+              <ProjectSections project={project} disabled={isFormDisabled} />
 
               {/* ── Export ── */}
               <div className="mt-8 space-y-3 border-t pt-6">

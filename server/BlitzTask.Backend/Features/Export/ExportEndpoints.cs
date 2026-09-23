@@ -121,6 +121,9 @@ namespace BlitzTask.Backend.Features.Export
                             pp.CreatedAt
                         ))
                         .ToList(),
+                    p.Sections.OrderBy(sec => sec.Score)
+                        .Select(sec => new SectionExport(sec.Name, sec.Color, sec.Score))
+                        .ToList(),
                     // Trashed rows are excluded for free: Project, ProjectColumn and ProjectTask
                     // all carry the soft-delete query filter, so an export is what the board
                     // shows rather than what the table holds. Restoring from the trash and
@@ -137,6 +140,7 @@ namespace BlitzTask.Backend.Features.Export
                                     t.Priority,
                                     t.Score,
                                     t.Tags,
+                                    t.Section == null ? null : t.Section.Name,
                                     t.StartDate,
                                     t.DueDate,
                                     t.CreatedAt,
@@ -214,6 +218,7 @@ namespace BlitzTask.Backend.Features.Export
         [
             "Project",
             "Column",
+            "Section",
             "Task",
             "Description",
             "Priority",
@@ -234,6 +239,7 @@ namespace BlitzTask.Backend.Features.Export
                 {
                     project.Name,
                     column.Name,
+                    task.Section,
                     task.Name,
                     task.Description,
                     task.Priority.ToString(),

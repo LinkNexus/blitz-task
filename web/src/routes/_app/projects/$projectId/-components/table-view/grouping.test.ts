@@ -34,7 +34,10 @@ const row = (over: Partial<TaskRow> & { id: number }): TaskRows[number] =>
     },
   }) as unknown as TaskRows[number];
 
-const project = (participants: { userId: number; name: string }[]) =>
+const project = (
+  participants: { userId: number; name: string }[],
+  sections: { id: number; name: string }[] = [],
+) =>
   ({
     participants: participants.map((p, i) => ({
       id: i + 1,
@@ -42,6 +45,12 @@ const project = (participants: { userId: number; name: string }[]) =>
       name: p.name,
       role: "Contributor",
       joinedAt: "2026-01-01T00:00:00Z",
+    })),
+    sections: sections.map((s, i) => ({
+      id: s.id,
+      name: s.name,
+      color: "#6366F1",
+      score: i * 1000,
     })),
   }) as unknown as ProjectDetails;
 
@@ -163,5 +172,79 @@ describe("groupRows — assignee", () => {
 
   test("an empty row set produces no groups at all", () => {
     expect(groupRows([], "assignee", people)).toEqual([]);
+  });
+});
+
+describe("groupRows — section", () => {
+  const withSections = project(
+    [],
+    [
+      { id: 10, name: "frontend" },
+      { id: 20, name: "backend" },
+      { id: 30, name: "infra" },
+    ],
+  );
+
+  test("lists every section the project has, empty ones included", () => {
+    const groups = groupRows(
+      [row({ id: 1, sectionId: 10 })],
+      "section",
+      withSections,
+    );
+
+    // Unlike assignees, a project has few sections and they are structure somebody set up on
+    // purpose — one disappearing because it briefly holds nothing would read as having lost it.
+    expect(groups.map((g) => g.label)).toEqual([
+      "frontend",
+      "backend",
+      "infra",
+      "No section",
+    ]);
+  });
+
+  test("puts each task under its own section", () => {
+    const groups = groupRows(
+      [
+        row({ id: 1, sectionId: 10 }),
+        row({ id: 2, sectionId: 20 }),
+        row({ id: 3, sectionId: 10 }),
+      ],
+      "section",
+      withSections,
+    );
+
+    expect(groups[0].rows.map((r) => r.original.name)).toEqual([
+      "Task 1",
+      "Task 3",
+    ]);
+    expect(groups[1].rows.map((r) => r.original.name)).toEqual(["Task 2"]);
+    expect(groups[2].rows).toEqual([]);
+  });
+
+  test("collects unsectioned tasks rather than dropping them", () => {
+    // Not an edge case: it is where every task starts and where quick captures stay.
+    const groups = groupRows(
+      [row({ id: 1, sectionId: null }), row({ id: 2, sectionId: 10 })],
+      "section",
+      withSections,
+    );
+
+    const none = groups.find((g) => g.key === "section:none");
+    expect(none?.rows.map((r) => r.original.name)).toEqual(["Task 1"]);
+  });
+
+  test("a section id that no longer exists lands in No section", () => {
+    // A section can be deleted while someone else has the board open; the task survives it, and
+    // every row has to land in exactly one group or it vanishes from the table.
+    const groups = groupRows(
+      [row({ id: 1, sectionId: 999 })],
+      "section",
+      withSections,
+    );
+
+    expect(groups.flatMap((g) => g.rows)).toHaveLength(1);
+    expect(
+      groups.find((g) => g.key === "section:none")?.rows[0].original.name,
+    ).toBe("Task 1");
   });
 });

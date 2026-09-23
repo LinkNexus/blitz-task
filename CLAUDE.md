@@ -529,6 +529,20 @@ on the wrong branch.
   entity — `Token` included, a live credential — and `UserPermissions`, which describes the
   caller. Fine in a response to a member; a leak in a file that gets downloaded and forwarded.
   Anything added to `ProjectDetails` later does **not** automatically belong in the export.
+- **Never put an EF entity in a response record.** `ProjectDetails.Invitations` used to be
+  `List<ProjectInvitation>`, and it cost twice: the entity's `Token` — a live credential — went
+  to every member on every board load, and its `Project` navigation dragged the entity graph into
+  the generated OpenAPI schema, so adding `Project.Sections` closed a cycle and the document
+  generator blew its 64-level depth limit, **failing the build** with a JSON depth error that
+  says nothing about the cause. Both are fixed by projecting (`ProjectInvitationInfo`). If a
+  build ever fails that way again, look for an entity reachable from a response type.
+- **A section is an extra axis, never a coordinate a task needs.** `ProjectTask.SectionId` is
+  nullable because every task predating L40.5 has none and a quick capture has nowhere to put
+  one. Deleting a section keeps its tasks (`SetNull`, declared — EF's default for an optional FK
+  is `NO ACTION`, which would refuse the delete), and `ProjectSection` is deliberately not
+  `ISoftDeletable`: removing one throws away no work, so there is nothing to restore. Anything
+  grouping by section must bucket "not one of this project's sections" rather than "null", or a
+  task whose section was just deleted lands in no group and disappears from the view.
 - **An import only ever creates, and the importer always owns the result.** `POST /api/import`
   never merges, updates or deletes — the worst a mistaken import does is leave a duplicate. Roles
   come across but an `Owner` in the file becomes a `Collaborator`, because a file is not evidence

@@ -68,6 +68,7 @@ const GROUP_BY_OPTIONS: { value: GroupByField; label: string }[] = [
   { value: "priority", label: "Priority" },
   { value: "assignee", label: "Assignee" },
   { value: "dueDate", label: "Due date" },
+  { value: "section", label: "Section" },
 ];
 
 // Keep the checkbox menu open across clicks so several filters can be toggled at once.

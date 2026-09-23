@@ -37,7 +37,7 @@ export const boardSearchSchema = z.object({
     .default(null)
     .catch(null),
   group: z
-    .enum(["column", "priority", "assignee", "dueDate"])
+    .enum(["column", "priority", "assignee", "dueDate", "section"])
     .default("column")
     .catch("column"),
 });

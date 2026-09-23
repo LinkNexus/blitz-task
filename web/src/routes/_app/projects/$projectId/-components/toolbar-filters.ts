@@ -7,7 +7,12 @@ import { type DueBucket, dueBucketOf } from "@/lib/due-dates";
 export { type DueBucket, dueBucketOf };
 
 export type SortField = "priority" | "dueDate" | "createdAt" | "score" | "name";
-export type GroupByField = "column" | "priority" | "assignee" | "dueDate";
+export type GroupByField =
+  | "column"
+  | "priority"
+  | "assignee"
+  | "dueDate"
+  | "section";
 
 export type ToolbarState = {
   search: string;

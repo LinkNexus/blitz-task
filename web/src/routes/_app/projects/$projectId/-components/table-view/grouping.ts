@@ -59,6 +59,41 @@ export function groupRows(
     }));
   }
 
+  if (groupBy === "section") {
+    // Every section is listed, empty or not — like priorities and unlike assignees. A project
+    // has few of them, they are the structure someone deliberately set up, and one vanishing
+    // because it briefly holds nothing would read as having lost it.
+    const groups: TaskGroup[] = project.sections.map((section) => ({
+      key: `section:${section.id}`,
+      label: section.name,
+      rows: rows.filter(
+        (row) => String(row.original.sectionId) === String(section.id),
+      ),
+    }));
+
+    // A task need not belong to a section, so this bucket is not an edge case — it is where
+    // everything starts out and where quick captures stay.
+    //
+    // It also catches a task pointing at a section this board no longer has, which happens for
+    // real: someone deletes a section while another person has the table open. Testing for
+    // "not one of ours" rather than "null" is what stops that task disappearing from the view
+    // altogether — every row has to land in exactly one group.
+    const known = new Set(
+      project.sections.map((section) => String(section.id)),
+    );
+    groups.push({
+      key: "section:none",
+      label: "No section",
+      rows: rows.filter(
+        (row) =>
+          row.original.sectionId == null ||
+          !known.has(String(row.original.sectionId)),
+      ),
+    });
+
+    return groups;
+  }
+
   // A task with several assignees is listed under each of them, so the counts
   // here can add up to more than the number of tasks.
   const groups: TaskGroup[] = project.participants.map((participant) => ({

@@ -80,7 +80,7 @@ namespace BlitzTask.Backend.Features.ProjectMembers
 
         public static async Task<
             Results<
-                Ok<ProjectInvitation>,
+                Ok<ProjectInvitationInfo>,
                 BadRequest<ApiMessageResponse>,
                 InternalServerError<ApiMessageResponse>
             >
@@ -163,7 +163,17 @@ namespace BlitzTask.Backend.Features.ProjectMembers
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
-            return TypedResults.Ok(invitation);
+
+            // The projection, not the entity: the token it carries is a live credential, and the
+            // caller has no use for it — they are not the one being invited.
+            return TypedResults.Ok(
+                new ProjectInvitationInfo(
+                    invitation.Id,
+                    invitation.GuestEmail,
+                    invitation.Role,
+                    invitation.CreatedAt
+                )
+            );
         }
 
         public static async Task<
