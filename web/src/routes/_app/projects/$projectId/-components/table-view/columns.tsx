@@ -92,6 +92,30 @@ export const columns = columnHelper.columns([
     ),
   }),
 
+  columnHelper.display({
+    id: "section",
+    header: "Section",
+    cell: (info) => {
+      const task = info.row.original;
+      const section = info.table.options.meta?.project.sections.find(
+        (s) => String(s.id) === String(task.sectionId),
+      );
+
+      // A missing section is the normal case, not a gap — most tasks never have one.
+      if (!section) return empty;
+
+      return (
+        <Badge
+          variant="outline"
+          className="rounded-md text-[11px] whitespace-nowrap"
+          style={{ borderColor: section.color, color: section.color }}
+        >
+          {section.name}
+        </Badge>
+      );
+    },
+  }),
+
   columnHelper.accessor("name", {
     header: "Task",
     cell: (info) => {

@@ -3,6 +3,7 @@ using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.Notifications;
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
+using BlitzTask.Backend.Features.ProjectSections;
 using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.ProjectTasks;
@@ -23,6 +24,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ProjectInvitation> ProjectInvitations => Set<ProjectInvitation>();
     public DbSet<SavedView> SavedViews => Set<SavedView>();
     public DbSet<ProjectColumn> ProjectColumns => Set<ProjectColumn>();
+    public DbSet<ProjectSection> ProjectSections => Set<ProjectSection>();
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
     public DbSet<TaskReminder> TaskReminders => Set<TaskReminder>();
     public DbSet<TaskChecklistItem> TaskChecklistItems => Set<TaskChecklistItem>();

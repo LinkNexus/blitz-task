@@ -26,6 +26,19 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public required int RelatedProjectId { get; set; }
         public required float Score { get; set; }
         public List<string> Tags { get; set; } = [];
+
+        /// <summary>
+        /// Which part of the project this belongs to, if any (L40.5).
+        /// <para>
+        /// <b>Nullable on purpose.</b> Every task that existed before sections did has none, and
+        /// a quick capture has nowhere to put one — making it required would have meant a data
+        /// migration inventing a section per project and a decision at every capture point.
+        /// Nothing in the app requires a task to be sectioned; it is an extra axis to read the
+        /// board along, not a new coordinate a task must have.
+        /// </para>
+        /// </summary>
+        public int? SectionId { get; set; }
+
         public DateTimeOffset? StartDate { get; set; }
         public DateTimeOffset? DueDate { get; set; }
 
@@ -35,6 +48,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
 
         public ICollection<User> Assignees { get; set; } = [];
         public ProjectColumn RelatedColumn { get; set; } = null!;
+        public ProjectSections.ProjectSection? Section { get; set; }
         public Project RelatedProject { get; set; } = null!;
         public ICollection<Attachment> Attachments { get; set; } = [];
         public ICollection<TaskReminder> Reminders { get; set; } = [];
@@ -71,6 +85,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public string Description { get; set; } = null!;
         public ProjectTaskPriority Priority { get; set; }
         public List<string>? Tags { get; set; } = [];
+        public int? SectionId { get; set; }
         public DateTimeOffset? StartDate { get; set; }
         public DateTimeOffset? DueDate { get; set; }
         public List<int>? AssigneeIds { get; set; } = [];
@@ -104,7 +119,14 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public RecurrenceInput? Recurrence { get; set; }
     }
 
-    public record MoveProjectTaskRequest(int ColumnId, float Score);
+    /// <param name="SectionId">
+    /// The section the task should end up in — <b>always</b> the intended final value, never
+    /// "leave it alone". A swimlane drop sends the lane it landed in; every other caller sends
+    /// the section the task already had. That is what lets <c>null</c> mean "no section" without
+    /// ambiguity, and it is why the card's "Move to" menu has to pass the current one: sending
+    /// nothing would quietly unsection the task.
+    /// </param>
+    public record MoveProjectTaskRequest(int ColumnId, float Score, int? SectionId = null);
 
     public record UpdateProjectTaskRequest
     {
@@ -112,6 +134,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public string Description { get; set; } = null!;
         public ProjectTaskPriority Priority { get; set; }
         public List<string>? Tags { get; set; } = [];
+        public int? SectionId { get; set; }
         public DateTimeOffset? StartDate { get; set; }
         public DateTimeOffset? DueDate { get; set; }
         public List<int>? AssigneeIds { get; set; } = [];
@@ -219,6 +242,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         List<int> AssigneeIds,
         List<AttachmentMetadata> Attachments,
         int ColumnId,
+        int? SectionId,
         List<ChecklistItemDetails> ChecklistItems,
         RecurrenceDetails? Recurrence
     );

@@ -22,6 +22,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                     a.Id, a.OriginalFilename, a.ContentType, a.SizeInBytes, a.CreatedAt
                 ))],
                 task.RelatedColumnId,
+                task.SectionId,
                 [.. task.ChecklistItems.OrderBy(c => c.Position)
                     .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))],
                 task.Recurrence is null

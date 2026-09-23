@@ -6,6 +6,7 @@ using BlitzTask.Backend.Features.Notifications;
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.ProjectMembers;
+using BlitzTask.Backend.Features.ProjectSections;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Calendar;
 using BlitzTask.Backend.Features.Export;
@@ -289,6 +290,7 @@ public class Program
             .MapSavedViewsEndpoints()
             .MapProjectMembersEndpoints()
             .MapProjectColumnsEndpoints()
+            .MapProjectSectionsEndpoints()
             .MapProjectTasksEndpoints()
             .MapBulkTasksEndpoints()
             .MapTaskRemindersEndpoints()

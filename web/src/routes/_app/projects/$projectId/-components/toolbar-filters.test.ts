@@ -31,6 +31,7 @@ const task = (over: Partial<ProjectTaskDetails> = {}): ProjectTaskDetails => ({
   assigneeIds: [],
   attachments: [],
   columnId: 1,
+  sectionId: null,
   checklistItems: [],
   recurrence: null,
   ...over,

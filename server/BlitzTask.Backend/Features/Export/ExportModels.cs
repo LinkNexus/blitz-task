@@ -49,8 +49,11 @@ namespace BlitzTask.Backend.Features.Export
         bool IsInbox,
         DateTime CreatedAt,
         List<ProjectMemberExport> Members,
+        List<SectionExport> Sections,
         List<ColumnExport> Columns
     );
+
+    public record SectionExport(string Name, string Color, float Score);
 
     public record ProjectMemberExport(
         string Name,
@@ -61,6 +64,10 @@ namespace BlitzTask.Backend.Features.Export
 
     public record ColumnExport(string Name, string Color, float Score, List<TaskExport> Tasks);
 
+    /// <param name="Section">
+    /// The section's <b>name</b>, not its id — the same choice the rest of this format makes, and
+    /// what lets an importer match it against a section it has just created on the far side.
+    /// </param>
     /// <param name="Attachments">
     /// File names only. The bytes live on disk under <c>Uploads/</c> and are backed up at the
     /// file level (L23) — putting them in here would turn a text export into a multi-megabyte
@@ -73,6 +80,7 @@ namespace BlitzTask.Backend.Features.Export
         ProjectTaskPriority Priority,
         float Score,
         List<string> Tags,
+        string? Section,
         DateTimeOffset? StartDate,
         DateTimeOffset? DueDate,
         DateTime CreatedAt,

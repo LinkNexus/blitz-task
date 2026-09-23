@@ -34,6 +34,12 @@ export function useMoveTask(project: ProjectDetails) {
       task: ProjectTaskDetails,
       destinationColumnId: number,
       score: number,
+      /**
+       * The section the task should end up in. Always the intended final value: a swimlane drop
+       * sends the lane it landed in, every other caller resends what the task already had.
+       * Sending nothing would quietly unsection it.
+       */
+      destinationSectionId: number | null,
       callbacks: MoveCallbacks = {},
     ) => {
       const taskId = Number(task.id);
@@ -50,6 +56,7 @@ export function useMoveTask(project: ProjectDetails) {
         ...task,
         columnId: destinationColumnId,
         score,
+        sectionId: destinationSectionId,
       };
 
       // Move just this task between columns rather than rebuilding every column from a
@@ -80,7 +87,11 @@ export function useMoveTask(project: ProjectDetails) {
       moveTaskMut.mutate(
         {
           path: { projectId: Number(project.id), taskId },
-          body: { columnId: destinationColumnId, score },
+          body: {
+            columnId: destinationColumnId,
+            score,
+            sectionId: destinationSectionId,
+          },
         },
         {
           onSuccess: (updatedTask) => {

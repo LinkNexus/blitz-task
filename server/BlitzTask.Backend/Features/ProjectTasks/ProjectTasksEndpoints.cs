@@ -2,6 +2,7 @@ using BlitzTask.Backend.Features.Activity;
 using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.Notifications;
 using BlitzTask.Backend.Features.Auth;
+using BlitzTask.Backend.Features.ProjectSections;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Shared.Models;
 using BlitzTask.Backend.Infrastructure.Data;
@@ -390,6 +391,33 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             return next;
         }
 
+        /// <summary>
+        /// The section a task should carry, or null.
+        /// <para>
+        /// A section from another project is discarded rather than rejected, which is the same
+        /// call <c>FileTask</c> makes about assignees who are not participants: the id is
+        /// meaningless here, and failing a whole save over a stale one loses the edit that was
+        /// actually being made. A board cannot offer a foreign section in the first place.
+        /// </para>
+        /// </summary>
+        private static async Task<int?> ResolveSectionAsync(
+            int? sectionId,
+            int projectId,
+            ApplicationDbContext dbContext,
+            CancellationToken cancellationToken
+        )
+        {
+            if (sectionId is null)
+                return null;
+
+            var belongs = await dbContext.ProjectSections.AnyAsync(
+                s => s.Id == sectionId && s.ProjectId == projectId,
+                cancellationToken
+            );
+
+            return belongs ? sectionId : null;
+        }
+
         // A dashboard widget shows a handful of rows; the cap exists so a malformed `limit`
         // cannot turn this into a full table scan serialised over the wire.
         private const int MaxUserTaskPageSize = 200;
@@ -721,6 +749,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 Assignees = assignees,
                 Priority = request.Priority,
                 Tags = request.Tags ?? [],
+                SectionId = await ResolveSectionAsync(
+                    request.SectionId,
+                    projectId,
+                    dbContext,
+                    cancellationToken
+                ),
                 // Set here rather than by a follow-up call to the reminders endpoint: that one
                 // needs an id, so the task would have to be saved first, and a failure between
                 // the two would leave a task whose reminder the user believes they set.
@@ -828,6 +862,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             task.Description = request.Description;
             task.Priority = request.Priority;
             task.Tags = request.Tags ?? [];
+            task.SectionId = await ResolveSectionAsync(
+                request.SectionId,
+                projectId,
+                dbContext,
+                cancellationToken
+            );
             task.StartDate = request.StartDate;
             task.DueDate = request.DueDate;
             SyncChecklist(task, request.ChecklistItems);
@@ -950,6 +990,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
 
             task.RelatedColumnId = request.ColumnId;
             task.Score = request.Score;
+            task.SectionId = await ResolveSectionAsync(
+                request.SectionId,
+                projectId,
+                dbContext,
+                cancellationToken
+            );
 
             // Completion is a position, not a flag — a task is done once it sits in its project's
             // last column — so this drop is the only moment the app can notice that a recurring

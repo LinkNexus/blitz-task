@@ -179,10 +179,14 @@ function ExistingAttachmentItem({
 
 const FORM_ID = "task-sheet-form";
 
+/** Radix Select cannot hold an empty value, so "no section" needs a stand-in. */
+const NO_SECTION = "none";
+
 const EMPTY_DEFAULTS: FormValues = {
   name: "",
   description: "",
   priority: "MEDIUM",
+  sectionId: null,
   tags: [],
   startDate: null,
   dueDate: null,
@@ -281,6 +285,7 @@ export function TaskSheet({ project }: Props) {
         name: task.name,
         description: task.description ?? "",
         priority: task.priority,
+        sectionId: task.sectionId == null ? null : Number(task.sectionId),
         tags: task.tags ?? [],
         startDate: task.startDate ?? null,
         dueDate: task.dueDate ?? null,
@@ -368,6 +373,7 @@ export function TaskSheet({ project }: Props) {
       name: data.name,
       description: data.description,
       priority: data.priority,
+      sectionId: data.sectionId,
       tags: data.tags,
       startDate: data.startDate,
       dueDate: data.dueDate,
@@ -552,6 +558,47 @@ export function TaskSheet({ project }: Props) {
                 </Field>
               )}
             />
+
+            {/* Only offered once the project actually has sections — an empty picker on every
+                task would be clutter on the many boards that never split into parts. */}
+            {project.sections.length > 0 && (
+              <Controller
+                control={form.control}
+                name="sectionId"
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Section</FieldLabel>
+                    <Select
+                      // Select has no value for "nothing", so a sentinel stands in for null on
+                      // the way through and is mapped back on change.
+                      value={
+                        field.value === null ? NO_SECTION : String(field.value)
+                      }
+                      onValueChange={(value) =>
+                        field.onChange(
+                          value === NO_SECTION ? null : Number(value),
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="No section" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_SECTION}>No section</SelectItem>
+                        {project.sections.map((section) => (
+                          <SelectItem
+                            key={String(section.id)}
+                            value={String(section.id)}
+                          >
+                            {section.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+              />
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <Controller

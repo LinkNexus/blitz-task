@@ -69,14 +69,28 @@ public class ImportTests
         string name,
         List<ColumnExport>? columns = null,
         List<ProjectMemberExport>? members = null,
-        bool isInbox = false
-    ) => new(name, "", null, null, [], isInbox, DateTime.UtcNow, members ?? [], columns ?? []);
+        bool isInbox = false,
+        List<SectionExport>? sections = null
+    ) =>
+        new(
+            name,
+            "",
+            null,
+            null,
+            [],
+            isInbox,
+            DateTime.UtcNow,
+            members ?? [],
+            sections ?? [],
+            columns ?? []
+        );
 
     private static TaskExport Task(
         string name,
         List<string>? assignees = null,
         List<CommentExport>? comments = null,
-        List<string>? attachments = null
+        List<string>? attachments = null,
+        string? section = null
     ) =>
         new(
             name,
@@ -84,6 +98,7 @@ public class ImportTests
             ProjectTaskPriority.MEDIUM,
             1000,
             [],
+            section,
             null,
             null,
             DateTime.UtcNow,
@@ -329,6 +344,50 @@ public class ImportTests
         // Import only ever creates. Merging needs a rule for which side wins on every field, and
         // getting that wrong destroys the data the feature exists to protect.
         Assert.Equal(2, await dbContext.Projects.CountAsync(p => p.Name == "Alpha"));
+    }
+
+    [Fact]
+    public async Task SectionsComeAcrossByNameAndAnUnknownOneIsDropped()
+    {
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+
+        var envelope = Envelope(
+            Project(
+                "Alpha",
+                columns:
+                [
+                    new ColumnExport(
+                        "Todo",
+                        "#FF0000",
+                        0,
+                        [
+                            Task("Style the header", section: "frontend"),
+                            Task("Ghost", section: "a section the file never defined"),
+                        ]
+                    ),
+                ],
+                sections: [new SectionExport("frontend", "#6366F1", 0)]
+            )
+        );
+
+        await ImportAsync(dbContext, alice, envelope);
+
+        var imported = await dbContext
+            .Projects.Include(p => p.Sections)
+            .Include(p => p.Columns)
+            .ThenInclude(c => c.Tasks)
+            .SingleAsync(p => p.Name == "Alpha");
+
+        var frontend = Assert.Single(imported.Sections);
+        Assert.Equal("frontend", frontend.Name);
+
+        var tasks = imported.Columns.SelectMany(c => c.Tasks).ToDictionary(t => t.Name);
+        // Matched by name, because an id identifies nothing across instances.
+        Assert.Equal(frontend.Id, tasks["Style the header"].SectionId);
+        // A section is an extra axis, not a coordinate a task needs — losing it is not worth
+        // failing an import over.
+        Assert.Null(tasks["Ghost"].SectionId);
     }
 
     [Theory]

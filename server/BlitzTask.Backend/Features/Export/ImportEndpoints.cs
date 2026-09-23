@@ -1,6 +1,7 @@
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.ProjectTasks;
+using BlitzTask.Backend.Features.ProjectSections;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Shared.Models;
 using BlitzTask.Backend.Features.TaskComments;
@@ -138,6 +139,28 @@ namespace BlitzTask.Backend.Features.Export
                     );
                 }
 
+                // Sections first, so a task can name one. Keyed by name because that is what
+                // the file carries — ids identify nothing across instances.
+                var sections = new Dictionary<string, ProjectSection>(
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+                foreach (var sourceSection in source.Sections)
+                {
+                    if (string.IsNullOrWhiteSpace(sourceSection.Name))
+                        continue;
+
+                    var section = new ProjectSection
+                    {
+                        Name = sourceSection.Name.Trim(),
+                        Color = sourceSection.Color,
+                        Score = sourceSection.Score,
+                    };
+
+                    if (sections.TryAdd(section.Name, section))
+                        project.Sections.Add(section);
+                }
+
                 foreach (var sourceColumn in source.Columns)
                 {
                     var column = new ProjectColumn
@@ -149,17 +172,28 @@ namespace BlitzTask.Backend.Features.Export
 
                     foreach (var task in sourceColumn.Tasks)
                     {
-                        column.Tasks.Add(
-                            BuildTask(
-                                task,
-                                project,
-                                column,
-                                people,
-                                participantIds,
-                                ref commentsSkipped,
-                                ref attachmentsSkipped
-                            )
+                        var built = BuildTask(
+                            task,
+                            project,
+                            column,
+                            people,
+                            participantIds,
+                            ref commentsSkipped,
+                            ref attachmentsSkipped
                         );
+
+                        // A task naming a section the file never defined simply arrives
+                        // unsectioned — the section is an extra axis, not a coordinate the task
+                        // needs, so losing it is not worth failing an import over.
+                        if (
+                            task.Section is not null
+                            && sections.TryGetValue(task.Section.Trim(), out var section)
+                        )
+                        {
+                            built.Section = section;
+                        }
+
+                        column.Tasks.Add(built);
                         tasksImported++;
                     }
 

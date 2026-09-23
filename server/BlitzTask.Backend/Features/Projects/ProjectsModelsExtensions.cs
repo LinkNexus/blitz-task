@@ -1,5 +1,6 @@
 using BlitzTask.Backend.Features.Attachments;
 using BlitzTask.Backend.Features.ProjectColumns;
+using BlitzTask.Backend.Features.ProjectSections;
 using BlitzTask.Backend.Features.ProjectTasks;
 
 namespace BlitzTask.Backend.Features.Projects
@@ -64,7 +65,13 @@ namespace BlitzTask.Backend.Features.Projects
                     ))
                     .ToList(),
                 p.ImageId,
-                p.Invitations.ToList(),
+                p.Invitations.Select(i => new ProjectInvitationInfo(
+                        i.Id,
+                        i.GuestEmail,
+                        i.Role,
+                        i.CreatedAt
+                    ))
+                    .ToList(),
                 p.Columns.OrderBy(c => c.Score)
                     .Select(c => new ProjectColumnDetails(
                         c.Id,
@@ -88,6 +95,7 @@ namespace BlitzTask.Backend.Features.Projects
                                 t.Assignees.Select(a => a.Id).ToList(),
                                 t.Attachments.Select(a => new AttachmentMetadata(a.Id, a.OriginalFilename, a.ContentType, a.SizeInBytes, a.CreatedAt)).ToList(),
                                 t.RelatedColumnId,
+                                t.SectionId,
                                 t.ChecklistItems.OrderBy(c => c.Position)
                                     .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))
                                     .ToList(),
@@ -101,6 +109,9 @@ namespace BlitzTask.Backend.Features.Projects
                             ))
                             .ToList()
                     ))
+                    .ToList(),
+                p.Sections.OrderBy(s => s.Score)
+                    .Select(s => new ProjectSectionDetails(s.Id, s.Name, s.Color, s.Score))
                     .ToList()
             ));
         }
@@ -125,7 +136,14 @@ namespace BlitzTask.Backend.Features.Projects
                     )),
                 ],
                 project.ImageId,
-                [.. project.Invitations],
+                [
+                    .. project.Invitations.Select(i => new ProjectInvitationInfo(
+                        i.Id,
+                        i.GuestEmail,
+                        i.Role,
+                        i.CreatedAt
+                    )),
+                ],
                 [
                     .. project
                         .Columns.OrderBy(c => c.Score)
@@ -153,6 +171,7 @@ namespace BlitzTask.Backend.Features.Projects
                                         [.. t.Assignees.Select(a => a.Id)],
                                         [.. t.Attachments.Select(a => new AttachmentMetadata(a.Id, a.OriginalFilename, a.ContentType, a.SizeInBytes, a.CreatedAt))],
                                         t.RelatedColumnId,
+                                        t.SectionId,
                                         [.. t.ChecklistItems.OrderBy(c => c.Position)
                                             .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))],
                                         t.Recurrence == null
@@ -165,6 +184,11 @@ namespace BlitzTask.Backend.Features.Projects
                                     )),
                             ]
                         )),
+                ],
+                [
+                    .. project
+                        .Sections.OrderBy(s => s.Score)
+                        .Select(s => new ProjectSectionDetails(s.Id, s.Name, s.Color, s.Score)),
                 ]
             );
         }

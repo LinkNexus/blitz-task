@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useTaskSelection } from "../../task-selection";
-import { colDndId, sortablePlugins, taskDndId } from "../../use-drag-n-drop";
+import { cellDndId, sortablePlugins, taskDndId } from "../../use-drag-n-drop";
 import { getPriorityIcon, getPriorityPillClass } from "../lib";
 import { ProjectMenu } from "./menu";
 
@@ -22,6 +22,8 @@ type Props = {
   task: ProjectTaskDetails;
   index: number;
   columnId: string | number;
+  /** The swimlane this card is rendered in; `ALL_LANES` on an unsplit board. */
+  laneKey: string;
   dragDisabled: boolean;
 };
 
@@ -30,6 +32,7 @@ export function TaskCard({
   task,
   project,
   columnId,
+  laneKey,
   dragDisabled,
 }: Props) {
   const { ref, isDragging } = useSortable({
@@ -37,7 +40,10 @@ export function TaskCard({
     index,
     type: "task",
     accept: "task",
-    group: colDndId(columnId),
+    // The sortable group is the cell, not the column: with swimlanes on, dnd-kit has to see
+    // each lane's slice of a column as its own list or the indices it computes are against the
+    // whole column and a drop lands in the wrong place.
+    group: cellDndId(columnId, laneKey),
     plugins: sortablePlugins,
     disabled: dragDisabled,
   });

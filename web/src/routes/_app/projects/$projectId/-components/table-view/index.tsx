@@ -104,6 +104,7 @@ export function TableView({ project, dndProps, groupBy }: Props) {
                         "text-left text-xs font-medium text-muted-foreground/70 whitespace-nowrap",
                         header.column.id === "select" && "w-8 pr-0",
                         header.column.id === "drag" && "w-8 pr-0",
+                        header.column.id === "section" && "w-[120px]",
                         header.column.id === "tags" && "w-fit max-w-[200px]",
                         header.column.id === "name" && "min-w-[220px] w-full",
                         header.column.id === "actions" && "w-10",

@@ -186,9 +186,11 @@ public class ExportTests
         var lines = csv.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
 
         Assert.Equal(3, lines.Length);
-        Assert.StartsWith($"{CsvWriter.Bom}Project,Column,Task", lines[0]);
-        Assert.Contains("Alpha,Todo,First", csv);
-        Assert.Contains("Alpha,Done,Second", csv);
+        Assert.StartsWith($"{CsvWriter.Bom}Project,Column,Section,Task", lines[0]);
+        // The empty field is the section (L40.5): a task need not have one, and the column is
+        // still written so every row has the same shape.
+        Assert.Contains("Alpha,Todo,,First", csv);
+        Assert.Contains("Alpha,Done,,Second", csv);
     }
 
     [Fact]

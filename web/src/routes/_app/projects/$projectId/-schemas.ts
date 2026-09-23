@@ -10,6 +10,8 @@ export const TaskSchema = z
       .max(100, "Must be at most 100 characters"),
     description: z.string().max(1000, "Must be at most 1000 characters"),
     priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
+    // Null is the ordinary state: most tasks belong to no section (L40.5).
+    sectionId: z.number().int().nullable(),
     tags: z.array(z.string().max(20, "Tag too long")).max(5, "Maximum 5 tags"),
     startDate: z.iso.datetime().nullable(),
     dueDate: z.iso.datetime().nullable(),

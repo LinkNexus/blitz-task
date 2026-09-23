@@ -37,7 +37,7 @@ describe("boardSearchSchema", () => {
     const parsed = boardSearchSchema.parse({
       view: "gantt",
       sort: "vibes",
-      group: "section",
+      group: "nonsense",
       priority: ["URGENT", "CRITICAL"],
     });
 
