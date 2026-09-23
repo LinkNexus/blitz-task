@@ -8,6 +8,7 @@ using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Calendar;
+using BlitzTask.Backend.Features.Export;
 using BlitzTask.Backend.Features.ProjectTasks;
 using BlitzTask.Backend.Features.TaskComments;
 using BlitzTask.Backend.Features.Trash;
@@ -297,7 +298,8 @@ public class Program
             .MapNotificationsEndpoints()
             .MapSearchEndpoints()
             .MapTrashEndpoints()
-            .MapCalendarEndpoints();
+            .MapCalendarEndpoints()
+            .MapExportEndpoints();
 
         app.MapGet(
             "/api/csrf-token",
