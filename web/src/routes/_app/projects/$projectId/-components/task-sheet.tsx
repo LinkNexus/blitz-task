@@ -63,6 +63,7 @@ import { getInitials } from "@/lib/utils";
 import { TaskSchema } from "../-schemas";
 import { TaskChecklist } from "./task-checklist";
 import { TaskComments } from "./task-comments";
+import { TaskDependenciesSection } from "./task-dependencies-section";
 import { TaskRecurrence } from "./task-recurrence";
 import { TaskReminders } from "./task-reminders";
 
@@ -725,6 +726,12 @@ export function TaskSheet({ project }: Props) {
                 />
               )}
             />
+
+            {/* An edge joins two saved rows, so there is nothing to show while the task is
+                still being written. */}
+            {editingTask && (
+              <TaskDependenciesSection project={project} task={editingTask} />
+            )}
 
             {/* Attachments */}
             <div className="space-y-3">

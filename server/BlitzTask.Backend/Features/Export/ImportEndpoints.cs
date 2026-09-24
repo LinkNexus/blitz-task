@@ -68,6 +68,11 @@ namespace BlitzTask.Backend.Features.Export
             var commentsSkipped = 0;
             var attachmentsSkipped = 0;
 
+            // Edges are wired after every task is built, because a file may name a blocker that
+            // appears later in it — and because a ref only means anything within its own project.
+            var byRef = new Dictionary<string, ProjectTask>();
+            var pendingEdges = new List<(ProjectTask Dependent, string BlockerRef)>();
+
             foreach (var source in envelope.Projects)
             {
                 if (source.IsInbox)
@@ -84,17 +89,17 @@ namespace BlitzTask.Backend.Features.Export
 
                     foreach (var task in source.Columns.SelectMany(c => c.Tasks))
                     {
-                        capture.Tasks.Add(
-                            BuildTask(
-                                task,
-                                inbox,
-                                capture,
-                                people,
-                                new HashSet<int> { user.Id },
-                                ref commentsSkipped,
-                                ref attachmentsSkipped
-                            )
+                        var captured = BuildTask(
+                            task,
+                            inbox,
+                            capture,
+                            people,
+                            new HashSet<int> { user.Id },
+                            ref commentsSkipped,
+                            ref attachmentsSkipped
                         );
+                        Remember(byRef, pendingEdges, task, captured);
+                        capture.Tasks.Add(captured);
                         tasksIntoInbox++;
                     }
 
@@ -193,6 +198,7 @@ namespace BlitzTask.Backend.Features.Export
                             built.Section = section;
                         }
 
+                        Remember(byRef, pendingEdges, task, built);
                         column.Tasks.Add(built);
                         tasksImported++;
                     }
@@ -202,6 +208,15 @@ namespace BlitzTask.Backend.Features.Export
 
                 dbContext.Projects.Add(project);
                 projectsCreated++;
+            }
+
+            foreach (var (dependent, blockerRef) in pendingEdges)
+            {
+                // A ref the file never defined is dropped rather than failing the import, the
+                // same call the section lookup makes: a missing edge is a smaller loss than a
+                // refused restore.
+                if (byRef.TryGetValue(blockerRef, out var blocker) && blocker != dependent)
+                    dependent.BlockedBy.Add(new ProjectTaskDependency { DependsOnTask = blocker });
             }
 
             // One save for the whole file: a half-imported backup is worse than a refused one.
@@ -253,6 +268,21 @@ namespace BlitzTask.Backend.Features.Export
         }
 
         private static string Key(string email) => email.Trim().ToLowerInvariant();
+
+        /// <summary>Indexes a built task by its file ref and queues the edges it asked for.</summary>
+        private static void Remember(
+            Dictionary<string, ProjectTask> byRef,
+            List<(ProjectTask, string)> pendingEdges,
+            TaskExport source,
+            ProjectTask built
+        )
+        {
+            if (!string.IsNullOrWhiteSpace(source.Ref))
+                byRef[source.Ref] = built;
+
+            foreach (var blockerRef in source.BlockedBy)
+                pendingEdges.Add((built, blockerRef));
+        }
 
         /// <summary>
         /// Builds a task into <paramref name="column"/>.

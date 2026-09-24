@@ -1,6 +1,7 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import {
   IconCalendarDue,
+  IconLink,
   IconListCheck,
   IconPaperclip,
   IconRepeat,
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { openBlockers } from "../../task-dependencies";
 import { useTaskSelection } from "../../task-selection";
 import { cellDndId, sortablePlugins, taskDndId } from "../../use-drag-n-drop";
 import { getPriorityIcon, getPriorityPillClass } from "../lib";
@@ -68,6 +70,10 @@ export function TaskCard({
     new Date(task.dueDate) < new Date();
 
   const checklistDone = task.checklistItems.filter((i) => i.isDone).length;
+
+  // A dependency you cannot see is write-only data, so the card says when something is still
+  // holding this task up — and says nothing once those blockers are done.
+  const blockers = openBlockers(task, project);
 
   const priorityLabel =
     task.priority.charAt(0) + task.priority.slice(1).toLowerCase();
@@ -151,6 +157,16 @@ export function TaskCard({
               {getPriorityIcon(task.priority)}
               {priorityLabel}
             </span>
+
+            {blockers.length > 0 && (
+              <span
+                className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400"
+                title={`Blocked by ${blockers.map((b) => b.name).join(", ")}`}
+              >
+                <IconLink className="size-3.5 shrink-0" />
+                {blockers.length}
+              </span>
+            )}
 
             {task.dueDate && (
               <span

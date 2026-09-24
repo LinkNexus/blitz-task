@@ -1,11 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
+import { toast } from "sonner";
 import type { ProjectDetails, ProjectTaskDetails } from "@/api";
 import {
   getProjectQueryKey,
   moveProjectTaskMutation,
 } from "@/api/@tanstack/react-query.gen";
 import { invalidateUserTasks } from "@/lib/query-invalidation";
+import { openBlockers } from "./task-dependencies";
 
 type MoveCallbacks = {
   onSuccess?: (task: ProjectTaskDetails) => void;
@@ -106,11 +108,25 @@ export function useMoveTask(project: ProjectDetails) {
             // that task exists in no cache: the response describes only the one that moved.
             // Refetch, or the new instance stays invisible until something else happens to
             // reload the board.
+            // Advisory, never a block: in a personal tool there is always a legitimate reason
+            // to finish something early, and refusing the drop would turn a guardrail into an
+            // obstacle. Said afterwards rather than as a confirmation, because interrupting a
+            // drag to ask is worse than either.
+            const movedIntoLastColumn = !columns.some(
+              (c) => Number(c.score) > Number(destinationCol.score),
+            );
+
+            if (movedIntoLastColumn) {
+              const blockers = openBlockers(task, project);
+              if (blockers.length > 0) {
+                toast.warning(`"${task.name}" still has open blockers`, {
+                  description: blockers.map((b) => b.name).join(", "),
+                });
+              }
+            }
+
             const completedARecurringTask =
-              !!task.recurrence &&
-              !columns.some(
-                (c) => Number(c.score) > Number(destinationCol.score),
-              );
+              !!task.recurrence && movedIntoLastColumn;
 
             if (completedARecurringTask) {
               queryClient.invalidateQueries({ queryKey });
@@ -126,7 +142,7 @@ export function useMoveTask(project: ProjectDetails) {
         },
       );
     },
-    [columns, moveTaskMut, project.id, queryClient],
+    [columns, moveTaskMut, project, queryClient],
   );
 
   return { moveTask, isPending: moveTaskMut.isPending };

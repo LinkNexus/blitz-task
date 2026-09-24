@@ -99,6 +99,20 @@ namespace BlitzTask.Backend.Features.Projects
                                 t.ChecklistItems.OrderBy(c => c.Position)
                                     .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))
                                     .ToList(),
+                                // A trashed blocker drops out for free: ProjectTask carries the
+                                // soft-delete query filter, so it is simply not there to join to.
+                                t.BlockedBy.Select(d => new TaskDependencyLink(
+                                        d.DependsOnTask.Id,
+                                        d.DependsOnTask.Name,
+                                        d.DependsOnTask.RelatedColumnId
+                                    ))
+                                    .ToList(),
+                                t.Blocks.Select(d => new TaskDependencyLink(
+                                        d.DependentTask.Id,
+                                        d.DependentTask.Name,
+                                        d.DependentTask.RelatedColumnId
+                                    ))
+                                    .ToList(),
                                 t.Recurrence == null
                                     ? null
                                     : new RecurrenceDetails(
@@ -174,6 +188,16 @@ namespace BlitzTask.Backend.Features.Projects
                                         t.SectionId,
                                         [.. t.ChecklistItems.OrderBy(c => c.Position)
                                             .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))],
+                                        [.. t.BlockedBy.Select(d => new TaskDependencyLink(
+                                            d.DependsOnTask.Id,
+                                            d.DependsOnTask.Name,
+                                            d.DependsOnTask.RelatedColumnId
+                                        ))],
+                                        [.. t.Blocks.Select(d => new TaskDependencyLink(
+                                            d.DependentTask.Id,
+                                            d.DependentTask.Name,
+                                            d.DependentTask.RelatedColumnId
+                                        ))],
                                         t.Recurrence == null
                                             ? null
                                             : new RecurrenceDetails(

@@ -90,9 +90,12 @@ public class ImportTests
         List<string>? assignees = null,
         List<CommentExport>? comments = null,
         List<string>? attachments = null,
-        string? section = null
+        string? section = null,
+        string? taskRef = null,
+        List<string>? blockedBy = null
     ) =>
         new(
+            taskRef ?? name,
             name,
             "",
             ProjectTaskPriority.MEDIUM,
@@ -107,6 +110,7 @@ public class ImportTests
             [],
             comments ?? [],
             attachments ?? [],
+            blockedBy ?? [],
             null
         );
 
@@ -388,6 +392,43 @@ public class ImportTests
         // A section is an extra axis, not a coordinate a task needs — losing it is not worth
         // failing an import over.
         Assert.Null(tasks["Ghost"].SectionId);
+    }
+
+    [Fact]
+    public async Task DependenciesComeAcrossByRefAndAnUnknownOneIsDropped()
+    {
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+
+        var envelope = Envelope(
+            Project(
+                "Alpha",
+                columns:
+                [
+                    new ColumnExport(
+                        "Todo",
+                        "#FF0000",
+                        0,
+                        [
+                            Task("Ship the API", taskRef: "t1"),
+                            Task("Build the UI", taskRef: "t2", blockedBy: ["t1", "t999"]),
+                        ]
+                    ),
+                ]
+            )
+        );
+
+        await ImportAsync(dbContext, alice, envelope);
+
+        var ui = await dbContext
+            .ProjectTasks.Include(t => t.BlockedBy)
+            .ThenInclude(d => d.DependsOnTask)
+            .SingleAsync(t => t.Name == "Build the UI");
+
+        // Refs, not names: two tasks in one file may share a name, and a row id means nothing on
+        // the far side. A ref the file never defined is dropped rather than failing the import.
+        var blocker = Assert.Single(ui.BlockedBy);
+        Assert.Equal("Ship the API", blocker.DependsOnTask.Name);
     }
 
     [Theory]

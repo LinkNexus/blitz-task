@@ -25,6 +25,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 task.SectionId,
                 [.. task.ChecklistItems.OrderBy(c => c.Position)
                     .Select(c => new ChecklistItemDetails(c.Id, c.Text, c.IsDone, c.Position))],
+                [.. task.BlockedBy.Select(d => new TaskDependencyLink(
+                    d.DependsOnTask.Id, d.DependsOnTask.Name, d.DependsOnTask.RelatedColumnId
+                ))],
+                [.. task.Blocks.Select(d => new TaskDependencyLink(
+                    d.DependentTask.Id, d.DependentTask.Name, d.DependentTask.RelatedColumnId
+                ))],
                 task.Recurrence is null
                     ? null
                     : new RecurrenceDetails(
