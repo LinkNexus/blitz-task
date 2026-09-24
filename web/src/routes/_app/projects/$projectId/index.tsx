@@ -10,6 +10,7 @@ import { getProjectOptions } from "@/api/@tanstack/react-query.gen";
 import { flashMessagesStore } from "@/lib/store";
 import { BulkActionBar } from "./-components/bulk-action-bar";
 import { ColumnDialog } from "./-components/column-dialog";
+import { GraphView } from "./-components/graph-view";
 import { KanbanBoard } from "./-components/kanban-view/board";
 import { ProjectHeader } from "./-components/project-header";
 import { ProjectPageSkeleton } from "./-components/project-page-skeleton";
@@ -17,7 +18,10 @@ import { TableView } from "./-components/table-view/index";
 import { TaskSelectionProvider } from "./-components/task-selection";
 import { TaskSheet } from "./-components/task-sheet";
 import { KanbanToolbar } from "./-components/toolbar";
-import type { ToolbarState } from "./-components/toolbar-filters";
+import {
+  hasActiveFilters,
+  type ToolbarState,
+} from "./-components/toolbar-filters";
 import { useDragNDrop } from "./-components/use-drag-n-drop";
 import {
   BOARD_SEARCH_DEFAULTS,
@@ -132,7 +136,12 @@ function SingleProjectPage() {
       <TaskSelectionProvider visibleTaskIds={visibleTaskIds}>
         <div className="flex-1 overflow-auto">
           <div className="p-4 sm:p-6">
-            {view === "table" ? (
+            {view === "graph" ? (
+              <GraphView
+                project={project}
+                filtersActive={hasActiveFilters(toolbarState)}
+              />
+            ) : view === "table" ? (
               <TableView
                 dndProps={dndProps}
                 project={project}

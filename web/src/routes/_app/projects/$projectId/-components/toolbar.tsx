@@ -7,6 +7,7 @@ import {
   IconLayoutColumns,
   IconPlus,
   IconSearch,
+  IconSitemap,
   IconTable,
   IconX,
 } from "@tabler/icons-react";
@@ -37,7 +38,7 @@ import {
 
 type Props = {
   project: ProjectDetails;
-  view: "board" | "table";
+  view: "board" | "table" | "graph";
   state: ToolbarState;
   onStateChange: Dispatch<SetStateAction<ToolbarState>>;
 };
@@ -308,6 +309,23 @@ export function KanbanToolbar({ project, view, state, onStateChange }: Props) {
               title="Table view"
             >
               <IconTable className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-7 w-7 p-0 ${view === "graph" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() =>
+                navigate({
+                  to: "/projects/$projectId",
+                  params: {
+                    projectId: project.id.toString(),
+                  },
+                  search: (previous) => ({ ...previous, view: "graph" }),
+                })
+              }
+              title="Dependency graph"
+            >
+              <IconSitemap className="size-3.5" />
             </Button>
           </div>
 
