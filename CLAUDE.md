@@ -536,6 +536,13 @@ on the wrong branch.
   generator blew its 64-level depth limit, **failing the build** with a JSON depth error that
   says nothing about the cause. Both are fixed by projecting (`ProjectInvitationInfo`). If a
   build ever fails that way again, look for an entity reachable from a response type.
+- **Anything that must happen after a move belongs on the promise, not on `mutate`'s callbacks.**
+  `useMoveTask` uses `mutateAsync` and hangs its side effects off `.then`/`.catch` because the
+  optimistic write *unmounts the caller*: moving a task re-renders the board, the card leaves its
+  old column, and React Query discards the per-call callbacks of an observer whose component has
+  gone. The card menu owns its own `useMoveTask`, so its "Moved to X" toast silently never fired
+  — the same code working from a drag only because that hook lives in the route component, which
+  does not unmount. Watch for this in any component that mutates something that removes it.
 - **Dependencies are advisory, and cycle detection is the server's job.** Nothing stops a blocked
   task being completed — `useMoveTask` warns afterwards, which is why the warning lives there and
   not in the board: it is the single path a task takes to another column, so the drag and the card
