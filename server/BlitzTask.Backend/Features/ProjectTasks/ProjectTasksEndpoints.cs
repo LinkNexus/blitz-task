@@ -826,6 +826,10 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .Include(t => t.Attachments)
                 .Include(t => t.ChecklistItems)
                 .Include(t => t.Recurrence)
+                .Include(t => t.BlockedBy)
+                .ThenInclude(d => d.DependsOnTask)
+                .Include(t => t.Blocks)
+                .ThenInclude(d => d.DependentTask)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (task is null)
@@ -853,6 +857,10 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .Include(t => t.Reminders)
                 .Include(t => t.ChecklistItems)
                 .Include(t => t.Recurrence)
+                .Include(t => t.BlockedBy)
+                .ThenInclude(d => d.DependsOnTask)
+                .Include(t => t.Blocks)
+                .ThenInclude(d => d.DependentTask)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (task is null)
@@ -969,6 +977,10 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .Include(t => t.ChecklistItems)
                 .Include(t => t.Reminders)
                 .Include(t => t.Recurrence)
+                .Include(t => t.BlockedBy)
+                .ThenInclude(d => d.DependsOnTask)
+                .Include(t => t.Blocks)
+                .ThenInclude(d => d.DependentTask)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (task is null)

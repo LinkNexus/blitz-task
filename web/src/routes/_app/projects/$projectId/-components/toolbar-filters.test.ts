@@ -33,6 +33,8 @@ const task = (over: Partial<ProjectTaskDetails> = {}): ProjectTaskDetails => ({
   columnId: 1,
   sectionId: null,
   checklistItems: [],
+  blockedBy: [],
+  blocks: [],
   recurrence: null,
   ...over,
 });

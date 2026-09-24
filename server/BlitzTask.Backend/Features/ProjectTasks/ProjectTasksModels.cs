@@ -53,6 +53,12 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public ICollection<Attachment> Attachments { get; set; } = [];
         public ICollection<TaskReminder> Reminders { get; set; } = [];
         public ICollection<TaskChecklistItem> ChecklistItems { get; set; } = [];
+
+        /// <summary>Edges where this task is the one being blocked.</summary>
+        public ICollection<ProjectTaskDependency> BlockedBy { get; set; } = [];
+
+        /// <summary>Edges where this task is the blocker.</summary>
+        public ICollection<ProjectTaskDependency> Blocks { get; set; } = [];
         public ICollection<TaskComments.TaskComment> Comments { get; set; } = [];
         public TaskRecurrence? Recurrence { get; set; }
 
@@ -244,6 +250,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         int ColumnId,
         int? SectionId,
         List<ChecklistItemDetails> ChecklistItems,
+        List<TaskDependencyLink> BlockedBy,
+        List<TaskDependencyLink> Blocks,
         RecurrenceDetails? Recurrence
     );
 }

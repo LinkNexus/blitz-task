@@ -64,6 +64,13 @@ namespace BlitzTask.Backend.Features.Export
 
     public record ColumnExport(string Name, string Color, float Score, List<TaskExport> Tasks);
 
+    /// <param name="Ref">
+    /// A handle for this task <b>within this file</b>, so dependencies can point at each other.
+    /// Names cannot do that job — two tasks may share one — and row ids identify nothing across
+    /// instances, which is the rule the rest of this format follows. A file written before
+    /// dependencies existed has neither this nor <c>BlockedBy</c>, and imports fine.
+    /// </param>
+    /// <param name="BlockedBy">Refs of the tasks this one is blocked by (L40.6).</param>
     /// <param name="Section">
     /// The section's <b>name</b>, not its id — the same choice the rest of this format makes, and
     /// what lets an importer match it against a section it has just created on the far side.
@@ -75,6 +82,7 @@ namespace BlitzTask.Backend.Features.Export
     /// missing.
     /// </param>
     public record TaskExport(
+        string Ref,
         string Name,
         string Description,
         ProjectTaskPriority Priority,
@@ -89,6 +97,7 @@ namespace BlitzTask.Backend.Features.Export
         List<ChecklistItemExport> Checklist,
         List<CommentExport> Comments,
         List<string> Attachments,
+        List<string> BlockedBy,
         RecurrenceExport? Recurrence
     );
 

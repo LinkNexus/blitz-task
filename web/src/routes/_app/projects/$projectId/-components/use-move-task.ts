@@ -1,11 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
+import { toast } from "sonner";
 import type { ProjectDetails, ProjectTaskDetails } from "@/api";
 import {
   getProjectQueryKey,
   moveProjectTaskMutation,
 } from "@/api/@tanstack/react-query.gen";
 import { invalidateUserTasks } from "@/lib/query-invalidation";
+import { openBlockers } from "./task-dependencies";
 
 type MoveCallbacks = {
   onSuccess?: (task: ProjectTaskDetails) => void;
@@ -84,49 +86,69 @@ export function useMoveTask(project: ProjectDetails) {
 
       placeTask(movedTask);
 
-      moveTaskMut.mutate(
-        {
+      // `mutateAsync`, and the side effects hung off the promise rather than passed to
+      // `mutate` as callbacks — because the optimistic write above *unmounts this caller*.
+      // Moving a task to another column re-renders the board, the card leaves its old column,
+      // and React Query discards the per-call callbacks of an observer whose component has
+      // gone. The card menu owns its own `useMoveTask`, so everything after the response was
+      // being dropped there: the "Moved to X" toast never fired, and neither did the blocked
+      // warning. The drag path was never affected only because its hook lives in the route
+      // component, which does not unmount — the same code, silently behaving differently
+      // depending on where it was mounted. The mutation itself lives on the cache and always
+      // runs to completion, so the promise settles either way.
+      moveTaskMut
+        .mutateAsync({
           path: { projectId: Number(project.id), taskId },
           body: {
             columnId: destinationColumnId,
             score,
             sectionId: destinationSectionId,
           },
-        },
-        {
-          onSuccess: (updatedTask) => {
-            placeTask(updatedTask);
+        })
+        .then((updatedTask) => {
+          placeTask(updatedTask);
 
-            // A move can cross the last column, which is the only definition of "done" this
-            // app has — so the dashboard's open-task list changes even though nothing here
-            // touched its query.
-            invalidateUserTasks(queryClient);
+          // A move can cross the last column, which is the only definition of "done" this
+          // app has — so the dashboard's open-task list changes even though nothing here
+          // touched its query.
+          invalidateUserTasks(queryClient);
 
-            // Completing a recurring task makes the server write the *next* occurrence, and
-            // that task exists in no cache: the response describes only the one that moved.
-            // Refetch, or the new instance stays invisible until something else happens to
-            // reload the board.
-            const completedARecurringTask =
-              !!task.recurrence &&
-              !columns.some(
-                (c) => Number(c.score) > Number(destinationCol.score),
-              );
+          // The last column is the only definition of "done" this app has, and two separate
+          // things hang off crossing into it.
+          const movedIntoLastColumn = !columns.some(
+            (c) => Number(c.score) > Number(destinationCol.score),
+          );
 
-            if (completedARecurringTask) {
-              queryClient.invalidateQueries({ queryKey });
+          // Advisory, never a block: in a personal tool there is always a legitimate reason
+          // to finish something early, and refusing the move would turn a guardrail into an
+          // obstacle. Said afterwards rather than as a confirmation, because interrupting a
+          // drag to ask is worse than either.
+          if (movedIntoLastColumn) {
+            const blockers = openBlockers(task, project);
+            if (blockers.length > 0) {
+              toast.warning(`"${task.name}" still has open blockers`, {
+                description: blockers.map((b) => b.name).join(", "),
+              });
             }
+          }
 
-            callbacks.onSuccess?.(updatedTask);
-          },
-          onError: () => {
+          // Completing a recurring task makes the server write the *next* occurrence, and
+          // that task exists in no cache: the response describes only the one that moved.
+          // Refetch, or the new instance stays invisible until something else happens to
+          // reload the board.
+          if (task.recurrence && movedIntoLastColumn) {
             queryClient.invalidateQueries({ queryKey });
-            callbacks.onError?.();
-          },
-          onSettled: () => callbacks.onSettled?.(),
-        },
-      );
+          }
+
+          callbacks.onSuccess?.(updatedTask);
+        })
+        .catch(() => {
+          queryClient.invalidateQueries({ queryKey });
+          callbacks.onError?.();
+        })
+        .finally(() => callbacks.onSettled?.());
     },
-    [columns, moveTaskMut, project.id, queryClient],
+    [columns, moveTaskMut, project, queryClient],
   );
 
   return { moveTask, isPending: moveTaskMut.isPending };

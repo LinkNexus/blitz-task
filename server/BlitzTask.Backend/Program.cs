@@ -295,6 +295,7 @@ public class Program
             .MapBulkTasksEndpoints()
             .MapTaskRemindersEndpoints()
             .MapTaskChecklistEndpoints()
+            .MapTaskDependenciesEndpoints()
             .MapTaskCommentsEndpoints()
             .MapActivityEndpoints()
             .MapNotificationsEndpoints()

@@ -135,6 +135,10 @@ namespace BlitzTask.Backend.Features.Export
                             c.Score,
                             c.Tasks.OrderByDescending(t => t.Score)
                                 .Select(t => new TaskExport(
+                                    // The row id, but only as a label inside this file — the
+                                    // importer resolves it against what it has just created and
+                                    // never against anything on this instance.
+                                    "t" + t.Id,
                                     t.Name,
                                     t.Description,
                                     t.Priority,
@@ -161,6 +165,7 @@ namespace BlitzTask.Backend.Features.Export
                                         ))
                                         .ToList(),
                                     t.Attachments.Select(a => a.OriginalFilename).ToList(),
+                                    t.BlockedBy.Select(d => "t" + d.DependsOnTaskId).ToList(),
                                     t.Recurrence == null
                                         ? null
                                         : new RecurrenceExport(

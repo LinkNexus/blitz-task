@@ -536,6 +536,24 @@ on the wrong branch.
   generator blew its 64-level depth limit, **failing the build** with a JSON depth error that
   says nothing about the cause. Both are fixed by projecting (`ProjectInvitationInfo`). If a
   build ever fails that way again, look for an entity reachable from a response type.
+- **Anything that must happen after a move belongs on the promise, not on `mutate`'s callbacks.**
+  `useMoveTask` uses `mutateAsync` and hangs its side effects off `.then`/`.catch` because the
+  optimistic write *unmounts the caller*: moving a task re-renders the board, the card leaves its
+  old column, and React Query discards the per-call callbacks of an observer whose component has
+  gone. The card menu owns its own `useMoveTask`, so its "Moved to X" toast silently never fired
+  — the same code working from a drag only because that hook lives in the route component, which
+  does not unmount. Watch for this in any component that mutates something that removes it.
+- **Dependencies are advisory, and cycle detection is the server's job.** Nothing stops a blocked
+  task being completed — `useMoveTask` warns afterwards, which is why the warning lives there and
+  not in the board: it is the single path a task takes to another column, so the drag and the card
+  menu both get it. A loop is refused by `TaskDependenciesEndpoints` walking the project's edges
+  in memory, because EF Core will not translate a recursive CTE and a UI-only check is not
+  enforcement. The walk needs its `seen` set for **diamonds**, not cycles. Edges are same-project
+  only: a foreign blocker would render a task title to someone who cannot open its project.
+- **A blocker's completeness is decided on the client, on purpose.** `TaskDependencyLink` carries
+  `columnId` and never an `isCompleted`, because "done" is a *position* and the client already
+  holds the columns. Adding the flag server-side would put a second copy of that rule one
+  projection away from the first.
 - **The drag order is keyed by a *cell*, not a column.** `TasksOrder` in `use-drag-n-drop.ts`
   maps `cellDndId(columnId, laneKey)` → task ids, where the lane is a section and `ALL_LANES`
   means "board not split". That is deliberate generalisation rather than a branch: the ordinary
