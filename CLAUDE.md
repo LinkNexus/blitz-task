@@ -424,9 +424,27 @@ on the wrong branch.
   `navigateFallback` answers a failed navigation from the precache, so without
   `navigateFallbackDenylist` an offline `/api/…` navigation comes back as `index.html` — the same
   HTML-where-an-array-was-expected crash that `app.MapFallback("/api/{**path}", …)` exists to
-  stop on the server. `/api` and `/hub` are denied, and nothing under either is cached: offline
-  reads and queued mutations are L45's unshipped half, and a cached API response is stale data
-  wearing a fresh timestamp.
+  stop on the server. `/api` and `/hub` are denied — that denylist covers *navigations*, and is
+  unrelated to the `NetworkFirst` route that caches `GET /api/…` for offline reads.
+- **Offline support lives in three places, and two of them are not the service worker.**
+  Workbox caches `GET /api/…` (`blitz-api-reads`, `NetworkFirst`, `/api/csrf-token` excluded —
+  a token from a week-old cache is not a token), but the cache is unreachable unless the client
+  actually makes the request. React Query's default `networkMode: "online"` **refuses to run a
+  query while `navigator.onLine` is false**, so the worker is never asked and a cold load offline
+  hangs on its suspense boundary forever; both queries and mutations are set to `"always"` in
+  `main.tsx`. And nothing boots at all if the entry module's top-level `await` can reject — see
+  `lib/csrf.ts`. If offline reads ever "stop working", check those two before the worker.
+- **A write while offline is refused, not queued, and that is a decision.** React Query's default
+  *pauses* a mutation while offline and replays it on reconnect: the button spins with no
+  explanation for as long as the connection is gone, and the write lands later against a board
+  that has moved — and `/move` carries a **client-computed score**, so a replayed drop is wrong by
+  construction, not merely late. `main.tsx`'s request interceptor rejects any non-GET while
+  `navigator.onLine` is false, so the action fails immediately with its own error under the
+  offline banner. Re-enabling the pause means solving score reconciliation first (`BulkMoveTasks`
+  computes scores server-side and is the shape that would survive it).
+- **Logout must clear `blitz-api-reads`.** A cached board belongs to whoever was signed in when it
+  was fetched; on a shared device the next person would be served it from disk with no request
+  made. `clearApiCache()` runs beside `logout()` in `nav-user.tsx`.
 - **`.webmanifest` needs an explicit content-type mapping.** `UseStaticFiles` will not serve an
   extension it cannot name, and ASP.NET's default map has no entry for this one — so the manifest
   404s, the app is silently not installable, and nothing in the logs explains it. Anything under

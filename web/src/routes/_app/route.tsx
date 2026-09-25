@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { CommandPalette } from "./-components/command-palette";
 import { ImportDialog } from "./-components/import-dialog";
 import { NotificationBell } from "./-components/notification-bell";
+import { OfflineBanner } from "./-components/offline-banner";
 import { QuickCapture, requestQuickCapture } from "./-components/quick-capture";
 import { AppSidebar } from "./-components/sidebar/app-sidebar";
 import { useRealtime } from "./-components/use-realtime";
@@ -137,6 +138,8 @@ function RouteComponent() {
             </Button>
           </div>
         </header>
+        <OfflineBanner />
+
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="min-h-screen">
             <div className="max-w-4xl mx-auto py-8 px-4">
