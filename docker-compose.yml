@@ -25,6 +25,14 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY must be set}
       Resend__FromEmail: ${RESEND_FROM_EMAIL:?RESEND_FROM_EMAIL must be set (a domain verified in Resend)}
       Resend__FromName: ${RESEND_FROM_NAME:-BlitzTask}
+      # Push notifications (L32.5). Optional as a set — leave them unset and the app simply
+      # never offers to notify a device — but the keypair MUST outlive the container once it is
+      # in use: every subscription a browser makes is bound to the public key it was created
+      # with, so replacing the pair silently invalidates all of them. Generate one with
+      # `dotnet run --project server/BlitzTask.Backend -- --vapid-keys`.
+      Push__PublicKey: ${PUSH_PUBLIC_KEY:-}
+      Push__PrivateKey: ${PUSH_PRIVATE_KEY:-}
+      Push__Subject: ${PUSH_SUBJECT:-}
       # The public origin, used to build the links inside those emails. Required rather than
       # derived from the request: the reminder sweep runs on a timer and has no request to
       # derive anything from, so an unset value means reminder mail with links to nowhere.

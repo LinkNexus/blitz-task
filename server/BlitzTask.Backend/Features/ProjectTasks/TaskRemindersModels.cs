@@ -28,11 +28,23 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public DateTime RemindAt { get; set; }
 
         /// <summary>
-        /// When this last fired. Null means never. Compared against
-        /// <see cref="RemindAt"/> rather than merely checked for null, so pushing a due date
-        /// forward re-arms an already-sent reminder instead of silently swallowing it.
+        /// When the <b>email</b> for this reminder last went out. Null means never. Compared
+        /// against <see cref="RemindAt"/> rather than merely checked for null, so pushing a due
+        /// date forward re-arms an already-sent reminder instead of silently swallowing it.
         /// </summary>
-        public DateTime? SentAt { get; set; }
+        public DateTime? EmailSentAt { get; set; }
+
+        /// <summary>
+        /// The same, for the push notification — and it is deliberately a <b>second column</b>
+        /// rather than a shared one (L32.5).
+        /// <para>
+        /// One timestamp covering both channels means a push that fails re-arms the reminder,
+        /// and the next tick sends the email again. That duplicate is precisely what
+        /// "mark sent only after the send returns" was written to prevent, so the rule has to
+        /// hold per channel or it stops holding at all.
+        /// </para>
+        /// </summary>
+        public DateTime? PushSentAt { get; set; }
 
         public ProjectTask ProjectTask { get; set; } = null!;
         public User User { get; set; } = null!;
@@ -48,7 +60,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         int Id,
         int MinutesBeforeDue,
         DateTime RemindAt,
-        DateTime? SentAt
+        DateTime? EmailSentAt,
+        DateTime? PushSentAt
     );
 
     /// <summary>Model for <c>Templates/Email/TaskReminder.cshtml</c>.</summary>

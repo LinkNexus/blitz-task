@@ -356,6 +356,8 @@ required ones with `:?` so a deploy fails loudly rather than starting half-confi
 | `App__BaseUrl` | yes | This instance's public origin, e.g. `https://tasks.example.com`. Every emailed link is built from it. **Required, not derived**: the reminder sweep is a background job with no HTTP request to read a scheme and host from, so without this it throws rather than send a relative link. Inside a request it also wins over `X-Forwarded-Proto`, which is what L14 could not make reliable. |
 | `App__SupportEmail` | no | Address shown in every email footer. No default on purpose — a hardcoded one would be published with the repo and inherited by forks. Unset means the footer omits the line. |
 | `App__Name` | no | Product name in email. Defaults to `Blitz Task`. |
+| `Push__PublicKey` / `Push__PrivateKey` | no | VAPID keypair for push (L32.5). Unset means push is simply never offered. **Must outlive the container**: every browser subscription is bound to the public key it was made with, so replacing the pair silently invalidates all of them — sends keep succeeding and no device ever buzzes. Generate with `dotnet run --project server/BlitzTask.Backend -- --vapid-keys`. |
+| `Push__Subject` | no | A `mailto:` a push service can use to reach the operator. Required by VAPID alongside the keys; some services reject a send without it. |
 | `ASPNETCORE_ENVIRONMENT` | set in Dockerfile | Anything other than `Development` selects `ResendMailerService` over SMTP. |
 | `ASPNETCORE_HTTP_PORTS` | set in Dockerfile | 8080; Traefik's `loadbalancer.server.port` must agree. |
 | `ConnectionStrings__DefaultConnection` | no | Defaults to `Data Source=Data/blitz-task.db`, which the volume covers. |
@@ -401,6 +403,17 @@ on the wrong branch.
   default trust list is loopback only and Traefik arrives over a Docker network; without that
   the headers are parsed and then silently dropped. Safe only while the container publishes no
   port of its own — expose it directly and this becomes a spoofing vector.
+- **A reminder's "sent" is per channel, and the migration that split it had to be corrected by
+  hand.** `EmailSentAt` and `PushSentAt` are separate columns because one shared timestamp means
+  a failing push re-arms the row and the next tick re-sends the email. EF generated the rename
+  the wrong way round — `SentAt` → `PushSentAt`, with `EmailSentAt` added fresh — because it
+  matches columns by shape and cannot know the old values record emails; applied as generated it
+  would have re-sent every historical reminder. Check any rename EF writes for you against what
+  the data *means*.
+- **`PushSender` swallows delivery failures and returns whether it delivered.** Not throwing is
+  right — a push service outage must never fail the write that prompted it — but then the return
+  value is the only way a caller can tell delivery from silence. Marking a channel sent
+  regardless retires it after one bad minute.
 - **The service worker is a second place the `/api` fallback bug can return.** Workbox's
   `navigateFallback` answers a failed navigation from the precache, so without
   `navigateFallbackDenylist` an offline `/api/…` navigation comes back as `index.html` — the same

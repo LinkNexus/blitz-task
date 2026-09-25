@@ -66,7 +66,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                     r.Id,
                     r.MinutesBeforeDue,
                     r.RemindAt,
-                    r.SentAt
+                    r.EmailSentAt,
+                    r.PushSentAt
                 ))
                 .ToListAsync(cancellationToken);
 
@@ -140,7 +141,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                     reminder.Id,
                     reminder.MinutesBeforeDue,
                     reminder.RemindAt,
-                    reminder.SentAt
+                    reminder.EmailSentAt,
+                    reminder.PushSentAt
                 ),
                 statusCode: StatusCodes.Status201Created
             );

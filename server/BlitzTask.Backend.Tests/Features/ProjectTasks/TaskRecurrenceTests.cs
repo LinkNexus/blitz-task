@@ -267,7 +267,7 @@ public class TaskRecurrenceTests
                 UserId = alice.Id,
                 MinutesBeforeDue = 60,
                 RemindAt = TaskReminder.ResolveRemindAt(due, 60),
-                SentAt = DateTime.UtcNow,
+                EmailSentAt = DateTime.UtcNow,
             },
         ];
         await dbContext.SaveChangesAsync();
@@ -293,7 +293,7 @@ public class TaskRecurrenceTests
         Assert.All(spawned.ChecklistItems, c => Assert.False(c.IsDone));
 
         var reminder = Assert.Single(spawned.Reminders);
-        Assert.Null(reminder.SentAt);
+        Assert.Null(reminder.EmailSentAt);
         Assert.Equal(
             TaskReminder.ResolveRemindAt(spawned.DueDate!.Value, 60),
             reminder.RemindAt,

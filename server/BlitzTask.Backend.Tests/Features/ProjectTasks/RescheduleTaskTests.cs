@@ -187,7 +187,7 @@ public class RescheduleTaskTests
                 UserId = alice.Id,
                 MinutesBeforeDue = 60,
                 RemindAt = sentAt,
-                SentAt = sentAt,
+                EmailSentAt = sentAt,
             }
         );
         await dbContext.SaveChangesAsync();
@@ -198,11 +198,11 @@ public class RescheduleTaskTests
             r.ProjectTaskId == task.Id
         );
 
-        // Nothing here clears SentAt, and nothing needs to: the sweep fires on
-        // `SentAt < RemindAt`, so moving RemindAt past the recorded send re-arms it for free.
+        // Nothing here clears EmailSentAt, and nothing needs to: the sweep fires on
+        // `EmailSentAt < RemindAt`, so moving RemindAt past the recorded send re-arms it for free.
         // Clearing it would be the same decision made twice, in two places.
-        Assert.NotNull(reminder.SentAt);
-        Assert.True(reminder.SentAt < reminder.RemindAt);
+        Assert.NotNull(reminder.EmailSentAt);
+        Assert.True(reminder.EmailSentAt < reminder.RemindAt);
     }
 
     [Fact]
