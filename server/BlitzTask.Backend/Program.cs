@@ -85,11 +85,15 @@ public class Program
         // between the two halves of one save, so a shared instance would have concurrent
         // requests publishing each other's changes.
         builder.Services.AddScoped<RealtimePublishInterceptor>();
+        builder.Services.AddScoped<PushNotificationInterceptor>();
         builder.Services.AddDbContext<ApplicationDbContext>(
             (serviceProvider, options) =>
                 options
                     .UseSqlite(connectionString)
-                    .AddInterceptors(serviceProvider.GetRequiredService<RealtimePublishInterceptor>())
+                    .AddInterceptors(
+                        serviceProvider.GetRequiredService<RealtimePublishInterceptor>(),
+                        serviceProvider.GetRequiredService<PushNotificationInterceptor>()
+                    )
         );
 
         // Data Protection keys sign the auth cookie and the antiforgery token. The default
