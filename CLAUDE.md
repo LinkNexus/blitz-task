@@ -543,6 +543,12 @@ on the wrong branch.
   gone. The card menu owns its own `useMoveTask`, so its "Moved to X" toast silently never fired
   — the same code working from a drag only because that hook lives in the route component, which
   does not unmount. Watch for this in any component that mutates something that removes it.
+- **The dependency graph lays out longest-path, and draws nodes in HTML over SVG edges.** A task
+  sits one layer after the *latest* of its blockers, so every arrow points forward; shortest-path
+  layering would draw some backwards. The layout has no cycle guard because the server refuses to
+  store one — only a written-before-recursing default so a bug there cannot overflow the stack.
+  Nodes are real `<button>`s positioned over an SVG that carries only the edges: `<text>` neither
+  wraps nor ellipsizes, and a `<g role="button">` is a button by assertion only.
 - **Dependencies are advisory, and cycle detection is the server's job.** Nothing stops a blocked
   task being completed — `useMoveTask` warns afterwards, which is why the warning lives there and
   not in the board: it is the single path a task takes to another column, so the drag and the card
