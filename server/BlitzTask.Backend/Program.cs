@@ -30,6 +30,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using RazorLight;
 using Resend;
@@ -279,7 +280,15 @@ public class Program
         }
 
         app.UseResponseCompression();
-        app.UseStaticFiles();
+
+        // `.webmanifest` is not in ASP.NET's default content-type map, and an unknown extension
+        // is not served at all — so without this the manifest 404s, the app is silently not
+        // installable, and nothing in the logs says why. The MIME type is already in the
+        // compression list above, which only ever mattered once the file could be fetched.
+        var contentTypes = new FileExtensionContentTypeProvider();
+        contentTypes.Mappings[".webmanifest"] = "application/manifest+json";
+
+        app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = contentTypes });
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseAntiforgery();

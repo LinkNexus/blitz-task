@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import tanstackRouter from "@tanstack/router-plugin/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -15,6 +16,67 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
+    VitePWA({
+      // Applied on the next load rather than prompting. This is a self-hosted personal tool;
+      // a dialog asking permission to install an update nobody chose to defer is friction.
+      registerType: "autoUpdate",
+      injectRegister: "auto",
+
+      // Off in dev, which is the default and worth keeping: a service worker caching the shell
+      // while you are editing it turns every change into a guessing game.
+      devOptions: { enabled: false },
+
+      includeAssets: [
+        "favicon.ico",
+        "favicon-16x16.png",
+        "favicon-32x32.png",
+        "apple-touch-icon.png",
+      ],
+
+      manifest: {
+        name: "Blitz Task",
+        short_name: "Blitz Task",
+        description:
+          "A self-hosted task and project manager — board, table and calendar in one place.",
+        id: "/",
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        // Both taken from the app's own theme tokens (`--primary`, `--background`) rather than
+        // picked, so an installed window does not frame the app in a colour it never uses.
+        theme_color: "#9b2c2c",
+        background_color: "#faf7f5",
+        icons: [
+          {
+            src: "/android-chrome-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: "/android-chrome-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+        ],
+      },
+
+      workbox: {
+        // The shell only. Nothing under /api is cached at any point — offline *reads* of live
+        // data and queued mutations are L45's other half, and a cached API response would be
+        // stale data wearing a fresh timestamp.
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+
+        navigateFallback: "/index.html",
+
+        // The one setting here that is load-bearing. Without it a navigation-mode request to
+        // /api that misses the network is answered with index.html, and the typed client hands
+        // a component an HTML *string* where it expected an array — the crash surfacing as
+        // `x.map is not a function` somewhere far from the cause. That is precisely the bug
+        // `app.MapFallback("/api/{**path}", ...)` exists to prevent on the server, and a
+        // service worker is a second place it can be reintroduced.
+        navigateFallbackDenylist: [/^\/api\//, /^\/hub\//],
+      },
+    }),
   ],
   resolve: {
     alias: {

@@ -401,6 +401,18 @@ on the wrong branch.
   default trust list is loopback only and Traefik arrives over a Docker network; without that
   the headers are parsed and then silently dropped. Safe only while the container publishes no
   port of its own — expose it directly and this becomes a spoofing vector.
+- **The service worker is a second place the `/api` fallback bug can return.** Workbox's
+  `navigateFallback` answers a failed navigation from the precache, so without
+  `navigateFallbackDenylist` an offline `/api/…` navigation comes back as `index.html` — the same
+  HTML-where-an-array-was-expected crash that `app.MapFallback("/api/{**path}", …)` exists to
+  stop on the server. `/api` and `/hub` are denied, and nothing under either is cached: offline
+  reads and queued mutations are L45's unshipped half, and a cached API response is stale data
+  wearing a fresh timestamp.
+- **`.webmanifest` needs an explicit content-type mapping.** `UseStaticFiles` will not serve an
+  extension it cannot name, and ASP.NET's default map has no entry for this one — so the manifest
+  404s, the app is silently not installable, and nothing in the logs explains it. Anything under
+  `web/public/` is served at a stable root URL on purpose: Vite hashes what it processes, and a
+  manifest cannot reference a filename that changes every build.
 - **Don't add `UseHttpsRedirection`.** Kestrel listens on plain HTTP 8080 and Traefik already
   redirects at the edge, so it would be a no-op for real traffic — except for the container
   healthcheck, which curls `http://localhost:8080/health` with no forwarded headers and would
