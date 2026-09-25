@@ -410,6 +410,12 @@ on the wrong branch.
   matches columns by shape and cannot know the old values record emails; applied as generated it
   would have re-sent every historical reminder. Check any rename EF writes for you against what
   the data *means*.
+- **Push for notifications is an interceptor, and it sends in its own scope.**
+  `PushNotificationInterceptor` pushes every `Notification` a save writes, so no handler has to
+  remember to — the same reasoning as `RealtimePublishInterceptor`, and the reason it cannot live
+  in `NotificationRecorder`, which adds without saving. The fresh scope is load-bearing:
+  `PushSender` prunes dead subscriptions with its own `SaveChanges`, which on the same context
+  would re-enter the interceptor mid-save.
 - **`PushSender` swallows delivery failures and returns whether it delivered.** Not throwing is
   right — a push service outage must never fail the write that prompted it — but then the return
   value is the only way a caller can tell delivery from silence. Marking a channel sent
