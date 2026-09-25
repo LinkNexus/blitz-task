@@ -7,6 +7,7 @@ using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.ProjectSections;
+using BlitzTask.Backend.Features.Push;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.Calendar;
 using BlitzTask.Backend.Features.Export;
@@ -32,6 +33,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Lib.Net.Http.WebPush;
 using RazorLight;
 using Resend;
 using SharpGrip.FluentValidation.AutoValidation.Endpoints.Extensions;
@@ -49,9 +51,18 @@ public class Program
         // *next* argument as its value, and `--seed --ConnectionStrings:...=x` quietly drops the
         // connection string, leaving the command pointed at whatever the default is. Which, for
         // a seeder, is the one mistake worth engineering out.
+        // Answered before a host exists: printing a keypair needs no database, no migrations
+        // and no scheduler, and asking for one on a machine with none of those configured
+        // should still work.
+        if (args.Contains(VapidKeyGenerator.Flag))
+        {
+            VapidKeyGenerator.Print();
+            return;
+        }
+
         var seedRequested = args.Contains(SeedFlag);
         var builder = WebApplication.CreateBuilder(
-            [.. args.Where(arg => arg != SeedFlag)]
+            [.. args.Where(arg => arg != SeedFlag && arg != VapidKeyGenerator.Flag)]
         );
 
         builder.Services.AddHttpContextAccessor();
@@ -137,6 +148,14 @@ public class Program
             .ValidateDataAnnotations()
             .ValidateOnStart();
         builder.Services.AddScoped<IFileService, LocalFileService>();
+
+        builder.Services.Configure<PushSettings>(
+            builder.Configuration.GetSection(PushSettings.SectionName)
+        );
+        // Through the factory, like ResendClient: the push services are ordinary HTTP endpoints
+        // and a socket-per-send would exhaust the pool on a busy sweep.
+        builder.Services.AddHttpClient<PushServiceClient>();
+        builder.Services.AddScoped<PushSender>();
 
         // The SPA bundle is served uncompressed otherwise — the largest route chunk alone is
         // ~600KB raw against ~180KB gzipped. Static files get no compression from
@@ -312,6 +331,7 @@ public class Program
             .MapTrashEndpoints()
             .MapCalendarEndpoints()
             .MapExportEndpoints()
+            .MapPushEndpoints()
             .MapImportEndpoints();
 
         app.MapGet(

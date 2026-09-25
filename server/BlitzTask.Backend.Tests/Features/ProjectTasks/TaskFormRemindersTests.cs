@@ -155,7 +155,7 @@ public class TaskFormRemindersTests
     public async Task UpdateKeepsAnAlreadySentReminderInsteadOfRebuildingIt()
     {
         // The reason this is reconciled rather than deleted-and-recreated: a rebuilt row comes
-        // back with SentAt null, and the sweep fires anything whose SentAt is behind its
+        // back with EmailSentAt null, and the sweep fires anything whose EmailSentAt is behind its
         // RemindAt — so saving an unrelated edit would re-send yesterday's email.
         using var dbContext = TestsUtils.CreateSqliteDbContext();
         var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
@@ -171,7 +171,7 @@ public class TaskFormRemindersTests
                 UserId = alice.Id,
                 MinutesBeforeDue = 60,
                 RemindAt = TaskReminder.ResolveRemindAt(due, 60),
-                SentAt = sentAt,
+                EmailSentAt = sentAt,
             }
         );
         await dbContext.SaveChangesAsync();
@@ -179,7 +179,7 @@ public class TaskFormRemindersTests
         await UpdateAsync(dbContext, alice, task, due, [60]);
 
         var reminder = Assert.Single(await RemindersOf(dbContext, task));
-        Assert.Equal(sentAt, reminder.SentAt!.Value, TimeSpan.FromSeconds(1));
+        Assert.Equal(sentAt, reminder.EmailSentAt!.Value, TimeSpan.FromSeconds(1));
     }
 
     [Fact]

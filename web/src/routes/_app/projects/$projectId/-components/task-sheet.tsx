@@ -693,8 +693,10 @@ export function TaskSheet({ project }: Props) {
                   value={field.value}
                   onChange={field.onChange}
                   hasDueDate={!!form.watch("dueDate")}
+                  // Either channel having gone out means this offset has fired; the row is
+                  // showing "already sent", not which transport carried it.
                   sentOffsets={(savedReminders ?? [])
-                    .filter((r) => r.sentAt)
+                    .filter((r) => r.emailSentAt || r.pushSentAt)
                     .map((r) => Number(r.minutesBeforeDue))}
                 />
               )}

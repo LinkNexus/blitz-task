@@ -4,6 +4,7 @@ using BlitzTask.Backend.Features.Notifications;
 using BlitzTask.Backend.Features.Auth;
 using BlitzTask.Backend.Features.ProjectColumns;
 using BlitzTask.Backend.Features.ProjectSections;
+using BlitzTask.Backend.Features.Push;
 using BlitzTask.Backend.Features.ProjectMembers;
 using BlitzTask.Backend.Features.Projects;
 using BlitzTask.Backend.Features.ProjectTasks;
@@ -32,6 +33,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
     public DbSet<ActivityEvent> ActivityEvents => Set<ActivityEvent>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
     public DbSet<TaskRecurrence> TaskRecurrences => Set<TaskRecurrence>();
 
     /// <summary>

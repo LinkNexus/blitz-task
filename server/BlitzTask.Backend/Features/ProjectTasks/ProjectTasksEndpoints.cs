@@ -151,7 +151,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         /// Brings the caller's reminders on a task in line with the offsets they submitted.
         /// <para>
         /// Reconciled rather than deleted-and-recreated, which is the whole point: a rebuilt row
-        /// comes back with <c>SentAt</c> null, and an already-fired reminder that looks unfired
+        /// comes back with <c>EmailSentAt</c> null, and an already-fired reminder that looks unfired
         /// is one the sweep will send again. Saving a task must not re-send yesterday's email.
         /// </para>
         /// <para>
@@ -368,7 +368,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 ],
                 Reminders =
                 [
-                    // SentAt starts null on purpose: this is a different deadline, so a reminder
+                    // EmailSentAt starts null on purpose: this is a different deadline, so a reminder
                     // that already fired for the previous occurrence has to fire again.
                     .. completed.Reminders.Select(r => new TaskReminder
                     {
@@ -649,9 +649,9 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             // Everyone's reminders, not just the caller's. A reminder is private in the sense
             // that only its owner set it and only they receive it (L25.5), but *when* it fires
             // is arithmetic on a deadline that belongs to the task, and one person moving the
-            // task is exactly when the others need re-arming. Nothing here touches SentAt: a
+            // task is exactly when the others need re-arming. Nothing here touches EmailSentAt: a
             // deadline pushed forward drags RemindAt past the recorded send, and the sweep's
-            // `SentAt < RemindAt` re-arms it on its own.
+            // `EmailSentAt < RemindAt` re-arms it on its own.
             foreach (var reminder in task.Reminders)
             {
                 reminder.RemindAt = TaskReminder.ResolveRemindAt(

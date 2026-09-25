@@ -1,3 +1,4 @@
+using BlitzTask.Backend.Features.Push;
 using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Data;
 using BlitzTask.Backend.Infrastructure.Scheduling;
@@ -12,6 +13,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
     public class TaskReminderJob(
         ApplicationDbContext dbContext,
         MailerService mailerService,
+        PushSender pushSender,
         AppUrlBuilder urlBuilder,
         ILogger<TaskReminderJob> logger
     ) : IScheduledJob
@@ -27,11 +29,21 @@ namespace BlitzTask.Backend.Features.ProjectTasks
 
             var due = await dbContext
                 .TaskReminders
-                // `SentAt < RemindAt` rather than `SentAt == null`: pushing a due date forward
-                // moves RemindAt past the old send, which re-arms the reminder. Checking only
-                // for null would fire once and then stay silent for the rest of the task's life,
-                // however far the deadline moved.
-                .Where(r => r.RemindAt <= now && (r.SentAt == null || r.SentAt < r.RemindAt))
+                // `< RemindAt` rather than `== null`: pushing a due date forward moves RemindAt
+                // past the old send, which re-arms the reminder. Checking only for null would
+                // fire once and then stay silent for the rest of the task's life, however far
+                // the deadline moved.
+                //
+                // Either channel outstanding is enough to pick the row up, and each is then
+                // judged on its own below — a push that failed last tick must not drag the
+                // email along with it.
+                .Where(r =>
+                    r.RemindAt <= now
+                    && (
+                        (r.EmailSentAt == null || r.EmailSentAt < r.RemindAt)
+                        || (r.PushSentAt == null || r.PushSentAt < r.RemindAt)
+                    )
+                )
                 // A reminder about finished work is noise. Same definition of "done" as
                 // everywhere else: the task sits in its project's last column.
                 .Where(r =>
@@ -43,6 +55,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 .Select(r => new
                 {
                     Reminder = r,
+                    r.UserId,
                     r.User.Name,
                     r.User.Email,
                     TaskName = r.ProjectTask.Name,
@@ -54,6 +67,54 @@ namespace BlitzTask.Backend.Features.ProjectTasks
 
             foreach (var item in due)
             {
+                var link = urlBuilder.Build($"/projects/{item.ProjectId}");
+                var dueText = item.DueDate!.Value.UtcDateTime.ToString("f") + " UTC";
+
+                // Each channel is tried and marked separately. One timestamp for both would mean
+                // a failing push re-arming the row and the next tick re-sending the email —
+                // exactly the duplicate that "mark sent only after the send returns" prevents.
+                if (
+                    item.Reminder.PushSentAt is null
+                    || item.Reminder.PushSentAt < item.Reminder.RemindAt
+                )
+                {
+                    try
+                    {
+                        // Marked only if it actually went. The sender swallows its own failures
+                        // so a push service outage cannot break anything else, which means the
+                        // return value is the only way to tell delivery from silence — and
+                        // marking regardless would retire the channel after one failed attempt.
+                        var delivered = await pushSender.SendAsync(
+                            [item.UserId],
+                            new PushPayload(
+                                Title: $"Reminder: {item.TaskName}",
+                                Body: $"{item.ProjectName} — due {dueText}",
+                                Url: $"/projects/{item.ProjectId}"
+                            ),
+                            cancellationToken
+                        );
+
+                        if (delivered)
+                            item.Reminder.PushSentAt = now;
+                    }
+                    catch (Exception exception)
+                    {
+                        logger.LogError(
+                            exception,
+                            "Failed to push reminder {ReminderId}",
+                            item.Reminder.Id
+                        );
+                    }
+                }
+
+                if (
+                    item.Reminder.EmailSentAt is not null
+                    && item.Reminder.EmailSentAt >= item.Reminder.RemindAt
+                )
+                {
+                    continue;
+                }
+
                 try
                 {
                     await mailerService.SendEmailAsync(
@@ -65,11 +126,11 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                                 UserName: item.Name,
                                 TaskName: item.TaskName,
                                 ProjectName: item.ProjectName,
-                                DueDateText: item.DueDate!.Value.UtcDateTime.ToString("f") + " UTC",
+                                DueDateText: dueText,
                                 // Absolute: there is no request here to resolve a
                                 // relative href against, and a mail client will not
                                 // invent one either.
-                                TaskLink: urlBuilder.Build($"/projects/{item.ProjectId}")
+                                TaskLink: link
                             )
                         )
                     );
@@ -77,7 +138,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                     // Marked only after the send returns. A crash before this repeats the email
                     // on the next tick, which is the right way round: a duplicate reminder is an
                     // annoyance, a missed one defeats the feature.
-                    item.Reminder.SentAt = now;
+                    item.Reminder.EmailSentAt = now;
                 }
                 catch (Exception exception)
                 {

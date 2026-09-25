@@ -75,6 +75,11 @@ export default defineConfig({
         // `app.MapFallback("/api/{**path}", ...)` exists to prevent on the server, and a
         // service worker is a second place it can be reintroduced.
         navigateFallbackDenylist: [/^\/api\//, /^\/hub\//],
+
+        // The push and notificationclick handlers (L32.5), pulled in rather than replacing the
+        // generated worker: `injectManifest` would mean rewriting the routing above by hand,
+        // including the denylist, to add two event listeners.
+        importScripts: ["/push-sw.js"],
       },
     }),
   ],

@@ -1,4 +1,6 @@
 import {
+  IconBell,
+  IconBellOff,
   IconCheck,
   IconDeviceLaptop,
   IconDownload,
@@ -30,11 +32,13 @@ import {
 } from "@/components/ui/dropdown-menu.tsx";
 import { SidebarMenuButton } from "@/components/ui/sidebar.tsx";
 import { useAccount } from "@/hooks/use-current-user";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { requestImport } from "../import-dialog";
 
 export const NavUser = memo(() => {
   const { user } = useAccount();
   const { theme, setTheme } = useTheme();
+  const push = usePushNotifications();
 
   const themeOptions = [
     { value: "light" as const, label: "Light", icon: IconSun },
@@ -109,6 +113,38 @@ export const NavUser = memo(() => {
             <span>Profile Settings</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+        {/* Hidden entirely when this instance has no VAPID keypair, or the browser cannot do
+            push: a switch that cannot work is worse than no switch. Only ever asks for
+            permission because it was pressed — an unprompted request is the reliable way to be
+            denied permanently, and a denial can only be undone in browser settings. */}
+        {push.state !== "unsupported" && push.state !== "unconfigured" && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="cursor-pointer"
+              disabled={push.busy || push.state === "denied"}
+              onSelect={(e) => {
+                e.preventDefault();
+                if (push.state === "on") push.disable();
+                else push.enable();
+              }}
+            >
+              {push.state === "on" ? (
+                <IconBellOff className="h-4 w-4" />
+              ) : (
+                <IconBell className="h-4 w-4" />
+              )}
+              <span>
+                {push.state === "denied"
+                  ? "Notifications blocked"
+                  : push.state === "on"
+                    ? "Turn off notifications"
+                    : "Notify me on this device"}
+              </span>
+            </DropdownMenuItem>
+          </>
+        )}
+
         <DropdownMenuSeparator />
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="cursor-pointer">
