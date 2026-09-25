@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu.tsx";
 import { SidebarMenuButton } from "@/components/ui/sidebar.tsx";
 import { useAccount } from "@/hooks/use-current-user";
+import { clearApiCache } from "@/hooks/use-offline";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { requestImport } from "../import-dialog";
 
@@ -56,6 +57,9 @@ export const NavUser = memo(() => {
   const handleLogout = async () => {
     try {
       await logout();
+      // The cached board belongs to whoever was signed in when it was fetched; on a shared
+      // device the next person must not be served it from disk.
+      await clearApiCache();
     } finally {
       window.location.href = "/login";
     }
