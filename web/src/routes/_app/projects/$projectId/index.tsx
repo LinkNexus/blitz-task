@@ -17,6 +17,7 @@ import { ProjectPageSkeleton } from "./-components/project-page-skeleton";
 import { TableView } from "./-components/table-view/index";
 import { TaskSelectionProvider } from "./-components/task-selection";
 import { TaskSheet } from "./-components/task-sheet";
+import { TimelineView } from "./-components/timeline-view";
 import { KanbanToolbar } from "./-components/toolbar";
 import {
   hasActiveFilters,
@@ -136,7 +137,12 @@ function SingleProjectPage() {
       <TaskSelectionProvider visibleTaskIds={visibleTaskIds}>
         <div className="flex-1 overflow-auto">
           <div className="p-4 sm:p-6">
-            {view === "graph" ? (
+            {view === "timeline" ? (
+              <TimelineView
+                project={project}
+                filtersActive={hasActiveFilters(toolbarState)}
+              />
+            ) : view === "graph" ? (
               <GraphView
                 project={project}
                 filtersActive={hasActiveFilters(toolbarState)}
