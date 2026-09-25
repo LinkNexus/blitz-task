@@ -8,7 +8,7 @@ import {
   type ToolbarState,
 } from "./toolbar-filters";
 
-export type BoardView = "board" | "table" | "graph";
+export type BoardView = "board" | "table" | "graph" | "timeline";
 
 /**
  * The board's whole state, in the URL.
@@ -20,7 +20,10 @@ export type BoardView = "board" | "table" | "graph";
  * through this same schema — including one written by a build that had filters this one does not.
  */
 export const boardSearchSchema = z.object({
-  view: z.enum(["board", "table", "graph"]).default("board").catch("board"),
+  view: z
+    .enum(["board", "table", "graph", "timeline"])
+    .default("board")
+    .catch("board"),
   q: z.string().default("").catch(""),
   priority: z
     .array(z.enum(["URGENT", "HIGH", "MEDIUM", "LOW"]))

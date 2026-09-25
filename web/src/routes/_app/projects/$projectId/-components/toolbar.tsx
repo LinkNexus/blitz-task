@@ -9,6 +9,7 @@ import {
   IconSearch,
   IconSitemap,
   IconTable,
+  IconTimeline,
   IconX,
 } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
@@ -38,7 +39,7 @@ import {
 
 type Props = {
   project: ProjectDetails;
-  view: "board" | "table" | "graph";
+  view: "board" | "table" | "graph" | "timeline";
   state: ToolbarState;
   onStateChange: Dispatch<SetStateAction<ToolbarState>>;
 };
@@ -326,6 +327,23 @@ export function KanbanToolbar({ project, view, state, onStateChange }: Props) {
               title="Dependency graph"
             >
               <IconSitemap className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-7 w-7 p-0 ${view === "timeline" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() =>
+                navigate({
+                  to: "/projects/$projectId",
+                  params: {
+                    projectId: project.id.toString(),
+                  },
+                  search: (previous) => ({ ...previous, view: "timeline" }),
+                })
+              }
+              title="Timeline"
+            >
+              <IconTimeline className="size-3.5" />
             </Button>
           </div>
 
