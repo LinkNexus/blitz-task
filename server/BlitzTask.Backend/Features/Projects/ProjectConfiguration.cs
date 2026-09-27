@@ -46,6 +46,26 @@ namespace BlitzTask.Backend.Features.Projects
                 .IsUnique()
                 .HasFilter($"\"{nameof(Project.IsInbox)}\" = 1");
 
+            builder
+                .HasMany(p => p.Attachments)
+                .WithMany()
+                .UsingEntity<ProjectAttachment>(j =>
+                {
+                    j.HasKey(pa => new { pa.ProjectId, pa.AttachmentId });
+                    j.HasOne<Attachment>()
+                        .WithMany()
+                        .HasForeignKey(pa => pa.AttachmentId)
+                        // Cascade so the join cannot outlive the file it names. It is the
+                        // *opposite* direction that matters now: deleting an Attachment row is no
+                        // longer something a delete path does, because another task or project may
+                        // still be pointing at it. AttachmentOrphanSweepJob owns that.
+                        .OnDelete(DeleteBehavior.Cascade);
+                    j.HasOne<Project>()
+                        .WithMany()
+                        .HasForeignKey(pa => pa.ProjectId)
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             builder.ConfigureAuditable();
             builder.ConfigureSoftDeletable();
         }

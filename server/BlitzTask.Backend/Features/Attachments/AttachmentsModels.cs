@@ -32,6 +32,22 @@ namespace BlitzTask.Backend.Features.Attachments
         public User? UploadedBy { get; set; }
     }
 
+    /// <summary>
+    /// A file the project holds, and how many of its tasks point at it.
+    /// <para>
+    /// Separate from <see cref="AttachmentMetadata"/> because of that last field: a task's
+    /// attachment has no reference count to report — it is the thing doing the referencing.
+    /// </para>
+    /// </summary>
+    public record ProjectAttachmentDetails(
+        Guid Id,
+        string OriginalFileName,
+        string ContentType,
+        long SizeInBytes,
+        DateTime UploadedAt,
+        int ReferencedByTaskCount
+    );
+
     public record AttachmentMetadata(
         Guid Id,
         string OriginalFileName,

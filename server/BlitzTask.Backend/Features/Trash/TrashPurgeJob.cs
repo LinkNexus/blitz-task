@@ -15,21 +15,25 @@ namespace BlitzTask.Backend.Features.Trash
     public static class TrashPurge
     {
         /// <summary>
-        /// Files first, rows second. The other order loses the attachment ids: the rows carry the
-        /// only record of which blobs belong to the task, and once they are gone the files are
-        /// unreferenced bytes on a volume nothing will ever sweep.
+        /// Removes the task. Its files are <b>not</b> deleted here.
+        /// <para>
+        /// This used to delete them, in this order, precisely because the rows were the only
+        /// record of which blobs belonged to the task. Since L40.7 they are not: a file can also
+        /// be the project's, or referenced by another task, so "the last task holding it is
+        /// purged" no longer means "nobody wants it". Dropping the rows is what makes it an
+        /// orphan, and <c>AttachmentOrphanSweepJob</c> is what notices — including for anything
+        /// this job orphaned on a previous run and a crash left behind.
+        /// </para>
         /// </summary>
-        public static async Task PurgeTaskAsync(
+        public static Task PurgeTaskAsync(
             ProjectTask task,
             ApplicationDbContext dbContext,
             IFileService fileService,
             CancellationToken cancellationToken
         )
         {
-            foreach (var attachment in task.Attachments.ToList())
-                await fileService.DeleteFileAsync(attachment.Id, cancellationToken);
-
             dbContext.ProjectTasks.Remove(task);
+            return Task.CompletedTask;
         }
 
         public static async Task PurgeProjectAsync(
@@ -39,22 +43,12 @@ namespace BlitzTask.Backend.Features.Trash
             CancellationToken cancellationToken
         )
         {
-            if (project.ImageId.HasValue)
-                await fileService.DeleteFileAsync(project.ImageId.Value, cancellationToken);
-
-            // Loaded past the query filter on purpose: by now every task under this project is
-            // trashed, so the filtered navigation would be empty and their files would survive
-            // the project that owned them.
-            var attachmentIds = await dbContext
-                .ProjectTasks.IgnoreQueryFilters()
-                .Where(t => t.RelatedProjectId == project.Id)
-                .SelectMany(t => t.Attachments.Select(a => a.Id))
-                .ToListAsync(cancellationToken);
-
-            foreach (var attachmentId in attachmentIds)
-                await fileService.DeleteFileAsync(attachmentId, cancellationToken);
-
-            // Columns and tasks go with it through the FK cascade.
+            // Same as above: removing the project drops its image reference, its own attachment
+            // joins and — through the FK cascade — every task's, which is exactly what turns
+            // those files into orphans for the sweep to collect. It no longer walks the tasks
+            // past the query filter to find blobs, because finding them is not the question any
+            // more; whether anything *else* still points at them is, and one project cannot see
+            // that.
             dbContext.Projects.Remove(project);
         }
     }

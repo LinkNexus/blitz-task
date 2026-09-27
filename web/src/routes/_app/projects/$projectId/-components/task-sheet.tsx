@@ -64,6 +64,7 @@ import { TaskSchema } from "../-schemas";
 import { TaskChecklist } from "./task-checklist";
 import { TaskComments } from "./task-comments";
 import { TaskDependenciesSection } from "./task-dependencies-section";
+import { TaskFilePicker } from "./task-file-picker";
 import { TaskRecurrence } from "./task-recurrence";
 import { TaskReminders } from "./task-reminders";
 
@@ -751,6 +752,16 @@ export function TaskSheet({ project }: Props) {
                     />
                   ))}
                 </div>
+              )}
+
+              {/* Referencing a project file lands immediately and is not part of the draft —
+                  same reasoning as a checklist tick. Edit mode only: a reference needs a task. */}
+              {editingTaskId !== null && (
+                <TaskFilePicker
+                  projectId={Number(project.id)}
+                  taskId={editingTaskId}
+                  attachedIds={existingAttachments.map((a) => String(a.id))}
+                />
               )}
 
               {/* New file dropzone */}

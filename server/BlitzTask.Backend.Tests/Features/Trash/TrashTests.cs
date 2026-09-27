@@ -306,7 +306,7 @@ public class TrashTests
     }
 
     [Fact]
-    public async Task ThePurgeTakesWhatIsPastTheWindowAndItsFilesWithIt()
+    public async Task ThePurgeTakesWhatIsPastTheWindowButLeavesTheFilesToTheSweep()
     {
         using var dbContext = TestsUtils.CreateSqliteDbContext();
         var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
@@ -348,9 +348,20 @@ public class TrashTests
         // Still inside its window, so still recoverable.
         Assert.NotNull(await RawTask(dbContext, recent.Id));
 
-        // The purge is the only thing that touches disk, and it has to, or the volume fills with
-        // blobs nothing references.
-        files.Verify(f => f.DeleteFileAsync(attachment.Id, It.IsAny<CancellationToken>()), Times.Once);
+        // It used to delete the blob here, and since L40.7 it must not: the same file can be the
+        // project's or another task's, and this job cannot see that. Removing the row drops the
+        // join, which is what makes the file an orphan — AttachmentOrphanSweepJob decides whether
+        // the bytes may go.
+        files.Verify(
+            f => f.DeleteFileAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never
+        );
+        Assert.Empty(
+            await dbContext
+                .Set<ProjectTaskAttachment>()
+                .Where(j => j.AttachmentId == attachment.Id)
+                .ToListAsync()
+        );
     }
 
     [Fact]

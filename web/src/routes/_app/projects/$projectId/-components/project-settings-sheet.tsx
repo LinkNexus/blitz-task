@@ -3,6 +3,7 @@ import {
   IconActivity,
   IconAlertTriangle,
   IconDownload,
+  IconPaperclip,
   IconSettings2,
   IconUsers,
 } from "@tabler/icons-react";
@@ -52,6 +53,7 @@ import { invalidateProjectLists } from "@/lib/query-invalidation";
 import { cn, getInitials, imageFormats } from "@/lib/utils";
 import { MAX_PROJECT_IMAGE_SIZE, ProjectSchema } from "../-schemas";
 import { ProjectActivity } from "./project-activity";
+import { ProjectFiles } from "./project-files";
 import { ProjectMembersSection } from "./project-members";
 import { ProjectSections } from "./project-sections";
 
@@ -226,6 +228,10 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
               <span className="ml-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground tabular-nums">
                 {project.participants.length}
               </span>
+            </TabsTrigger>
+            <TabsTrigger value="files" className="gap-1.5">
+              <IconPaperclip className="size-3.5" />
+              Files
             </TabsTrigger>
             <TabsTrigger value="activity" className="gap-1.5">
               <IconActivity className="size-3.5" />
@@ -436,6 +442,10 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
           </TabsContent>
 
           {/* ── Members ── */}
+          <TabsContent value="files" className="flex-1 overflow-y-auto p-6">
+            <ProjectFiles projectId={Number(project.id)} />
+          </TabsContent>
+
           <TabsContent value="members" className="flex-1 overflow-y-auto p-6">
             <ProjectMembersSection
               project={project}
