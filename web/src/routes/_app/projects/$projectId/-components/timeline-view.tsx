@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { ProjectDetails } from "@/api";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { buildTimeline, type TimelineBar } from "./timeline";
 
@@ -12,6 +13,8 @@ type Props = {
 const DAY_WIDTH = 34;
 const ROW_HEIGHT = 34;
 const LABEL_WIDTH = 190;
+/** On a phone the full gutter is half the screen, leaving about three days of chart. */
+const NARROW_LABEL_WIDTH = 116;
 const HEADER_HEIGHT = 40;
 
 const xOf = (bar: TimelineBar) => bar.offsetDays * DAY_WIDTH;
@@ -32,6 +35,10 @@ const yOf = (bar: TimelineBar) => bar.row * ROW_HEIGHT;
  */
 export function TimelineView({ project, filtersActive }: Props) {
   const timeline = useMemo(() => buildTimeline(project), [project]);
+
+  // The gutter is laid out in pixels rather than CSS, so a media query cannot reach it — the
+  // header cell, the name column and the chart's own width all have to agree on one number.
+  const labelWidth = useIsMobile() ? NARROW_LABEL_WIDTH : LABEL_WIDTH;
 
   const byId = useMemo(
     () => new Map(timeline.bars.map((bar) => [bar.id, bar])),
@@ -79,12 +86,12 @@ export function TimelineView({ project, filtersActive }: Props) {
       )}
 
       <div className="overflow-x-auto rounded-xl border bg-card">
-        <div style={{ width: LABEL_WIDTH + chartWidth }}>
+        <div style={{ width: labelWidth + chartWidth }}>
           {/* Date header */}
           <div className="flex border-b" style={{ height: HEADER_HEIGHT }}>
             <div
               className="shrink-0 border-r bg-muted/30"
-              style={{ width: LABEL_WIDTH }}
+              style={{ width: labelWidth }}
             />
             {days.map((day, i) => {
               const isWeekend = day.getDay() === 0 || day.getDay() === 6;
@@ -118,18 +125,21 @@ export function TimelineView({ project, filtersActive }: Props) {
             {/* Task names, in their own column so a long name never overlaps the chart. */}
             <div
               className="shrink-0 border-r bg-muted/30"
-              style={{ width: LABEL_WIDTH }}
+              style={{ width: labelWidth }}
             >
               {timeline.bars.map((bar) => (
                 <div
                   key={bar.id}
                   style={{ height: ROW_HEIGHT }}
                   className={cn(
-                    "flex items-center truncate px-3 text-xs",
+                    "flex items-center px-3 text-xs",
                     bar.isCompleted && "text-muted-foreground line-through",
                   )}
                 >
-                  {bar.name}
+                  {/* The ellipsis has to be on an element of its own: `truncate` on the flex
+                      container does nothing, because the name is an anonymous flex item and
+                      `text-overflow` never reaches it. It cut mid-letter instead. */}
+                  <span className="truncate">{bar.name}</span>
                 </div>
               ))}
             </div>

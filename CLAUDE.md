@@ -476,6 +476,25 @@ on the wrong branch.
   renders there and a doomed request costs a "Forbidden Access" toast. A new route that loads
   data needs no guard of its own — but it does inherit this one, so don't put anything an
   unconfirmed user is supposed to reach under `_app`.
+- **A hover-only control does not exist on a phone.** `opacity-0 group-hover:opacity-100` is the
+  house pattern for a card menu or a row's actions, and a touchscreen never triggers it — the
+  card's menu *and* its selection checkbox were unreachable, which took every bulk action with
+  them. Anything hidden until hover needs `pointer-coarse:opacity-100` beside it. Use the pointer
+  variant, not a width: a tablet is wide and still cannot hover, and a narrow desktop window can.
+- **The board's touch drag is the library's, and it is already right.** `@dnd-kit/react`'s pointer
+  sensor applies a 250ms press-and-hold with 5px tolerance when `pointerType === "touch"`, so a
+  swipe scrolls and a hold drags. Don't add a sensor, a `touch-action: none`, or a drag handle for
+  mobile — any of them breaks scrolling to fix something that works.
+- **`sm:contents` is how the toolbar is two rows on a phone and one on a desktop.** The second row
+  is a real box below the breakpoint and `display: contents` above it, so its children become
+  direct flex items of the single row again — one set of markup, and the desktop layout is
+  provably unchanged. Whatever must stay visible on the phone's scrolling row carries
+  `order-first sm:order-none`; `ml-auto` in front of the view switcher is what used to park it
+  off-screen.
+- **`truncate` on a flex container does nothing.** The text becomes an anonymous flex item and
+  `text-overflow` never reaches it, so the name cuts mid-letter instead of ellipsing. Put
+  `truncate` on a `<span>` of its own inside the flex row. This was live in the timeline's label
+  gutter and only became visible once the gutter got narrower.
 - **The webfont is self-hosted, and its metrics are load-bearing.** `--font-sans` named Poppins
   from the start while nothing loaded it, so the app rendered in the `sans-serif` fallback for
   months — visible not as a wrong typeface but as *every icon sitting a pixel off its label*.
