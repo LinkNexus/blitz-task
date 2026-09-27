@@ -10,6 +10,7 @@ import { addMonths, format } from "date-fns";
 import z from "zod";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Agenda } from "./-components/agenda";
 import {
@@ -48,7 +49,14 @@ function CalendarSkeleton() {
 }
 
 function CalendarPage() {
-  const { month: monthParam, view = "month" } = Route.useSearch();
+  const { month: monthParam, view: viewParam } = Route.useSearch();
+
+  // A month grid on a phone gives each day about 50px, which truncates every event to its first
+  // letter — "R…", "S…", "W…". The agenda says the same thing in a readable list, so it is the
+  // default there. Only the default: the toggle sets the param explicitly, and a link carrying
+  // `?view=month` still opens the grid.
+  const isMobile = useIsMobile();
+  const view = viewParam ?? (isMobile ? "agenda" : "month");
   const month = monthFrom(monthParam);
   const { data: items } = useSuspenseQuery(calendarQuery(month));
   const { reschedule } = useRescheduleTask(month);

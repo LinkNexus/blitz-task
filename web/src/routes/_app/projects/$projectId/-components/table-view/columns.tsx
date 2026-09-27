@@ -77,6 +77,18 @@ function SelectCell({ task }: { task: TaskRow }) {
   );
 }
 
+/**
+ * Columns dropped on a phone, used by the header and both bodies so the `<th>`s and the `<td>`s
+ * can never disagree about which ones exist.
+ *
+ * At 390px the table fitted the section and the drag grip and then ran out of room before the
+ * due date — so the columns carrying the least were the only ones on screen. None of this is
+ * lost: tapping the row still opens the task with all of it. The grip goes too, because a
+ * touchscreen drags the row by pressing and holding it, not by a 4px handle.
+ */
+export const narrowHidden = (columnId: string) =>
+  ["drag", "section", "tags", "files"].includes(columnId) && "max-sm:hidden";
+
 export const columns = columnHelper.columns([
   columnHelper.display({
     id: "select",
@@ -88,7 +100,7 @@ export const columns = columnHelper.columns([
     id: "drag",
     header: "",
     cell: () => (
-      <IconGripVertical className="size-4 text-muted-foreground/30 opacity-0 transition-opacity group-hover/row:opacity-100 cursor-grab active:cursor-grabbing" />
+      <IconGripVertical className="size-4 text-muted-foreground/30 opacity-0 transition-opacity group-hover/row:opacity-100 pointer-coarse:opacity-100 cursor-grab active:cursor-grabbing" />
     ),
   }),
 
@@ -262,7 +274,7 @@ export const columns = columnHelper.columns([
       // biome-ignore lint/a11y/noStaticElementInteractions: not interactive — it only stops the row's click from firing when the menu inside is used.
       // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard users reach the menu button directly; this wrapper is mouse-only propagation control.
       <div
-        className="opacity-0 group-hover/row:opacity-100 transition-opacity"
+        className="opacity-0 group-hover/row:opacity-100 pointer-coarse:opacity-100 transition-opacity"
         onClick={(e) => e.stopPropagation()}
       >
         <ProjectMenu

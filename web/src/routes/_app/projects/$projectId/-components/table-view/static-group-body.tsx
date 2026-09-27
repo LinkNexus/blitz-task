@@ -2,7 +2,7 @@ import { FlexRender } from "@tanstack/react-table";
 import { Fragment } from "react";
 import { TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { columns } from "./columns";
+import { columns, narrowHidden } from "./columns";
 import type { TaskGroup, TaskRows } from "./grouping";
 
 /** One read-only task row, shared by a flat group and a section's column sub-groups. */
@@ -25,8 +25,9 @@ function TaskTableRow({ row }: { row: TaskRows[number] }) {
             cell.column.id === "drag" && "w-8 pr-0",
             cell.column.id === "section" && "w-[120px]",
             cell.column.id === "tags" && "w-[140px] max-w-[140px]",
-            cell.column.id === "name" && "min-w-[220px]",
+            cell.column.id === "name" && "min-w-[220px] max-sm:min-w-[150px]",
             cell.column.id === "actions" && "w-10",
+            narrowHidden(cell.column.id),
           )}
         >
           {/* Keep the drag column for header alignment, but not its grip: there is nothing to

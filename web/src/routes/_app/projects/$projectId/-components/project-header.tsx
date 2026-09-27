@@ -80,7 +80,9 @@ export const ProjectHeader = ({ project }: Props) => {
         </div>
 
         {/* Meta — stacks vertically on mobile, flows in a row on sm+ */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-2 text-sm text-muted-foreground">
+        {/* Wraps rather than stacking: a column put the dates, the tags and the faces on three
+            separate rows, which on a phone is most of the screen spent before the first task. */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-5 text-sm text-muted-foreground">
           {(project.startDate || project.dueDate) && (
             <div className="flex items-center gap-1.5">
               <IconCalendarEvent className="size-4 shrink-0" />
@@ -103,7 +105,7 @@ export const ProjectHeader = ({ project }: Props) => {
           )}
 
           {project.participants.length > 0 && (
-            <div className="sm:ml-auto flex items-center">
+            <div className="ml-auto flex items-center">
               <AvatarGroup>
                 {project.participants.slice(0, 4).map((p) => (
                   <Tooltip key={String(p.userId)}>

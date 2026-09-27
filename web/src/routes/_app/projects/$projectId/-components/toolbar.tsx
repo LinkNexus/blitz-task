@@ -118,9 +118,13 @@ export function KanbanToolbar({ project, view, state, onStateChange }: Props) {
 
   return (
     <div className="border-b bg-background shrink-0">
-      <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto">
-        {/* Search */}
-        <div className="relative min-w-[180px] max-w-xs flex-1">
+      {/* Two rows on a phone, one on a desktop. The second row is `sm:contents`, so above the
+          breakpoint it stops being a box and every control becomes a direct child of this row
+          again — the same single-row layout as before, without a second copy of the markup. */}
+      <div className="flex flex-col gap-2 px-4 py-2 sm:flex-row sm:items-center sm:overflow-x-auto">
+        {/* Search takes the whole first row on a phone: sharing it with the view switcher left
+            it about 110px wide, which is not enough to read back what you typed. */}
+        <div className="relative w-full sm:w-auto sm:min-w-[180px] sm:max-w-xs sm:flex-1">
           <IconSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
           <Input
             value={state.search}
@@ -132,242 +136,257 @@ export function KanbanToolbar({ project, view, state, onStateChange }: Props) {
           />
         </div>
 
-        <Separator orientation="vertical" className="h-5 shrink-0" />
+        <div className="flex items-center gap-2 overflow-x-auto sm:contents">
+          <Separator
+            orientation="vertical"
+            className="hidden sm:block h-5 shrink-0"
+          />
 
-        {/* Saved views */}
-        <SavedViews projectId={Number(project.id)} state={state} view={view} />
+          {/* Saved views */}
+          <SavedViews
+            projectId={Number(project.id)}
+            state={state}
+            view={view}
+          />
 
-        <Separator orientation="vertical" className="h-5 shrink-0" />
+          <Separator orientation="vertical" className="h-5 shrink-0" />
 
-        {/* Filter */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          {/* Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={filtersActive ? "secondary" : "ghost"}
+                size="sm"
+                className="h-8 gap-1.5 text-muted-foreground hover:text-foreground shrink-0"
+              >
+                <IconAdjustments className="size-3.5" />
+                <span className="text-xs">Filter</span>
+                <IconChevronDown className="size-3 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Priority
+              </DropdownMenuLabel>
+              {PRIORITY_OPTIONS.map((p) => (
+                <DropdownMenuCheckboxItem
+                  key={p.value}
+                  checked={state.priorities.has(p.value)}
+                  onSelect={keepOpen}
+                  onCheckedChange={() => togglePriority(p.value)}
+                >
+                  {p.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Due date
+              </DropdownMenuLabel>
+              {DUE_BUCKET_OPTIONS.map((d) => (
+                <DropdownMenuCheckboxItem
+                  key={d.value}
+                  checked={state.dueBuckets.has(d.value)}
+                  onSelect={keepOpen}
+                  onCheckedChange={() => toggleDueBucket(d.value)}
+                >
+                  {d.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Assignee
+              </DropdownMenuLabel>
+              {project.participants.map((p) => (
+                <DropdownMenuCheckboxItem
+                  key={String(p.userId)}
+                  checked={state.assigneeIds.has(String(p.userId))}
+                  onSelect={keepOpen}
+                  onCheckedChange={() => toggleAssignee(String(p.userId))}
+                >
+                  {p.name}
+                </DropdownMenuCheckboxItem>
+              ))}
+              {filtersActive && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={clearFilters} className="gap-2">
+                    <IconX className="size-3.5" />
+                    Clear filters
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Sort */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={state.sort ? "secondary" : "ghost"}
+                size="sm"
+                className="h-8 gap-1.5 text-muted-foreground hover:text-foreground shrink-0"
+              >
+                <IconArrowsSort className="size-3.5" />
+                <span className="text-xs">Sort</span>
+                <IconChevronDown className="size-3 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Sort by
+              </DropdownMenuLabel>
+              {SORT_OPTIONS.map((s) => (
+                <DropdownMenuCheckboxItem
+                  key={s.value}
+                  checked={state.sort === s.value}
+                  onCheckedChange={() => setSort(s.value)}
+                >
+                  {s.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Separator orientation="vertical" className="h-5 shrink-0" />
+
+          {/* Group by */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={state.groupBy !== "column" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-8 gap-1.5 text-muted-foreground hover:text-foreground shrink-0"
+              >
+                <IconLayoutColumns className="size-3.5" />
+                <span className="text-xs hidden sm:inline">Group by</span>
+                <IconChevronDown className="size-3 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Group by
+              </DropdownMenuLabel>
+              {GROUP_BY_OPTIONS.map((g) => (
+                <DropdownMenuCheckboxItem
+                  key={g.value}
+                  checked={state.groupBy === g.value}
+                  onCheckedChange={() => setGroupBy(g.value)}
+                >
+                  {g.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+              {view === "board" && state.groupBy !== "column" && (
+                <p className="px-2 pt-1.5 text-[11px] text-muted-foreground/70">
+                  Only applied in table view — the board always groups by
+                  column.
+                </p>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Right-side actions. Last in the DOM, but `order-first` on a phone: this row scrolls
+            there, and the view switcher is the one control that must be visible without
+            discovering that it scrolls — the old layout put `ml-auto` in front of it and parked
+            it permanently off-screen. */}
+          <div className="order-first ml-0 flex items-center gap-2 shrink-0 sm:order-none sm:ml-auto">
+            {/* View toggle */}
+            <div className="flex items-center rounded-md border bg-muted/40 p-0.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-7 w-7 p-0 ${view === "board" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() =>
+                  navigate({
+                    to: "/projects/$projectId",
+                    params: {
+                      projectId: project.id.toString(),
+                    },
+                    // Updater rather than a literal: the filters live in the search too now, and
+                    // replacing the object wholesale would clear them on every view switch.
+                    search: (previous) => ({ ...previous, view: "board" }),
+                  })
+                }
+                title="Board view"
+              >
+                <IconLayoutBoard className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-7 w-7 p-0 ${view === "table" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() =>
+                  navigate({
+                    to: "/projects/$projectId",
+                    params: {
+                      projectId: project.id.toString(),
+                    },
+                    search: (previous) => ({ ...previous, view: "table" }),
+                  })
+                }
+                title="Table view"
+              >
+                <IconTable className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-7 w-7 p-0 ${view === "graph" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() =>
+                  navigate({
+                    to: "/projects/$projectId",
+                    params: {
+                      projectId: project.id.toString(),
+                    },
+                    search: (previous) => ({ ...previous, view: "graph" }),
+                  })
+                }
+                title="Dependency graph"
+              >
+                <IconSitemap className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-7 w-7 p-0 ${view === "timeline" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() =>
+                  navigate({
+                    to: "/projects/$projectId",
+                    params: {
+                      projectId: project.id.toString(),
+                    },
+                    search: (previous) => ({ ...previous, view: "timeline" }),
+                  })
+                }
+                title="Timeline"
+              >
+                <IconTimeline className="size-3.5" />
+              </Button>
+            </div>
+
+            <Separator orientation="vertical" className="h-5" />
+
             <Button
-              variant={filtersActive ? "secondary" : "ghost"}
+              variant="outline"
               size="sm"
-              className="h-8 gap-1.5 text-muted-foreground hover:text-foreground shrink-0"
+              className="h-8 gap-1.5 text-xs"
+              onClick={() => requestColumnCreate(maxScore + 1000)}
+              title="New Column"
             >
-              <IconAdjustments className="size-3.5" />
-              <span className="text-xs">Filter</span>
-              <IconChevronDown className="size-3 opacity-50" />
+              <IconCirclePlus className="size-3.5" />
+              <span className="hidden sm:inline">New Column</span>
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Priority
-            </DropdownMenuLabel>
-            {PRIORITY_OPTIONS.map((p) => (
-              <DropdownMenuCheckboxItem
-                key={p.value}
-                checked={state.priorities.has(p.value)}
-                onSelect={keepOpen}
-                onCheckedChange={() => togglePriority(p.value)}
-              >
-                {p.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Due date
-            </DropdownMenuLabel>
-            {DUE_BUCKET_OPTIONS.map((d) => (
-              <DropdownMenuCheckboxItem
-                key={d.value}
-                checked={state.dueBuckets.has(d.value)}
-                onSelect={keepOpen}
-                onCheckedChange={() => toggleDueBucket(d.value)}
-              >
-                {d.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Assignee
-            </DropdownMenuLabel>
-            {project.participants.map((p) => (
-              <DropdownMenuCheckboxItem
-                key={String(p.userId)}
-                checked={state.assigneeIds.has(String(p.userId))}
-                onSelect={keepOpen}
-                onCheckedChange={() => toggleAssignee(String(p.userId))}
-              >
-                {p.name}
-              </DropdownMenuCheckboxItem>
-            ))}
-            {filtersActive && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={clearFilters} className="gap-2">
-                  <IconX className="size-3.5" />
-                  Clear filters
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Sort */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
             <Button
-              variant={state.sort ? "secondary" : "ghost"}
               size="sm"
-              className="h-8 gap-1.5 text-muted-foreground hover:text-foreground shrink-0"
-            >
-              <IconArrowsSort className="size-3.5" />
-              <span className="text-xs">Sort</span>
-              <IconChevronDown className="size-3 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-44">
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Sort by
-            </DropdownMenuLabel>
-            {SORT_OPTIONS.map((s) => (
-              <DropdownMenuCheckboxItem
-                key={s.value}
-                checked={state.sort === s.value}
-                onCheckedChange={() => setSort(s.value)}
-              >
-                {s.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Separator orientation="vertical" className="h-5 shrink-0" />
-
-        {/* Group by */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant={state.groupBy !== "column" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-8 gap-1.5 text-muted-foreground hover:text-foreground shrink-0"
-            >
-              <IconLayoutColumns className="size-3.5" />
-              <span className="text-xs hidden sm:inline">Group by</span>
-              <IconChevronDown className="size-3 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Group by
-            </DropdownMenuLabel>
-            {GROUP_BY_OPTIONS.map((g) => (
-              <DropdownMenuCheckboxItem
-                key={g.value}
-                checked={state.groupBy === g.value}
-                onCheckedChange={() => setGroupBy(g.value)}
-              >
-                {g.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-            {view === "board" && state.groupBy !== "column" && (
-              <p className="px-2 pt-1.5 text-[11px] text-muted-foreground/70">
-                Only applied in table view — the board always groups by column.
-              </p>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Right-side actions */}
-        <div className="ml-auto flex items-center gap-2 shrink-0">
-          {/* View toggle */}
-          <div className="flex items-center rounded-md border bg-muted/40 p-0.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-7 w-7 p-0 ${view === "board" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              className="h-8 gap-1.5 text-xs"
               onClick={() =>
-                navigate({
-                  to: "/projects/$projectId",
-                  params: {
-                    projectId: project.id.toString(),
-                  },
-                  // Updater rather than a literal: the filters live in the search too now, and
-                  // replacing the object wholesale would clear them on every view switch.
-                  search: (previous) => ({ ...previous, view: "board" }),
-                })
+                document.dispatchEvent(new CustomEvent("task.create"))
               }
-              title="Board view"
+              title="New Task"
             >
-              <IconLayoutBoard className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-7 w-7 p-0 ${view === "table" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() =>
-                navigate({
-                  to: "/projects/$projectId",
-                  params: {
-                    projectId: project.id.toString(),
-                  },
-                  search: (previous) => ({ ...previous, view: "table" }),
-                })
-              }
-              title="Table view"
-            >
-              <IconTable className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-7 w-7 p-0 ${view === "graph" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() =>
-                navigate({
-                  to: "/projects/$projectId",
-                  params: {
-                    projectId: project.id.toString(),
-                  },
-                  search: (previous) => ({ ...previous, view: "graph" }),
-                })
-              }
-              title="Dependency graph"
-            >
-              <IconSitemap className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-7 w-7 p-0 ${view === "timeline" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() =>
-                navigate({
-                  to: "/projects/$projectId",
-                  params: {
-                    projectId: project.id.toString(),
-                  },
-                  search: (previous) => ({ ...previous, view: "timeline" }),
-                })
-              }
-              title="Timeline"
-            >
-              <IconTimeline className="size-3.5" />
+              <IconPlus className="size-3.5" />
+              <span className="hidden sm:inline">New Task</span>
             </Button>
           </div>
-
-          <Separator orientation="vertical" className="h-5" />
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 text-xs"
-            onClick={() => requestColumnCreate(maxScore + 1000)}
-          >
-            <IconCirclePlus className="size-3.5" />
-            <span className="hidden sm:inline">New Column</span>
-          </Button>
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 text-xs"
-            onClick={() =>
-              document.dispatchEvent(new CustomEvent("task.create"))
-            }
-          >
-            <IconPlus className="size-3.5" />
-            New Task
-          </Button>
         </div>
       </div>
     </div>

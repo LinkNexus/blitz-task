@@ -15,7 +15,7 @@ import {
   sortablePlugins,
   taskDndId,
 } from "../use-drag-n-drop";
-import { columns, type features, type TaskRow } from "./columns";
+import { columns, type features, narrowHidden, type TaskRow } from "./columns";
 
 type Props = {
   column: ProjectColumnDetails;
@@ -198,8 +198,9 @@ function DraggableRow({
             "py-3",
             cell.column.id === "drag" && "w-8 pr-0",
             cell.column.id === "tags" && "w-[140px] max-w-[140px]",
-            cell.column.id === "name" && "min-w-[220px]",
+            cell.column.id === "name" && "min-w-[220px] max-sm:min-w-[150px]",
             cell.column.id === "actions" && "w-10",
+            narrowHidden(cell.column.id),
           )}
         >
           <FlexRender cell={cell} />

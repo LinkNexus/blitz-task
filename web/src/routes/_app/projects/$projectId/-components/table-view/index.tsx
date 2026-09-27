@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { requestColumnCreate } from "../column-dialog";
 import type { GroupByField } from "../toolbar-filters";
 import type { DndReturnValue } from "../use-drag-n-drop";
-import { columns, features, type TaskRow } from "./columns";
+import { columns, features, narrowHidden, type TaskRow } from "./columns";
 import { GroupBody } from "./group-body";
 import { groupRows } from "./grouping";
 import { StaticGroupBody } from "./static-group-body";
@@ -106,8 +106,10 @@ export function TableView({ project, dndProps, groupBy }: Props) {
                         header.column.id === "drag" && "w-8 pr-0",
                         header.column.id === "section" && "w-[120px]",
                         header.column.id === "tags" && "w-fit max-w-[200px]",
-                        header.column.id === "name" && "min-w-[220px] w-full",
+                        header.column.id === "name" &&
+                          "min-w-[220px] max-sm:min-w-[150px] w-full",
                         header.column.id === "actions" && "w-10",
+                        narrowHidden(header.column.id),
                       )}
                     >
                       {!header.isPlaceholder && (

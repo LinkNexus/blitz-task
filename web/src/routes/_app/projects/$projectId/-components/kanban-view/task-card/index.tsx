@@ -102,7 +102,10 @@ export function TaskCard({
               "shrink-0 pt-0.5 transition-opacity",
               isSelected || selection.count > 0
                 ? "opacity-100"
-                : "opacity-0 group-hover:opacity-100",
+                : // Hover is the only thing revealing this, and a touchscreen has none — so on a
+                  // coarse pointer the card's checkbox would simply never appear and selection
+                  // (and every bulk action behind it) would be unreachable.
+                  "opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100",
             )}
             onPointerDown={(e) => e.stopPropagation()}
           >
@@ -125,7 +128,7 @@ export function TaskCard({
             {task.name}
           </button>
           <div
-            className="opacity-0 transition-opacity group-hover:opacity-100 shrink-0 -mt-0.5 -mr-1"
+            className="opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100 shrink-0 -mt-0.5 -mr-1"
             onPointerDown={(e) => e.stopPropagation()}
           >
             <ProjectMenu task={task} project={project} />
