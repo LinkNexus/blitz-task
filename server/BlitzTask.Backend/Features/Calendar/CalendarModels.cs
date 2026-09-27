@@ -47,6 +47,35 @@ namespace BlitzTask.Backend.Features.Calendar
         bool CanReschedule
     );
 
+    /// <summary>
+    /// A person's calendar subscription, or the absence of one.
+    /// <para>
+    /// Returns the whole URL rather than the bare token because the token is only useful inside
+    /// it, and building the origin is <see cref="Shared.Services.AppUrlBuilder"/>'s job — a
+    /// client that assembled it from <c>window.location</c> would be wrong behind a proxy and
+    /// wrong in an email.
+    /// </para>
+    /// </summary>
+    public record CalendarFeedSubscription(string? Url);
+
+    public static class CalendarFeed
+    {
+        /// <summary>
+        /// How far back the feed reaches. Past deadlines are the record of what was due when, and
+        /// a subscription that silently drops them rewrites the calendar behind you — but a year
+        /// of them is noise, so it stops.
+        /// </summary>
+        public static int PastDays => 90;
+
+        /// <summary>
+        /// How far ahead. This is the horizon the roadmap warned about: occurrences are
+        /// materialised rather than emitted as <c>RRULE</c>s, so a weekly chore stops here. A year
+        /// is past the point where anyone is planning against a recurring task, and a client
+        /// re-polls the feed long before reaching it.
+        /// </summary>
+        public static int FutureDays => 365;
+    }
+
     public static class CalendarWindow
     {
         /// <summary>

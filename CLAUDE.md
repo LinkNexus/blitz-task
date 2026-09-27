@@ -572,6 +572,21 @@ on the wrong branch.
   `DeletedAt == null` — EF's **navigation fix-up puts tracked trashed rows back into a collection
   the query filter excluded**, and re-stamping one silently resurrects it — and never hard-delete
   a parent whose children you meant to keep recoverable, since the FK cascade ignores every flag.
+- **A due date is an instant, and the app has no concept of a date.** The picker writes *local
+  midnight* and stores it as a `DateTimeOffset`; nothing anywhere records which zone that midnight
+  belonged to. So anything that has to name a **day** — the ICS feed is the first — cannot use the
+  UTC date: for everyone east of UTC, local midnight is the previous afternoon in UTC, and the
+  deadline publishes a day early. The feed takes the subscriber's IANA zone from its own URL
+  (`?tz=`), written there by the browser, which is the only place the answer exists. Store the zone
+  on the user and this becomes a stale-profile bug instead; derive it on the server and there is
+  nothing to derive it from.
+- **The ICS feed's URL is the whole credential, so it is outside the authorized group.** Nothing
+  polling a subscription can hold a cookie or an antiforgery token. `UserTokenType.CalendarFeed`
+  is Base64**Url** (a path segment people copy by hand), never expires (a subscription that died
+  after a month reads as a broken feed, and nothing would tell the user to renew it), and
+  create-or-rotate is one endpoint because **rotation is the only way to revoke a URL already
+  given to Google**. An unknown token and a revoked one must answer the same 404. The route is
+  `ExcludeFromDescription` on purpose: the SPA only ever displays the link.
 - **The calendar is the only read path that returns things which are not rows.** `GET /api/calendar`
   is bounded by a window rather than a row count (a month view that truncates is wrong, not short),
   and it projects future occurrences of a recurrence rule as `CalendarItem`s with a **null
