@@ -8,6 +8,15 @@ namespace BlitzTask.Backend.Features.Auth
         EmailConfirmation,
         PasswordReset,
         SecurityStamp,
+
+        /// <summary>
+        /// The secret in a calendar subscription URL. Unlike the three above it is a
+        /// <b>long-lived, non-expiring</b> credential the user hands to a third party (Google,
+        /// Apple, whoever polls the feed), so it is revoked by deleting it rather than by
+        /// waiting, and there is at most one per person — rotating it is what breaks every
+        /// existing subscription at once, which is the point.
+        /// </summary>
+        CalendarFeed,
     }
 
     public class UserToken

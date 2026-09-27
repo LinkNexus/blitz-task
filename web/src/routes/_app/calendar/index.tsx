@@ -19,6 +19,7 @@ import {
   monthFrom,
 } from "./-components/calendar-query";
 import { MonthGrid } from "./-components/month-grid";
+import { SubscribeDialog } from "./-components/subscribe-dialog";
 import { useRescheduleTask } from "./-components/use-reschedule";
 
 const searchSchema = z.object({
@@ -129,6 +130,8 @@ function CalendarPage() {
               </Link>
             </Button>
           </div>
+
+          <SubscribeDialog />
         </div>
       </header>
 
