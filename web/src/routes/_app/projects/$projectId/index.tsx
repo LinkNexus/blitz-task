@@ -136,7 +136,7 @@ function SingleProjectPage() {
 
       <TaskSelectionProvider visibleTaskIds={visibleTaskIds}>
         <div className="flex-1 overflow-auto">
-          <div className="p-4 sm:p-6">
+          <div className="p-2 sm:p-6">
             {view === "timeline" ? (
               <TimelineView
                 project={project}

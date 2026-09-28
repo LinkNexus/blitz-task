@@ -485,6 +485,15 @@ on the wrong branch.
   sensor applies a 250ms press-and-hold with 5px tolerance when `pointerType === "touch"`, so a
   swipe scrolls and a hold drags. Don't add a sensor, a `touch-action: none`, or a drag handle for
   mobile — any of them breaks scrolling to fix something that works.
+- **The board's chrome is pinned, so every pixel of it is spent twice on a phone.** The board is
+  `flex-1 overflow-auto` and owns its own scroll viewport, which means the app header, the
+  project header and the toolbar above it **cannot be scrolled away** — they are gone from the
+  usable screen for the whole session. At 390x844 that was 319px, 38% of the phone, before the
+  first card; it is 266px now. So a padding value on that path is not cosmetic, and anything
+  added above the board costs more than it looks. **Mobile trims are `sm:`-guarded, and the
+  desktop layout is provably unchanged** — board, dashboard and board-dark diffed against the
+  previous commit at 1440px came back 0 differing pixels of 5,184,000. Keep it that way: change
+  a shared value and re-run that diff rather than assuming.
 - **`sm:contents` is how the toolbar is two rows on a phone and one on a desktop.** The second row
   is a real box below the breakpoint and `display: contents` above it, so its children become
   direct flex items of the single row again — one set of markup, and the desktop layout is
