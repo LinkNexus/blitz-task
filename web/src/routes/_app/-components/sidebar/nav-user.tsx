@@ -117,18 +117,30 @@ export const NavUser = memo(() => {
             <span>Profile Settings</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        {/* Hidden entirely when this instance has no VAPID keypair, or the browser cannot do
-            push: a switch that cannot work is worse than no switch. Only ever asks for
-            permission because it was pressed — an unprompted request is the reliable way to be
-            denied permanently, and a denial can only be undone in browser settings. */}
-        {push.state !== "unsupported" && push.state !== "unconfigured" && (
+        {/* Hidden only when the browser genuinely cannot do push. A server with no VAPID
+            configuration says so instead of vanishing: the row disappearing is what made a
+            half-configured instance impossible to diagnose from the UI — no toggle means
+            `Notification.requestPermission()` is never called, so the app never appears in the
+            OS notification settings at all, and nothing anywhere says why. Note the server
+            needs **all three** of `Push__PublicKey`, `Push__PrivateKey` and `Push__Subject`;
+            two out of three reads exactly like none.
+
+            Only ever asks for permission because it was pressed — an unprompted request is the
+            reliable way to be denied permanently, and a denial can only be undone in browser
+            settings. */}
+        {push.state !== "unsupported" && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="cursor-pointer"
-              disabled={push.busy || push.state === "denied"}
+              disabled={
+                push.busy ||
+                push.state === "denied" ||
+                push.state === "unconfigured"
+              }
               onSelect={(e) => {
                 e.preventDefault();
+                if (push.state === "unconfigured") return;
                 if (push.state === "on") push.disable();
                 else push.enable();
               }}
@@ -139,11 +151,13 @@ export const NavUser = memo(() => {
                 <IconBell className="h-4 w-4" />
               )}
               <span>
-                {push.state === "denied"
-                  ? "Notifications blocked"
-                  : push.state === "on"
-                    ? "Turn off notifications"
-                    : "Notify me on this device"}
+                {push.state === "unconfigured"
+                  ? "Notifications unavailable on this server"
+                  : push.state === "denied"
+                    ? "Notifications blocked"
+                    : push.state === "on"
+                      ? "Turn off notifications"
+                      : "Notify me on this device"}
               </span>
             </DropdownMenuItem>
           </>
