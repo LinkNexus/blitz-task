@@ -9,13 +9,18 @@ import {
   createProjectMutation,
   getProjectQueryKey,
 } from "@/api/@tanstack/react-query.gen";
-import { DatePickerField } from "@/components/forms/fields/date-picker";
+import { DateTimePicker } from "@/components/forms/date-time-picker";
 import { DropzoneField } from "@/components/forms/fields/dropzone";
 import { InputField } from "@/components/forms/fields/input";
 import { TextCollectionField } from "@/components/forms/fields/text-collection";
 import { TextareaField } from "@/components/forms/fields/textarea";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { useAccount } from "@/hooks/use-current-user";
 import { invalidateProjectLists } from "@/lib/query-invalidation";
@@ -142,12 +147,20 @@ function CreateProjectPage() {
             control={form.control}
             name="startDate"
             render={({ field, fieldState }) => (
-              <DatePickerField
-                field={field}
-                fieldState={fieldState}
-                labelProps={{ children: "Start Date" }}
-                inputProps={{ disabled: isFormDisabled }}
-              />
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Start Date</FieldLabel>
+                <DateTimePicker
+                  value={field.value}
+                  hasTime={false}
+                  allowTime={false}
+                  disabled={isFormDisabled}
+                  aria-invalid={fieldState.invalid}
+                  onChange={(value) => field.onChange(value)}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
             )}
           />
 
@@ -155,12 +168,20 @@ function CreateProjectPage() {
             control={form.control}
             name="dueDate"
             render={({ field, fieldState }) => (
-              <DatePickerField
-                field={field}
-                fieldState={fieldState}
-                labelProps={{ children: "Due Date" }}
-                inputProps={{ disabled: isFormDisabled }}
-              />
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel>Due Date</FieldLabel>
+                <DateTimePicker
+                  value={field.value}
+                  hasTime={false}
+                  allowTime={false}
+                  disabled={isFormDisabled}
+                  aria-invalid={fieldState.invalid}
+                  onChange={(value) => field.onChange(value)}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
             )}
           />
 
