@@ -154,6 +154,8 @@ namespace BlitzTask.Backend.Features.Calendar
                     t.Priority,
                     t.StartDate,
                     t.DueDate,
+                    t.HasStartTime,
+                    t.HasDueTime,
                     t.RelatedProjectId,
                     ProjectName = t.RelatedProject.Name,
                     ColumnColor = t.RelatedColumn.Color,
@@ -171,6 +173,8 @@ namespace BlitzTask.Backend.Features.Calendar
                     t.Priority,
                     t.StartDate,
                     t.DueDate!.Value,
+                    t.HasStartTime,
+                    t.HasDueTime,
                     t.RelatedProjectId,
                     t.ProjectName,
                     t.ColumnColor,
@@ -343,7 +347,21 @@ namespace BlitzTask.Backend.Features.Calendar
                     Url: item.TaskId is null
                         ? null
                         : urlBuilder.Build(item.IsInbox ? "/inbox" : $"/projects/{item.ProjectId}"),
-                    IsCompleted: item.IsCompleted
+                    IsCompleted: item.IsCompleted,
+                    // A deadline with a time becomes a timed event at that instant. The half
+                    // hour is a rendering decision, not a claim about the work: a zero-length
+                    // event is drawn inconsistently (Google puts it on the previous day), and a
+                    // deadline is a moment rather than a duration, so it gets the smallest block
+                    // that reads correctly everywhere. When the task also has a start time and
+                    // it genuinely precedes the deadline, the event spans the two instead.
+                    StartAt: !item.HasDueTime
+                        ? null
+                        : item.HasStartTime
+                          && item.StartDate is DateTimeOffset s
+                          && s < item.DueDate
+                            ? s
+                            : item.DueDate.AddMinutes(-30),
+                    EndAt: item.HasDueTime ? item.DueDate : null
                 );
             });
 
@@ -410,6 +428,8 @@ namespace BlitzTask.Backend.Features.Calendar
                     t.Priority,
                     t.StartDate,
                     t.DueDate,
+                    t.HasStartTime,
+                    t.HasDueTime,
                     t.RelatedProjectId,
                     ProjectName = t.RelatedProject.Name,
                     ColumnColor = t.RelatedColumn.Color,
@@ -447,6 +467,8 @@ namespace BlitzTask.Backend.Features.Calendar
                             task.Priority,
                             length == TimeSpan.Zero ? null : due - length,
                             due,
+                            task.HasStartTime,
+                            task.HasDueTime,
                             task.RelatedProjectId,
                             task.ProjectName,
                             task.ColumnColor,

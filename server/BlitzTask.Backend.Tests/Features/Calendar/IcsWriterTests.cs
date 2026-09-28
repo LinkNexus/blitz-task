@@ -150,6 +150,35 @@ public class IcsWriterTests
     }
 
     [Fact]
+    public void WritesATimedEventInUtcWhenTheTaskCarriesAChosenTime()
+    {
+        // 14:00+02:00 is 12:00Z. The whole reason a timed event needs no `?tz=` is that this
+        // instant is the same fact in every zone the subscriber might be in.
+        var due = new DateTimeOffset(2026, 6, 10, 14, 0, 0, TimeSpan.FromHours(2));
+        var ics = IcsWriter.Write(
+            "Cal",
+            [Event() with { StartAt = due.AddMinutes(-30), EndAt = due }],
+            Stamp
+        );
+
+        Assert.Contains("DTSTART:20260610T113000Z", ics);
+        Assert.Contains("DTEND:20260610T120000Z", ics);
+        // The all-day form must not also be written, or a client sees two start times.
+        Assert.DoesNotContain("VALUE=DATE", ics);
+    }
+
+    [Fact]
+    public void WritesAnAllDayEventWhenNoTimeWasChosen()
+    {
+        var ics = IcsWriter.Write("Cal", [Event()], Stamp);
+
+        Assert.Contains("DTSTART;VALUE=DATE:20260610", ics);
+        Assert.Contains("DTEND;VALUE=DATE:20260611", ics);
+        // A bare `DTSTART:` would mean a timed event; the all-day one must stay date-valued.
+        Assert.DoesNotContain("DTSTART:2026", ics);
+    }
+
+    [Fact]
     public void ADeadlineDoesNotMakeItsOwnerBusy()
     {
         Assert.Contains("TRANSP:TRANSPARENT", IcsWriter.Write("Cal", [Event()], Stamp));

@@ -355,6 +355,11 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 Tags = [.. completed.Tags],
                 StartDate = completed.StartDate?.Add(shift),
                 DueDate = nextDue,
+                // A series that falls at 09:00 keeps falling at 09:00: `Advance` is day and
+                // month arithmetic on the instant, so the time of day already carries — these
+                // say it was chosen, without which the successor would render as a bare date.
+                HasStartTime = completed.HasStartTime,
+                HasDueTime = completed.HasDueTime,
                 Assignees = [.. completed.Assignees],
                 ChecklistItems =
                 [
@@ -641,6 +646,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
 
             task.StartDate = start;
             task.DueDate = request.DueDate;
+            // Deliberately does not touch HasStartTime/HasDueTime: a drop on the calendar moves
+            // which day a task falls on, and says nothing about whether its time was chosen.
 
             // TaskReminder.RemindAt is derived from the due date, so this endpoint inherits
             // UpdateTask's obligation to move it — reschedule a task without this and every
@@ -745,6 +752,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                 Score = maxScore + 1000f,
                 StartDate = request.StartDate,
                 DueDate = request.DueDate,
+                HasStartTime = request.HasStartTime,
+                HasDueTime = request.HasDueTime,
                 Attachments = attachments,
                 Assignees = assignees,
                 Priority = request.Priority,
@@ -878,6 +887,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
             );
             task.StartDate = request.StartDate;
             task.DueDate = request.DueDate;
+            task.HasStartTime = request.HasStartTime;
+            task.HasDueTime = request.HasDueTime;
             SyncChecklist(task, request.ChecklistItems);
             SyncRecurrence(task, request.Recurrence);
 

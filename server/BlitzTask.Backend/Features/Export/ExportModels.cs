@@ -91,6 +91,11 @@ namespace BlitzTask.Backend.Features.Export
         string? Section,
         DateTimeOffset? StartDate,
         DateTimeOffset? DueDate,
+        // Whether the time of day on those is a chosen one. Carried through export/import for
+        // the same reason sections are: drop it and a round trip silently turns every timed
+        // deadline back into a bare date.
+        bool HasStartTime,
+        bool HasDueTime,
         DateTime CreatedAt,
         DateTime UpdatedAt,
         List<string> Assignees,

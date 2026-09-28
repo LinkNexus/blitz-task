@@ -15,6 +15,12 @@ export const TaskSchema = z
     tags: z.array(z.string().max(20, "Tag too long")).max(5, "Maximum 5 tags"),
     startDate: z.iso.datetime().nullable(),
     dueDate: z.iso.datetime().nullable(),
+    // Whether the clock part of the instants above is one the user chose. The dates have always
+    // been instants; what these add is the ability to say "no time", so a task written before
+    // this — and any task someone only gives a day to — keeps rendering as a bare date instead
+    // of claiming to be due at midnight.
+    hasStartTime: z.boolean(),
+    hasDueTime: z.boolean(),
     assigneeIds: z.array(z.number().int()),
     newAttachments: z.array(z.instanceof(File)).max(5, "Maximum 5 attachments"),
     removedAttachmentIds: z.array(z.string()),

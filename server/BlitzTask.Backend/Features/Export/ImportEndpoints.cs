@@ -313,6 +313,8 @@ namespace BlitzTask.Backend.Features.Export
                 Tags = [.. source.Tags],
                 StartDate = source.StartDate,
                 DueDate = source.DueDate,
+                HasStartTime = source.HasStartTime,
+                HasDueTime = source.HasDueTime,
                 RelatedProject = project,
                 RelatedColumn = column,
                 RelatedColumnId = 0,

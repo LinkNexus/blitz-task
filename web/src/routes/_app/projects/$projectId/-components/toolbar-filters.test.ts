@@ -22,6 +22,8 @@ const task = (over: Partial<ProjectTaskDetails> = {}): ProjectTaskDetails => ({
   name: "Write the report",
   description: "A description",
   priority: "MEDIUM",
+  hasStartTime: false,
+  hasDueTime: false,
   score: 1000,
   tags: [],
   startDate: null,

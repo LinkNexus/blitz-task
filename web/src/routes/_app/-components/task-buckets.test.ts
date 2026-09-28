@@ -22,6 +22,8 @@ function task(name: string, dueDate: string | null): UserTaskSummary {
     priority: "MEDIUM",
     tags: [],
     startDate: null,
+    hasStartTime: false,
+    hasDueTime: false,
     dueDate,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatTaskDate } from "@/lib/task-dates";
 import { cn } from "@/lib/utils";
 import { openBlockers } from "../../task-dependencies";
 import { useTaskSelection } from "../../task-selection";
@@ -179,10 +180,7 @@ export function TaskCard({
                 className={`flex items-center gap-1 text-xs ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}
               >
                 <IconCalendarDue className="size-3.5 shrink-0" />
-                {new Date(task.dueDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
+                {formatTaskDate(task.dueDate, task.hasDueTime)}
               </span>
             )}
 

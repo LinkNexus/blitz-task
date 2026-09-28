@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatTaskDate } from "@/lib/task-dates";
 import { cn, getInitials } from "@/lib/utils";
 import { getPriorityIcon, getPriorityPillClass } from "../kanban-view/lib";
 import { ProjectMenu } from "../kanban-view/task-card/menu";
@@ -178,12 +179,7 @@ export const columns = columnHelper.columns([
               : "text-muted-foreground",
           )}
         >
-          {new Date(task.dueDate).toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
+          {formatTaskDate(task.dueDate, task.hasDueTime, "long")}
         </div>
       );
     },

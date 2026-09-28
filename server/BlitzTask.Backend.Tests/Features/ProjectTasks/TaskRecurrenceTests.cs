@@ -302,6 +302,39 @@ public class TaskRecurrenceTests
     }
 
     [Fact]
+    public async Task TheNextOccurrenceKeepsTheTimeOfDayItWasSetAt()
+    {
+        // A standup at 09:15 is still at 09:15 next week. `Advance` is day arithmetic on the
+        // instant so the clock time carries by itself — what would not carry is the flag saying
+        // a person chose it, and without that the successor renders as a bare date and every
+        // reminder hanging off it resolves against midnight instead.
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+        var (project, todo, done) = await SeedProjectAsync(dbContext, "Alpha", alice.Id);
+
+        var due = new DateTimeOffset(2026, 6, 10, 9, 15, 0, TimeSpan.Zero);
+        var task = await SeedTaskAsync(dbContext, project, todo, "Standup", due);
+        task.Recurrence = Rule(RecurrenceFrequency.WEEKLY);
+        task.HasDueTime = true;
+        await dbContext.SaveChangesAsync();
+
+        await ProjectTasksEndpoints.MoveTask(
+            project.Id,
+            task.Id,
+            new MoveProjectTaskRequest(done.Id, 2000f),
+            dbContext,
+            ContextFor(alice),
+            CancellationToken.None
+        );
+
+        var spawned = await dbContext.ProjectTasks.SingleAsync(t => t.Id != task.Id);
+
+        Assert.True(spawned.HasDueTime);
+        Assert.Equal(9, spawned.DueDate!.Value.UtcDateTime.Hour);
+        Assert.Equal(15, spawned.DueDate!.Value.UtcDateTime.Minute);
+    }
+
+    [Fact]
     public async Task TheRuleRidesOnTheTaskFormLikeTheChecklistDoes()
     {
         using var dbContext = TestsUtils.CreateSqliteDbContext();
