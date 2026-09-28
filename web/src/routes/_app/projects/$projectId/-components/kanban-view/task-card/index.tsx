@@ -85,13 +85,16 @@ export function TaskCard({
       className={cn(
         "group select-none overflow-hidden",
         dragDisabled ? "cursor-default" : "cursor-grab active:cursor-grabbing",
-        "rounded-xl border bg-card",
+        // `Card` ships `gap-6 py-6`; the body below adds its own padding, which stacked to
+        // 40px above the title and 40px below the last row — most of a card's height on a
+        // phone, where it cost about a card per screen. Padding is the body's job here.
+        "rounded-xl border bg-card gap-0 py-0",
         "transition-all duration-200",
         isDragging ? "shadow-xl" : "hover:border-primary/30 hover:shadow-md",
         isSelected && "border-primary ring-1 ring-primary",
       )}
     >
-      <div className="p-4 space-y-3">
+      <div className="p-3 space-y-2.5">
         {/* Name + menu */}
         <div className="flex items-start justify-between gap-2">
           {/* `onPointerDown` stops here or the checkbox starts a drag instead of ticking, the
@@ -163,7 +166,7 @@ export function TaskCard({
 
             {blockers.length > 0 && (
               <span
-                className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400"
+                className="flex items-center gap-1 text-xs text-warning"
                 title={`Blocked by ${blockers.map((b) => b.name).join(", ")}`}
               >
                 <IconLink className="size-3.5 shrink-0" />
@@ -173,7 +176,7 @@ export function TaskCard({
 
             {task.dueDate && (
               <span
-                className={`flex items-center gap-1 text-xs ${isOverdue ? "text-red-500" : "text-muted-foreground"}`}
+                className={`flex items-center gap-1 text-xs ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}
               >
                 <IconCalendarDue className="size-3.5 shrink-0" />
                 {new Date(task.dueDate).toLocaleDateString("en-US", {
@@ -196,7 +199,7 @@ export function TaskCard({
               <span
                 className={`flex items-center gap-1 text-xs tabular-nums ${
                   checklistDone === task.checklistItems.length
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-success"
                     : "text-muted-foreground"
                 }`}
               >
@@ -214,7 +217,7 @@ export function TaskCard({
           </div>
 
           {task.assigneeIds.length > 0 && (
-            <div className="flex -space-x-2 shrink-0">
+            <div className="flex -space-x-1 shrink-0">
               {task.assigneeIds.slice(0, 4).map((id) => {
                 const participant = project.participants.find(
                   (p) => String(p.userId) === String(id),

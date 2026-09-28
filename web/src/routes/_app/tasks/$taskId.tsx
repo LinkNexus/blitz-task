@@ -1,9 +1,4 @@
-import {
-  IconArrowLeft,
-  IconCalendar,
-  IconFlag,
-  IconPencil,
-} from "@tabler/icons-react";
+import { IconArrowLeft, IconCalendar, IconPencil } from "@tabler/icons-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
@@ -20,6 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getInitials } from "@/lib/utils";
+import {
+  getPriorityIcon,
+  getPriorityPillClass,
+} from "../projects/$projectId/-components/kanban-view/lib";
 import { TaskComments } from "../projects/$projectId/-components/task-comments";
 import { TaskSheet } from "../projects/$projectId/-components/task-sheet";
 
@@ -84,13 +83,6 @@ function TaskSkeleton() {
     </div>
   );
 }
-
-const PRIORITY_TONE: Record<string, string> = {
-  URGENT: "bg-destructive/10 text-destructive",
-  HIGH: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  MEDIUM: "bg-amber-500/10 text-amber-600 dark:text-amber-500",
-  LOW: "bg-muted text-muted-foreground",
-};
 
 function TaskPage() {
   const { taskId } = Route.useParams();
@@ -181,8 +173,8 @@ function TaskPage() {
           </span>
         )}
 
-        <Badge className={PRIORITY_TONE[summary.priority] ?? PRIORITY_TONE.LOW}>
-          <IconFlag className="size-3" />
+        <Badge className={getPriorityPillClass(summary.priority)}>
+          {getPriorityIcon(summary.priority)}
           {summary.priority.charAt(0) + summary.priority.slice(1).toLowerCase()}
         </Badge>
 

@@ -30,14 +30,14 @@ export function StatTiles({
       label: "Overdue",
       icon: IconAlertTriangle,
       value: counts.overdue,
-      accent: "text-red-600 dark:text-red-400",
+      accent: "text-destructive",
     },
     {
       key: "today",
       label: "Due today",
       icon: IconSun,
       value: counts.today,
-      accent: "text-orange-600 dark:text-orange-400",
+      accent: "text-warning",
     },
     {
       key: "week",
@@ -56,14 +56,14 @@ export function StatTiles({
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {tiles.map(({ key, label, icon: Icon, value, accent }) => (
-        <Card key={key} className="p-4">
+        <Card key={key} className="gap-0 p-4">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Icon className="size-4 shrink-0" />
             <span className="truncate">{label}</span>
           </div>
           <p
             className={cn(
-              "mt-2 text-2xl font-semibold tabular-nums",
+              "mt-1.5 text-2xl font-semibold tabular-nums",
               value > 0 && accent,
             )}
           >

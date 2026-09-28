@@ -48,9 +48,7 @@ export function Agenda({ items }: { items: CalendarItem[] }) {
           <h3
             className={cn(
               "mb-1.5 flex items-center gap-2 px-3 text-xs font-semibold uppercase tracking-wide",
-              isToday(day.date)
-                ? "text-orange-600 dark:text-orange-400"
-                : "text-muted-foreground",
+              isToday(day.date) ? "text-warning" : "text-muted-foreground",
             )}
           >
             {format(day.date, "EEEE d MMMM")}

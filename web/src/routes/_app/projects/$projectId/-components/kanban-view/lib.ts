@@ -4,67 +4,44 @@ import {
   IconCircle,
   IconFlag,
 } from "@tabler/icons-react";
-import { createElement, type FunctionComponent, type ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
 import type { ProjectTaskPriority } from "@/api";
 
-export function getPriorityColor(priority: ProjectTaskPriority): string {
-  switch (priority) {
-    case "URGENT":
-      return "bg-red-100 text-red-800 border-red-200";
-    case "HIGH":
-      return "bg-orange-100 text-orange-800 border-orange-200";
-    case "MEDIUM":
-      return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    case "LOW":
-      return "bg-green-100 text-green-800 border-green-200";
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
-  }
-}
+/**
+ * Priority tone, and the ranking is the point: **visual weight tracks urgency**.
+ *
+ * This used to be four exported functions here spelling the four priorities in raw Tailwind
+ * steps (red/orange/yellow/green), plus a fifth, *different* spelling in `tasks/$taskId` —
+ * one concept, two drifting copies, and two of the four functions had no callers at all.
+ * Worse, all four gave every priority the same treatment: a filled pill. So `Low` rendered
+ * exactly as loud as `Urgent`, and on a board where most work is low or medium the quietest
+ * thing in the app was shouting. Weight now falls away down the scale — only `URGENT` is
+ * filled, and `LOW` is a plain neutral chip that recedes.
+ *
+ * Tokens, not palette steps: `destructive`/`warning` carry the app's one meaning of red and
+ * amber, so a theme change moves these with everything else.
+ */
+const TONE: Record<ProjectTaskPriority, string> = {
+  URGENT: "bg-destructive text-destructive-foreground",
+  HIGH: "bg-destructive-surface text-destructive",
+  MEDIUM: "bg-warning-surface text-warning",
+  LOW: "border border-border text-muted-foreground",
+};
 
-export function getPriorityBarColor(priority: ProjectTaskPriority): string {
-  switch (priority) {
-    case "URGENT":
-      return "bg-red-500";
-    case "HIGH":
-      return "bg-orange-500";
-    case "MEDIUM":
-      return "bg-yellow-400";
-    case "LOW":
-      return "bg-green-500";
-    default:
-      return "bg-muted";
-  }
-}
+const ICON: Record<ProjectTaskPriority, typeof IconCheck> = {
+  URGENT: IconAlertCircle,
+  HIGH: IconFlag,
+  MEDIUM: IconCircle,
+  LOW: IconCheck,
+};
 
 export function getPriorityPillClass(priority: ProjectTaskPriority): string {
-  switch (priority) {
-    case "URGENT":
-      return "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400";
-    case "HIGH":
-      return "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400";
-    case "MEDIUM":
-      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400";
-    case "LOW":
-      return "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400";
-    default:
-      return "bg-muted text-muted-foreground";
-  }
+  return TONE[priority] ?? TONE.LOW;
 }
 
+/** The icon inherits the pill's colour rather than carrying its own — one decision, not two. */
 export function getPriorityIcon(priority: ProjectTaskPriority): ReactNode {
-  const priorityMap: Record<
-    ProjectTaskPriority,
-    { element: FunctionComponent; color: string }
-  > = {
-    URGENT: { element: IconAlertCircle, color: "text-red-500" },
-    HIGH: { element: IconFlag, color: "text-orange-500" },
-    MEDIUM: { element: IconCircle, color: "text-yellow-500" },
-    LOW: { element: IconCheck, color: "text-green-500" },
-  };
-
-  return createElement(priorityMap[priority].element, {
-    // @ts-expect-error
-    className: `w-3 h-3 sm:w-4 sm:h-4 ${priorityMap[priority].color}`,
+  return createElement(ICON[priority] ?? ICON.LOW, {
+    className: "size-3.5 shrink-0",
   });
 }

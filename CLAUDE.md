@@ -499,13 +499,54 @@ on the wrong branch.
   from the start while nothing loaded it, so the app rendered in the `sans-serif` fallback for
   months — visible not as a wrong typeface but as *every icon sitting a pixel off its label*.
   Centring an icon beside text centres their **boxes**, while the eye reads cap-height to
-  baseline; the difference is `fontSize x ((ascent - descent) - capHeight) / 2` and **line-height
-  cannot change it** — half-leading is added symmetrically and cancels. Helvetica makes that
-  -0.089em (~1px at 14px); Poppins is drawn so `ascent - descent` (700) *is* its cap height
-  (698), so the term is zero. Don't reach for `leading-*`, `mt-px` or `translate-y` on a label
-  that looks misaligned: check the font is actually loading first. `@fontsource/poppins` is
-  imported per subset in `index.css`, because the aggregate `400.css` also carries devanagari
+  baseline; the difference is `fontSize x ((ascender + descender) - capHeight) / 2` and
+  **line-height cannot change it** — half-leading is added symmetrically and cancels. Helvetica
+  makes that -0.088em (~1.2px at 14px). **The face is Inter since L47.5**, chosen partly because
+  it holds that property: `ascender + descender` (1490) *is* its cap height (1490), so the term
+  is exactly zero — Poppins was 0.0010em, so the swap changed nothing about alignment. **Check
+  this number before swapping the face again**; it is the whole reason the app is not full of
+  one-pixel nudges. Don't reach for `leading-*`, `mt-px` or `translate-y` on a label that looks
+  misaligned: check the font is actually loading, and check its metrics, first. `@fontsource/inter`
+  is imported per subset in `index.css`, because the aggregate `400.css` also carries subsets
   that would be copied into `wwwroot` and never requested.
+
+- **The design system is the token layer in `index.css`, and the numbers in it are checked.**
+  Direction (L47.5) is *neutral canvas, colour as signal*: the chrome is true neutral (chroma 0)
+  so the only saturated pixels on a board are the ones that mean something. **Red is a meaning,
+  not the brand** — urgent, overdue, destructive. It used to be `--primary` as well, and
+  `--primary`/`--destructive` were `#9b2c2c`/`#991b1b`, **ΔE 0.026 in OKLab** — below the
+  just-noticeable threshold, and they are never adjacent to compare, so every delete button in
+  the app wore the save button's colour. The primary action is a near-black/near-white neutral
+  instead. Body and secondary text clear **4.5:1 on `--background` *and* on `--card`** in both
+  modes, focus clears 3:1, and nothing falls outside sRGB. **Changing a lightness means
+  re-checking the pairs it participates in** — `--muted` in particular is pinned from both sides:
+  it is the fill behind avatar fallbacks and chips, so it has to be visible on the canvas *and*
+  carry `--muted-foreground` at 4.5:1.
+- **Three surface levels, and they must stay three in both modes.** `--sidebar` (recessed) →
+  `--background` (canvas) → `--card` (raised). The old tokens had light mode separating the
+  sidebar but not cards — `--card` was byte-identical to `--background`, so a card was defined
+  only by a border at 1.13:1, i.e. by nothing — while dark mode separated cards but not the
+  sidebar. Two modes, two different structures, inverted. Depth in dark mode comes from that
+  ladder and from `--border`, not from shadow: a shadow barely registers on a dark canvas.
+- **`Card` ships `gap-6 py-6`, so a component that adds its own padding pays twice.** The task
+  card stacked to 40px above the title and 40px below the last row — most of its height, and
+  about one card per screen on a phone. Pass `gap-0 py-0` when the body owns its padding.
+- **Priority tone lives in one place and its weight is ranked on purpose.**
+  `kanban-view/lib.ts` is the single source; only `URGENT` is a filled pill and `LOW` is a plain
+  outline, because visual weight has to track urgency — when every priority got the same filled
+  treatment, `Low` shouted exactly as loud as `Urgent` on a board where most work is low. It was
+  previously four functions here (two with no callers) plus a fifth, different spelling in
+  `tasks/$taskId`. Don't spell a status as a raw palette step: `--success`/`--warning`/`--info`
+  and the `*-surface` variants exist so a theme change moves them with everything else.
+- **`_app/route.tsx` is full-bleed, and `max-w-4xl` must not come back.** It used to wrap every
+  route, so the board, table, timeline and calendar were all boxed into 896px and centred — on a
+  1440px screen that is two and a half columns, dead space down both sides, and a toolbar whose
+  1019px of controls overflowed into a scroll container where **"New Column" could not be
+  reached at all**. The remaining `max-w-[1680px]` only bites on a very wide monitor.
+- **An avatar stack overlaps by `-space-x-1`, not `-space-x-2`.** Initials are two letters
+  centred in the circle and `Avatar` is `overflow-hidden`, so an 8px overlap lets each avatar
+  clip its neighbour's second letter — `AL GH LT` renders as `AL G⊦ LT`. It was live in the
+  project header and in every task card.
 - **`PATCH /api/tasks/{id}/project` is the only cross-project move.** It authorises *two*
   projects, so it cannot use `RequireProjectPermissionFilter` (which reads one `projectId` from
   the route) and does the checks in the handler — mirroring the filter's rule that a project you

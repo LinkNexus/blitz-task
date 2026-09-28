@@ -140,11 +140,16 @@ function RouteComponent() {
         </header>
         <OfflineBanner />
 
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="min-h-screen">
-            <div className="max-w-4xl mx-auto py-8 px-4">
-              <Outlet />
-            </div>
+        {/* `max-w-4xl` used to sit here, so every route — the board, the table, the timeline,
+            the calendar — was boxed into 896px and centred. On a 1440px screen that left the
+            board 896px to draw in: about two and a half columns, dead space down both sides,
+            and the toolbar's 1019px of controls overflowing into a scroll container where
+            "New Column" could not be reached at all. A Kanban board is a full-bleed view.
+            The cap that remains only bites on a very wide monitor, where an unbounded line of
+            text would be the opposite problem. */}
+        <div className="flex flex-1 flex-col p-4 pt-0">
+          <div className="mx-auto w-full max-w-[1680px] py-6">
+            <Outlet />
           </div>
         </div>
       </SidebarInset>
