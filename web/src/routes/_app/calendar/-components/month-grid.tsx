@@ -67,6 +67,11 @@ function ItemBar({
         style={{ backgroundColor: item.columnColor }}
         aria-hidden
       />
+      {item.hasDueTime && (
+        <span className="shrink-0 tabular-nums text-muted-foreground">
+          {format(new Date(item.dueDate), "HH:mm")}
+        </span>
+      )}
       <span className="truncate">{item.name}</span>
     </>
   );

@@ -115,7 +115,9 @@ function TaskPage() {
   const done = task?.checklistItems.filter((item) => item.isDone).length ?? 0;
 
   return (
-    <div className="space-y-6">
+    // Narrower than the lists: this page is a description, a comment thread and a box to write
+    // one in. A full-bleed comment field is a metre of text input on a wide monitor.
+    <div className="mx-auto w-full max-w-3xl space-y-6">
       {/* Where this task lives, and the way back to it. An Inbox capture points at /inbox:
           its board is hidden on purpose. */}
       {summary.isInbox ? (

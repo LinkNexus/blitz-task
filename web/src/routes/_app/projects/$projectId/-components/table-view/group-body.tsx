@@ -81,12 +81,15 @@ export function GroupBody({
             >
               <IconGripVertical className="size-4" />
             </button>
+            {/* A filled square of a fully saturated column colour was the loudest thing in the
+                table, and a column's colour is a label rather than a rank — the same reason the
+                board's header bar is a hairline and the dashboard's dots are dimmed. A dot says
+                which column this is without competing with the priority pills in the rows. */}
             <span
-              className="flex size-6 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold text-white"
+              className="size-2 shrink-0 rounded-full"
               style={{ backgroundColor: column.color }}
-            >
-              {column.name.charAt(0).toUpperCase()}
-            </span>
+              aria-hidden
+            />
             <span className="text-[15px] font-semibold tracking-tight">
               {column.name}
             </span>

@@ -547,11 +547,17 @@ on the wrong branch.
   previously four functions here (two with no callers) plus a fifth, different spelling in
   `tasks/$taskId`. Don't spell a status as a raw palette step: `--success`/`--warning`/`--info`
   and the `*-surface` variants exist so a theme change moves them with everything else.
-- **`_app/route.tsx` is full-bleed, and `max-w-4xl` must not come back.** It used to wrap every
-  route, so the board, table, timeline and calendar were all boxed into 896px and centred — on a
-  1440px screen that is two and a half columns, dead space down both sides, and a toolbar whose
+- **`_app/route.tsx` is full-bleed, and width is now a decision each view makes.** `max-w-4xl`
+  used to wrap every route, so the board, table, timeline and calendar were boxed into 896px —
+  on a 1440px screen that is two and a half columns, dead space both sides, and a toolbar whose
   1019px of controls overflowed into a scroll container where **"New Column" could not be
-  reached at all**. The remaining `max-w-[1680px]` only bites on a very wide monitor.
+  reached at all**. Removing it was right for the grids and **wrong for everything else**, which
+  is the half that had to be put back per view: a comment box a metre wide, and a priority badge
+  a screen away from the task name it belongs to. The rule is *grid or reading*: the board,
+  table, graph, timeline and the calendar's **month** grid stay unbounded; the lists (Today,
+  Upcoming, Inbox, Search, Trash, the calendar's **agenda**) cap at `max-w-5xl`, the dashboard at
+  `max-w-6xl`, and `/tasks/{id}` at `max-w-3xl` because it is prose plus a box to write more
+  prose in. The layout's remaining `max-w-[1680px]` only bites on a very wide monitor.
 - **An avatar stack overlaps by `-space-x-1`, not `-space-x-2`.** Initials are two letters
   centred in the circle and `Avatar` is `overflow-hidden`, so an 8px overlap lets each avatar
   clip its neighbour's second letter — `AL GH LT` renders as `AL G⊦ LT`. It was live in the

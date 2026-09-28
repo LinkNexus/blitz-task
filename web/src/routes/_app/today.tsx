@@ -27,7 +27,7 @@ function TodayPage() {
   const sections = todaySections(tasks);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
         <p className="text-sm text-muted-foreground">

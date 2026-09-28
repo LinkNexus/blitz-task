@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_app/trash")({
 
 function TrashSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <Skeleton className="h-8 w-32" />
       <div className="space-y-2">
         {[0, 1, 2].map((i) => (

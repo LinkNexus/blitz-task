@@ -48,7 +48,7 @@ function DashboardPage() {
   const counts = countTasks(tasks);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">
           {greeting()}, {user.name.split(" ")[0]}

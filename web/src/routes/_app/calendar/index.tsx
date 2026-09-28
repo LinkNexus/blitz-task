@@ -65,7 +65,14 @@ function CalendarPage() {
   const step = (delta: number) => format(addMonths(month, delta), MONTH_FORMAT);
 
   return (
-    <div className="space-y-4">
+    // The month grid is a grid and wants the room; the agenda is a list of rows, and
+    // full-bleed puts a task's priority a screen away from its name.
+    <div
+      className={cn(
+        "mx-auto w-full space-y-4",
+        view === "month" ? "max-w-none" : "max-w-5xl",
+      )}
+    >
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">
