@@ -41,11 +41,11 @@ export const ProjectHeader = ({ project }: Props) => {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
       />
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {/* Title row — avatar shrinks on mobile, title size drops one step */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
-            <Avatar className="size-10 sm:size-14 shrink-0 rounded-xl">
+            <Avatar className="size-8 sm:size-14 shrink-0 rounded-xl">
               {project.imageId && (
                 <AvatarImage
                   className="object-cover"
@@ -58,7 +58,7 @@ export const ProjectHeader = ({ project }: Props) => {
             </Avatar>
 
             <div className="min-w-0 pt-0.5">
-              <h1 className="text-lg sm:text-2xl font-bold leading-tight truncate">
+              <h1 className="text-base sm:text-2xl font-bold leading-tight truncate">
                 {project.name}
               </h1>
               {project.description && (

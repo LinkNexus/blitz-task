@@ -123,7 +123,7 @@ function RouteComponent() {
             : "md:max-w-[calc(100%-var(--sidebar-width-icon))]",
         )}
       >
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+        <header className="flex h-14 shrink-0 items-center gap-2 transition-[width,height] ease-linear sm:h-16 group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
           </div>
@@ -147,8 +147,8 @@ function RouteComponent() {
             "New Column" could not be reached at all. A Kanban board is a full-bleed view.
             The cap that remains only bites on a very wide monitor, where an unbounded line of
             text would be the opposite problem. */}
-        <div className="flex flex-1 flex-col p-4 pt-0">
-          <div className="mx-auto w-full max-w-[1680px] py-6">
+        <div className="flex flex-1 flex-col p-2 pt-0 sm:p-4 sm:pt-0">
+          <div className="mx-auto w-full max-w-[1680px] py-2 sm:py-6">
             <Outlet />
           </div>
         </div>

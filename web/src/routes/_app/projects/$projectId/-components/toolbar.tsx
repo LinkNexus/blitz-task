@@ -121,7 +121,7 @@ export function KanbanToolbar({ project, view, state, onStateChange }: Props) {
       {/* Two rows on a phone, one on a desktop. The second row is `sm:contents`, so above the
           breakpoint it stops being a box and every control becomes a direct child of this row
           again — the same single-row layout as before, without a second copy of the markup. */}
-      <div className="flex flex-col gap-2 px-4 py-2 sm:flex-row sm:items-center sm:overflow-x-auto">
+      <div className="flex flex-col gap-1.5 px-3 py-1.5 sm:flex-row sm:items-center sm:gap-2 sm:px-4 sm:py-2 sm:overflow-x-auto">
         {/* Search takes the whole first row on a phone: sharing it with the view switcher left
             it about 110px wide, which is not enough to read back what you typed. */}
         <div className="relative w-full sm:w-auto sm:min-w-[180px] sm:max-w-xs sm:flex-1">
