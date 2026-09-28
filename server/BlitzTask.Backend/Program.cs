@@ -200,6 +200,7 @@ public class Program
         builder.Services.AddScoped<IScheduledJob, ExpiredTokenCleanupJob>();
         builder.Services.AddScoped<IScheduledJob, TaskReminderJob>();
         builder.Services.AddScoped<IScheduledJob, TrashPurgeJob>();
+        builder.Services.AddScoped<IScheduledJob, AttachmentOrphanSweepJob>();
 
         // Not during document generation: `dotnet build` starts the host to read the API
         // surface, and a runner registered here would tick and send real mail from a build.
@@ -334,6 +335,7 @@ public class Program
             .MapSearchEndpoints()
             .MapTrashEndpoints()
             .MapCalendarEndpoints()
+            .MapProjectAttachmentsEndpoints()
             .MapExportEndpoints()
             .MapPushEndpoints()
             .MapImportEndpoints();

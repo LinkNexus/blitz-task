@@ -560,12 +560,27 @@ on the wrong branch.
   backlog of overdue ones. The successor is an ordinary task: that is the whole point of
   materialising one at a time, and it is why the board, RBAC, reminders and checklists needed no
   changes.
-- **Deleting anything is a soft delete, and the purge job is the only thing that touches disk.**
+- **Deleting anything is a soft delete, and nothing but the sweep job touches disk.**
   `Project`, `ProjectColumn` and `ProjectTask` implement `ISoftDeletable` and carry a global query
   filter (`ConfigureSoftDeletable`), so ordinary queries exclude trashed rows for free — reaching
-  one means `IgnoreQueryFilters()`. Never call `DeleteFileAsync` from a delete endpoint again: a
-  restore has to give back a task whose attachments still open, so files die only in
-  `TrashPurgeJob`, past the 30-day window.
+  one means `IgnoreQueryFilters()`. **Never call `DeleteFileAsync` outside
+  `AttachmentOrphanSweepJob`.** Since L40.7 an attachment has no single owner — a project can hold
+  it and several tasks can reference it — so "the last thing I can see is gone" no longer means
+  "nobody wants it". Dropping a reference is what makes a file an orphan; the sweep decides
+  whether the bytes may go, and it is the only place that knows.
+- **The orphan sweep's `IgnoreQueryFilters` runs the opposite way to everywhere else.** A
+  *trashed* task still references its files — a restore has to give back a task whose attachments
+  open — so its join rows must count as references. Filter them out and the sweep deletes the
+  files of everything in the trash. Same for the project side, and a project image is a third kind
+  of reference (a plain FK, not a join): miss it and every avatar disappears six hours after it is
+  set.
+- **A task may only reference a file its own project holds, and that is authorisation, not
+  tidiness.** `AccessAttachment` authorises by rebuilding the set of files the project can reach,
+  so an endpoint attaching an arbitrary attachment id would be enough to read someone else's file.
+  It also has to know all three kinds of reference or every project-level file 404s — and
+  **concatenating the collections inside the projection does not translate**: EF throws "unable to
+  translate a collection subquery in a projection" at *request* time, so it compiles, ships and
+  500s on every download. Project them separately and join in memory.
 - **A cascade stamps one `DeletedAt` instant across parent and children, and restore matches on
   it.** That equality is what keeps a task deleted last week from reappearing when its project is
   restored. Two consequences when writing a new cascade: stamp only rows where

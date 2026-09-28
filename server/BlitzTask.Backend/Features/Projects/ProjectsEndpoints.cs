@@ -222,9 +222,11 @@ namespace BlitzTask.Backend.Features.Projects
 
             if (request.Image is not null)
             {
-                if (project.ImageId.HasValue)
-                    await fileService.DeleteFileAsync(project.ImageId.Value, cancellationToken);
-
+                // The old image is not deleted here. Since L40.7 no endpoint deletes a blob —
+                // dropping the last reference is what makes a file an orphan, and
+                // AttachmentOrphanSweepJob decides. Deleting inline was safe while an image
+                // belonged to one project and nothing else; keeping one exception to the rule is
+                // how the rule gets forgotten.
                 var uploadRes = await fileService.UploadFileAsync(
                     request.Image,
                     "images",
@@ -302,15 +304,24 @@ namespace BlitzTask.Backend.Features.Projects
             CancellationToken cancellationToken
         )
         {
+            // Three kinds of reference, and all three have to be here. The project's own files
+            // (L40.7) are the addition: a file uploaded to the project and referenced by no task
+            // is reachable by every other route in the app and would 404 on the only one that
+            // serves its bytes.
             var projectData = await dbContext
                 .Projects.Where(p => p.Id == projectId)
                 .Select(p => new
                 {
                     p.ImageId,
-                    AttachmentIds = p.Tasks
+                    // Two separate collections, joined in memory below. Concatenating them inside
+                    // the projection reads better and does not translate — EF throws
+                    // "unable to translate a collection subquery in a projection" at *request*
+                    // time, so the endpoint compiles, ships, and 500s on every download.
+                    TaskAttachmentIds = p.Tasks
                         .SelectMany(t => t.Attachments)
                         .Select(a => a.Id)
                         .ToList(),
+                    ProjectAttachmentIds = p.Attachments.Select(a => a.Id).ToList(),
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -318,7 +329,8 @@ namespace BlitzTask.Backend.Features.Projects
                 projectData is null
                 || (
                     projectData.ImageId != attachmentId
-                    && !projectData.AttachmentIds.Contains(attachmentId)
+                    && !projectData.TaskAttachmentIds.Contains(attachmentId)
+                    && !projectData.ProjectAttachmentIds.Contains(attachmentId)
                 )
             )
             {

@@ -119,6 +119,25 @@ namespace BlitzTask.Backend.Features.Projects
         public ICollection<ProjectColumn> Columns { get; set; } = [];
         public ICollection<ProjectSection> Sections { get; set; } = [];
         public ICollection<ProjectTask> Tasks { get; set; } = [];
+
+        /// <summary>
+        /// Files that belong to the project rather than to any one task — a spec, a schema, a
+        /// design — which a task then <i>references</i>.
+        /// <para>
+        /// This is the collection that makes an <see cref="Attachment"/> a shared thing, and
+        /// everything awkward about L40.7 follows from it: every existing delete path was written
+        /// when a file had exactly one owner, so it deletes the blob. See
+        /// <c>AttachmentOrphanSweepJob</c> for where that decision now lives instead.
+        /// </para>
+        /// </summary>
+        public ICollection<Attachment> Attachments { get; set; } = [];
+    }
+
+    /// <summary>The join behind <see cref="Project.Attachments"/>.</summary>
+    public class ProjectAttachment
+    {
+        public int ProjectId { get; set; }
+        public Guid AttachmentId { get; set; }
     }
 
     public class ProjectParticipant : ICreateable

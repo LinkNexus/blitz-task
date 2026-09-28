@@ -922,14 +922,15 @@ namespace BlitzTask.Backend.Features.ProjectTasks
 
             if (request.RemovedAttachmentIds is { Count: > 0 })
             {
+                // Detaching drops the join and nothing else. Since L40.7 a file can be the
+                // project's, and referenced from another task as well — deleting the blob here
+                // would take it out from under them. `AttachmentOrphanSweepJob` deletes the bytes
+                // once genuinely nothing points at them.
                 var toRemove = task
                     .Attachments.Where(a => request.RemovedAttachmentIds.Contains(a.Id))
                     .ToList();
                 foreach (var attachment in toRemove)
-                {
-                    await fileService.DeleteFileAsync(attachment.Id, cancellationToken);
                     task.Attachments.Remove(attachment);
-                }
             }
 
             if (request.NewAttachments is { Count: > 0 })
