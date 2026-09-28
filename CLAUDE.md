@@ -628,14 +628,31 @@ on the wrong branch.
   `DeletedAt == null` — EF's **navigation fix-up puts tracked trashed rows back into a collection
   the query filter excluded**, and re-stamping one silently resurrects it — and never hard-delete
   a parent whose children you meant to keep recoverable, since the FK cascade ignores every flag.
-- **A due date is an instant, and the app has no concept of a date.** The picker writes *local
-  midnight* and stores it as a `DateTimeOffset`; nothing anywhere records which zone that midnight
-  belonged to. So anything that has to name a **day** — the ICS feed is the first — cannot use the
-  UTC date: for everyone east of UTC, local midnight is the previous afternoon in UTC, and the
-  deadline publishes a day early. The feed takes the subscriber's IANA zone from its own URL
-  (`?tz=`), written there by the browser, which is the only place the answer exists. Store the zone
-  on the user and this becomes a stale-profile bug instead; derive it on the server and there is
-  nothing to derive it from.
+- **A due date is an instant, and whether its time was *chosen* is a separate fact.**
+  `ProjectTask.HasStartTime`/`HasDueTime` carry that, defaulting to false — so every task written
+  before them renders as a bare date and the migration needed no backfill. **Do not infer it from
+  the value.** Reading local midnight as "date only" is the obvious shortcut and it is wrong for
+  the one task genuinely due at midnight, in the direction where nothing ever tells you; it is
+  also not well defined, since the stored instant is UTC and which wall clock its midnight came
+  from is precisely what this app never recorded. The flags are what let the ICS feed emit a
+  real timed `DTSTART` (UTC, unambiguous in every zone, no `?tz=` involved) instead of forcing
+  every deadline through the all-day path below. The picker enforces the pairing by construction:
+  the time input *is* the flag, so there is no way to have a flag with no time or a time that
+  does not count. `formatTaskDate` (`lib/task-dates.ts`) is the one place the rendering rule
+  lives — five screens show a deadline and they had already drifted on the date format alone.
+- **An all-day deadline still cannot name its own day, which is why `?tz=` survives.** The ICS
+  feed takes the subscriber's IANA zone from its own URL, written there by the browser, because
+  for everyone east of UTC local midnight is the previous afternoon in UTC and the deadline
+  would publish a day early. That applies **only** to the date-valued events; a task with a
+  chosen time is already an instant and goes out as UTC. Store the zone on the user and this
+  becomes a stale-profile bug instead; derive it on the server and there is nothing to derive
+  it from.
+- **Reminders were always minute-precise — the *due date* was the blunt part.** The API has
+  always accepted any offset and `RemindAt = DueDate - minutes` has always been exact, but every
+  picker wrote local midnight, so "10 minutes before" meant 23:50 the previous night and only
+  the day-scale offsets were worth offering. Sub-hour presets exist now because a deadline can
+  carry a real time. A reminder chip shows the moment it resolves to, since an offset means
+  nothing without the deadline it hangs off.
 - **The ICS feed's URL is the whole credential, so it is outside the authorized group.** Nothing
   polling a subscription can hold a cookie or an antiforgery token. `UserTokenType.CalendarFeed`
   is Base64**Url** (a path segment people copy by hand), never expires (a subscription that died

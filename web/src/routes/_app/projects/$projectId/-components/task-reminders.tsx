@@ -7,12 +7,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatTaskDate } from "@/lib/task-dates";
 
-/** Offsets offered in the UI. The API accepts any number of minutes; these are the useful ones. */
+/**
+ * Offsets offered in the UI. The API has always accepted any number of minutes and
+ * `RemindAt = DueDate - minutes` has always been exact — what made the short ones pointless was
+ * the *due date*, which every picker wrote as local midnight. "10 minutes before" meant 23:50
+ * the previous night. Now that a deadline can carry a real time, the sub-hour offsets mean
+ * something, so they are offered.
+ */
 const PRESETS = [
+  { minutes: 5, label: "5 minutes before" },
+  { minutes: 10, label: "10 minutes before" },
   { minutes: 15, label: "15 minutes before" },
+  { minutes: 30, label: "30 minutes before" },
   { minutes: 60, label: "1 hour before" },
+  { minutes: 60 * 2, label: "2 hours before" },
   { minutes: 60 * 24, label: "1 day before" },
+  { minutes: 60 * 24 * 2, label: "2 days before" },
   { minutes: 60 * 24 * 7, label: "1 week before" },
 ] as const;
 
@@ -23,12 +35,32 @@ function labelFor(minutes: number): string {
   );
 }
 
+/**
+ * What a chip actually resolves to. An offset is only meaningful against the deadline it hangs
+ * off, and "1 day before" on a task due at 09:00 firing at 09:00 the previous day is not
+ * something a person should have to work out — least of all now that the answer depends on
+ * whether a time was set at all.
+ */
+function resolvedAt(
+  dueDate: string | null,
+  hasDueTime: boolean,
+  minutes: number,
+): string | null {
+  if (!dueDate) return null;
+  const at = new Date(new Date(dueDate).getTime() - minutes * 60_000);
+  return formatTaskDate(at.toISOString(), hasDueTime, "short");
+}
+
 type Props = {
   /** Offsets in minutes before the due date. */
   value: number[];
   onChange: (next: number[]) => void;
   /** Reminders are relative to the due date, so there is nothing to offer without one. */
   hasDueDate: boolean;
+  /** The deadline itself, so a chip can say when it will actually fire. */
+  dueDate?: string | null;
+  /** Whether that deadline carries a chosen time, so the resolved moment reads the same way. */
+  hasDueTime?: boolean;
   /** Offsets that have already fired, so a chip can say so. */
   sentOffsets?: number[];
 };
@@ -43,6 +75,8 @@ export function TaskReminders({
   value,
   onChange,
   hasDueDate,
+  dueDate = null,
+  hasDueTime = false,
   sentOffsets = [],
 }: Props) {
   if (!hasDueDate) {
@@ -88,8 +122,14 @@ export function TaskReminders({
                 <DropdownMenuItem
                   key={preset.minutes}
                   onSelect={() => onChange([...value, preset.minutes])}
+                  className="flex items-center justify-between gap-6"
                 >
-                  {preset.label}
+                  <span>{preset.label}</span>
+                  {resolvedAt(dueDate, hasDueTime, preset.minutes) && (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {resolvedAt(dueDate, hasDueTime, preset.minutes)}
+                    </span>
+                  )}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -106,6 +146,11 @@ export function TaskReminders({
               className="gap-1 pr-1 font-normal"
             >
               {labelFor(minutes)}
+              {resolvedAt(dueDate, hasDueTime, minutes) && (
+                <span className="text-muted-foreground tabular-nums">
+                  · {resolvedAt(dueDate, hasDueTime, minutes)}
+                </span>
+              )}
               {sentOffsets.includes(minutes) && (
                 <span className="text-muted-foreground">· sent</span>
               )}

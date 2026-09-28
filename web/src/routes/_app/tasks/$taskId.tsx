@@ -1,7 +1,6 @@
 import { IconArrowLeft, IconCalendar, IconPencil } from "@tabler/icons-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import z from "zod";
@@ -14,6 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatTaskDate } from "@/lib/task-dates";
 import { getInitials } from "@/lib/utils";
 import {
   getPriorityIcon,
@@ -181,7 +181,7 @@ function TaskPage() {
         {summary.dueDate && (
           <span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-muted-foreground">
             <IconCalendar className="size-3.5" />
-            {format(new Date(summary.dueDate), "d MMM yyyy")}
+            {formatTaskDate(summary.dueDate, summary.hasDueTime, "long")}
           </span>
         )}
 

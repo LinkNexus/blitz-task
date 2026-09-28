@@ -42,6 +42,29 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public DateTimeOffset? StartDate { get; set; }
         public DateTimeOffset? DueDate { get; set; }
 
+        /// <summary>
+        /// Whether the time of day on <see cref="StartDate"/> / <see cref="DueDate"/> is
+        /// something a person chose, or just the midnight a date picker left behind.
+        /// <para>
+        /// <b>A flag rather than a convention, and this is the whole design.</b> The dates are
+        /// instants and always have been, so storing a time needed no migration — what was
+        /// missing was any way to say <i>no time was chosen</i>. The tempting alternative is to
+        /// read local midnight as "date only", and it is silently wrong for the one task
+        /// genuinely due at midnight, in the direction where nothing ever tells you. It is also
+        /// not even well defined: the stored instant is UTC, and which wall-clock midnight it
+        /// came from is exactly the thing this app never recorded (see the ICS feed's
+        /// <c>?tz=</c>).
+        /// </para>
+        /// <para>
+        /// Defaults to <c>false</c>, so every task that predates this renders as a plain date
+        /// exactly as it did before, and the column needs no backfill.
+        /// </para>
+        /// </summary>
+        public bool HasStartTime { get; set; }
+
+        /// <inheritdoc cref="HasStartTime"/>
+        public bool HasDueTime { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public DateTime? DeletedAt { get; set; }
@@ -94,6 +117,15 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public int? SectionId { get; set; }
         public DateTimeOffset? StartDate { get; set; }
         public DateTimeOffset? DueDate { get; set; }
+
+        /// <summary>
+        /// Whether the time of day on the date beside it was chosen by a person. False means
+        /// "a date, no time", and the client renders and reminds accordingly.
+        /// </summary>
+        public bool HasStartTime { get; set; }
+
+        /// <inheritdoc cref="HasStartTime"/>
+        public bool HasDueTime { get; set; }
         public List<int>? AssigneeIds { get; set; } = [];
         public List<IFormFile>? Attachments { get; set; } = [];
 
@@ -143,6 +175,15 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         public int? SectionId { get; set; }
         public DateTimeOffset? StartDate { get; set; }
         public DateTimeOffset? DueDate { get; set; }
+
+        /// <summary>
+        /// Whether the time of day on the date beside it was chosen by a person. False means
+        /// "a date, no time", and the client renders and reminds accordingly.
+        /// </summary>
+        public bool HasStartTime { get; set; }
+
+        /// <inheritdoc cref="HasStartTime"/>
+        public bool HasDueTime { get; set; }
         public List<int>? AssigneeIds { get; set; } = [];
         public List<IFormFile>? NewAttachments { get; set; }
         public List<Guid>? RemovedAttachmentIds { get; set; }
@@ -220,6 +261,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         List<string> Tags,
         DateTimeOffset? StartDate,
         DateTimeOffset? DueDate,
+        bool HasStartTime,
+        bool HasDueTime,
         DateTime CreatedAt,
         DateTime UpdatedAt,
         List<int> AssigneeIds,
@@ -243,6 +286,8 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         List<string> Tags,
         DateTimeOffset? StartDate,
         DateTimeOffset? DueDate,
+        bool HasStartTime,
+        bool HasDueTime,
         DateTime CreatedAt,
         DateTime UpdatedAt,
         List<int> AssigneeIds,

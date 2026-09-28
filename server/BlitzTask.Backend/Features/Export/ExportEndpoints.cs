@@ -147,6 +147,8 @@ namespace BlitzTask.Backend.Features.Export
                                     t.Section == null ? null : t.Section.Name,
                                     t.StartDate,
                                     t.DueDate,
+                                    t.HasStartTime,
+                                    t.HasDueTime,
                                     t.CreatedAt,
                                     t.UpdatedAt,
                                     t.Assignees.Select(a => a.Email).ToList(),

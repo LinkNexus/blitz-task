@@ -48,11 +48,21 @@ namespace BlitzTask.Backend.Features.Calendar
                 AppendLine(builder, $"UID:{item.Uid}");
                 AppendLine(builder, $"DTSTAMP:{FormatUtc(now)}");
 
-                // DTEND is exclusive for an all-day event, so a task due on the 23rd runs
-                // 23 -> 24. Emitting the same date twice produces a zero-length event, which
-                // Google renders on the day before.
-                AppendLine(builder, $"DTSTART;VALUE=DATE:{FormatDate(item.Start)}");
-                AppendLine(builder, $"DTEND;VALUE=DATE:{FormatDate(item.End.AddDays(1))}");
+                if (item.StartAt is DateTimeOffset startAt && item.EndAt is DateTimeOffset endAt)
+                {
+                    // A chosen time is an instant, so it goes out as UTC and needs no zone
+                    // agreed with the reader.
+                    AppendLine(builder, $"DTSTART:{FormatUtc(startAt.UtcDateTime)}");
+                    AppendLine(builder, $"DTEND:{FormatUtc(endAt.UtcDateTime)}");
+                }
+                else
+                {
+                    // DTEND is exclusive for an all-day event, so a task due on the 23rd runs
+                    // 23 -> 24. Emitting the same date twice produces a zero-length event, which
+                    // Google renders on the day before.
+                    AppendLine(builder, $"DTSTART;VALUE=DATE:{FormatDate(item.Start)}");
+                    AppendLine(builder, $"DTEND;VALUE=DATE:{FormatDate(item.End.AddDays(1))}");
+                }
 
                 AppendLine(builder, $"SUMMARY:{Escape(item.Summary)}");
 
@@ -166,6 +176,19 @@ namespace BlitzTask.Backend.Features.Calendar
         DateOnly End,
         string? Description,
         string? Url,
-        bool IsCompleted
+        bool IsCompleted,
+        /// <summary>
+        /// Set when the task carries a time someone chose, in which case the event is written as
+        /// a timed one in UTC and <see cref="Start"/>/<see cref="End"/> are ignored.
+        /// <para>
+        /// This is the case the <c>?tz=</c> parameter does <b>not</b> apply to, and that is the
+        /// point: an all-day event has to name a day, and the stored instant cannot say which
+        /// wall clock its midnight came from, so the subscriber's zone is the only source for it.
+        /// A chosen time is already an unambiguous instant — writing it as UTC is exactly right
+        /// in every zone, and the client renders it in the reader's own.
+        /// </para>
+        /// </summary>
+        DateTimeOffset? StartAt = null,
+        DateTimeOffset? EndAt = null
     );
 }

@@ -104,6 +104,8 @@ public class ImportTests
             section,
             null,
             null,
+            false,
+            false,
             DateTime.UtcNow,
             DateTime.UtcNow,
             assignees ?? [],

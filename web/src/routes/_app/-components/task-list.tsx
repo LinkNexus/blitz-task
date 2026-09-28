@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { UserTaskSummary } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { formatTaskDate } from "@/lib/task-dates";
 import { cn } from "@/lib/utils";
 import {
   getPriorityIcon,
@@ -39,10 +40,7 @@ export function TaskRow({ task }: { task: UserTaskSummary }) {
               <span aria-hidden>·</span>
               <span className="flex items-center gap-1">
                 <IconCalendarDue className="size-3.5 shrink-0" />
-                {new Date(task.dueDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
+                {formatTaskDate(task.dueDate, task.hasDueTime)}
               </span>
             </>
           )}

@@ -27,7 +27,7 @@ import {
   listTaskRemindersQueryKey,
   updateProjectTaskMutation,
 } from "@/api/@tanstack/react-query.gen";
-import { DatePickerField } from "@/components/forms/fields/date-picker";
+import { DateTimePicker } from "@/components/forms/date-time-picker";
 import { DropzoneField } from "@/components/forms/fields/dropzone";
 import { InputField } from "@/components/forms/fields/input";
 import { MarkdownField } from "@/components/forms/fields/markdown";
@@ -192,6 +192,8 @@ const EMPTY_DEFAULTS: FormValues = {
   tags: [],
   startDate: null,
   dueDate: null,
+  hasStartTime: false,
+  hasDueTime: false,
   assigneeIds: [],
   newAttachments: [],
   removedAttachmentIds: [],
@@ -291,6 +293,8 @@ export function TaskSheet({ project }: Props) {
         tags: task.tags ?? [],
         startDate: task.startDate ?? null,
         dueDate: task.dueDate ?? null,
+        hasStartTime: task.hasStartTime ?? false,
+        hasDueTime: task.hasDueTime ?? false,
         assigneeIds: (task.assigneeIds ?? []).map(Number),
         // Carried on the task, unlike reminders, so there is nothing to wait for and nothing to
         // re-seed: whatever the board's cache holds is what the list is.
@@ -379,6 +383,8 @@ export function TaskSheet({ project }: Props) {
       tags: data.tags,
       startDate: data.startDate,
       dueDate: data.dueDate,
+      hasStartTime: data.hasStartTime,
+      hasDueTime: data.hasDueTime,
       assigneeIds: data.assigneeIds,
       // Always sent, empty included: this request is the full representation of the caller's
       // reminders, so omitting the field is how "I removed my last one" is expressed.
@@ -607,22 +613,48 @@ export function TaskSheet({ project }: Props) {
                 control={form.control}
                 name="startDate"
                 render={({ field, fieldState }) => (
-                  <DatePickerField
-                    field={field}
-                    fieldState={fieldState}
-                    labelProps={{ children: "Start date" }}
-                  />
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="task-start">Start</FieldLabel>
+                    <DateTimePicker
+                      id="task-start"
+                      value={field.value}
+                      hasTime={form.watch("hasStartTime")}
+                      aria-invalid={fieldState.invalid}
+                      onChange={(value, hasTime) => {
+                        field.onChange(value);
+                        form.setValue("hasStartTime", hasTime, {
+                          shouldDirty: true,
+                        });
+                      }}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
               <Controller
                 control={form.control}
                 name="dueDate"
                 render={({ field, fieldState }) => (
-                  <DatePickerField
-                    field={field}
-                    fieldState={fieldState}
-                    labelProps={{ children: "Due date" }}
-                  />
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="task-due">Due</FieldLabel>
+                    <DateTimePicker
+                      id="task-due"
+                      value={field.value}
+                      hasTime={form.watch("hasDueTime")}
+                      aria-invalid={fieldState.invalid}
+                      onChange={(value, hasTime) => {
+                        field.onChange(value);
+                        form.setValue("hasDueTime", hasTime, {
+                          shouldDirty: true,
+                        });
+                      }}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
             </div>
@@ -694,6 +726,8 @@ export function TaskSheet({ project }: Props) {
                   value={field.value}
                   onChange={field.onChange}
                   hasDueDate={!!form.watch("dueDate")}
+                  dueDate={form.watch("dueDate")}
+                  hasDueTime={form.watch("hasDueTime")}
                   // Either channel having gone out means this offset has fired; the row is
                   // showing "already sent", not which transport carried it.
                   sentOffsets={(savedReminders ?? [])

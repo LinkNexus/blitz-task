@@ -31,6 +31,13 @@ namespace BlitzTask.Backend.Features.Calendar
         /// calendar item at all.
         /// </summary>
         DateTimeOffset DueDate,
+        /// <summary>
+        /// Whether the time of day on the dates above was chosen by a person. A grid that draws
+        /// everything at midnight is drawing a default, not a fact — and the ICS feed uses these
+        /// to decide between an all-day event and a timed one.
+        /// </summary>
+        bool HasStartTime,
+        bool HasDueTime,
         int ProjectId,
         string ProjectName,
         string ColumnColor,
