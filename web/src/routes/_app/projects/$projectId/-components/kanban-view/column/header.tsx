@@ -48,7 +48,7 @@ export function ColumnHeader({
       )}
     >
       <div className="h-0.5 w-full" style={{ backgroundColor: column.color }} />
-      <div className="flex items-center justify-between px-3 py-2.5">
+      <div className="flex items-center justify-between px-3 py-1.5 sm:py-2.5">
         <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
