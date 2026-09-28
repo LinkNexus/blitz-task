@@ -95,6 +95,11 @@ function AgendaRow({ item }: { item: CalendarItem }) {
           {item.name}
         </p>
         <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+          {item.hasDueTime && (
+            <span className="shrink-0 tabular-nums">
+              {format(new Date(item.dueDate), "HH:mm")}
+            </span>
+          )}
           <span className="truncate">{item.projectName}</span>
           {item.isProjected && (
             <>

@@ -41,7 +41,7 @@ function InboxPage() {
   const { data: projects } = useSuspenseQuery(listProjectsOptions());
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <header className="flex items-start justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
