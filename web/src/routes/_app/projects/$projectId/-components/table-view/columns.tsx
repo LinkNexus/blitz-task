@@ -174,7 +174,7 @@ export const columns = columnHelper.columns([
           className={cn(
             "flex items-center gap-1.5 text-sm whitespace-nowrap",
             task.isOverdue
-              ? "text-red-600 dark:text-red-400 font-medium"
+              ? "text-destructive font-medium"
               : "text-muted-foreground",
           )}
         >

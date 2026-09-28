@@ -24,7 +24,7 @@ export const ProjectPageSkeleton = () => {
           <Skeleton className="h-5 w-16 rounded-full" />
           <Skeleton className="h-5 w-12 rounded-full" />
         </div>
-        <div className="ml-auto flex -space-x-2">
+        <div className="ml-auto flex -space-x-1">
           <Skeleton className="size-6 rounded-full ring-2 ring-background" />
           <Skeleton className="size-6 rounded-full ring-2 ring-background" />
           <Skeleton className="size-6 rounded-full ring-2 ring-background" />

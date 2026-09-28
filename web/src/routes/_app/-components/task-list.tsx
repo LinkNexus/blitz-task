@@ -13,8 +13,8 @@ import type { SectionAccent, TaskSection } from "./task-buckets";
 
 /** Sections past the deadline get a red heading, today's an orange one; the rest are neutral. */
 const ACCENT_CLASS: Record<SectionAccent, string> = {
-  danger: "text-red-600 dark:text-red-400",
-  warning: "text-orange-600 dark:text-orange-400",
+  danger: "text-destructive",
+  warning: "text-warning",
 };
 
 const ROW_CLASS =
@@ -24,7 +24,7 @@ export function TaskRow({ task }: { task: UserTaskSummary }) {
   const body = (
     <>
       <span
-        className="mt-1.5 size-2 shrink-0 rounded-full"
+        className="mt-1.5 size-1.5 shrink-0 rounded-full opacity-70"
         style={{ backgroundColor: task.columnColor }}
         aria-hidden
       />

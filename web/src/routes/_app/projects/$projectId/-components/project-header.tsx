@@ -62,7 +62,7 @@ export const ProjectHeader = ({ project }: Props) => {
                 {project.name}
               </h1>
               {project.description && (
-                <p className="mt-0.5 text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                <p className="mt-0.5 text-xs sm:text-sm text-muted-foreground line-clamp-1 sm:line-clamp-2">
                   {project.description}
                 </p>
               )}
@@ -82,7 +82,7 @@ export const ProjectHeader = ({ project }: Props) => {
         {/* Meta — stacks vertically on mobile, flows in a row on sm+ */}
         {/* Wraps rather than stacking: a column put the dates, the tags and the faces on three
             separate rows, which on a phone is most of the screen spent before the first task. */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-5 text-sm text-muted-foreground">
+        <div className="hidden flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground sm:flex sm:gap-x-5">
           {(project.startDate || project.dueDate) && (
             <div className="flex items-center gap-1.5">
               <IconCalendarEvent className="size-4 shrink-0" />
@@ -106,11 +106,11 @@ export const ProjectHeader = ({ project }: Props) => {
 
           {project.participants.length > 0 && (
             <div className="ml-auto flex items-center">
-              <AvatarGroup>
+              <AvatarGroup className="-space-x-1">
                 {project.participants.slice(0, 4).map((p) => (
                   <Tooltip key={String(p.userId)}>
                     <TooltipTrigger asChild>
-                      <Avatar size="sm">
+                      <Avatar>
                         <AvatarFallback>{getInitials(p.name)}</AvatarFallback>
                       </Avatar>
                     </TooltipTrigger>

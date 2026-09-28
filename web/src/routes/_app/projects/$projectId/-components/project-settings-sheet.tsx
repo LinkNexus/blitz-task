@@ -464,7 +464,7 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
               {canEditProject && (
                 <DangerRow
                   title="Archive Project"
-                  titleClassName="text-amber-600 dark:text-amber-400"
+                  titleClassName="text-warning"
                   description={`Hide "${project.name}" from active views. All data is preserved and the project can be restored at any time.`}
                   action={
                     <AlertDialog>
@@ -473,7 +473,7 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="border-amber-500/40 text-amber-700 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-400"
+                          className="border-amber-500/40 text-amber-700 hover:bg-amber-500/10 hover:text-warning dark:hover:text-amber-400"
                         >
                           Archive Project
                         </Button>

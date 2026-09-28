@@ -1,22 +1,27 @@
-/* Poppins, self-hosted. `--font-sans` has named it from the start but nothing ever loaded it,
-   so every screen rendered in the `sans-serif` fallback — and that is not only a cosmetic
-   difference. Centring an icon beside a label centres their *boxes*, while what the eye reads
-   is cap-height-to-baseline; the gap between those two centres is
-   `fontSize x ((ascent - descent) - capHeight) / 2`, which line-height cannot change. Helvetica
-   makes that -0.089em, so every icon+label row in the app sat about a pixel out. Poppins is
-   drawn so ascent - descent (700) is its cap height (698), i.e. the term is zero.
+/* Inter, self-hosted. `--font-sans` named Poppins from the start while nothing ever loaded it,
+   so the app rendered in the `sans-serif` fallback for months — visible not as a wrong typeface
+   but as *every icon sitting a pixel off its label*. Centring an icon beside text centres their
+   boxes, while the eye reads cap-height to baseline; the gap between those two centres is
+   `fontSize x ((ascender + descender) - capHeight) / 2` and **line-height cannot change it** —
+   half-leading is added symmetrically and cancels. Helvetica makes that -0.088em (~1.2px at
+   14px).
 
-   Per-subset imports rather than `@fontsource/poppins/400.css`: the aggregate file also carries
-   devanagari, which no unicode-range here will ever request but which would still be copied
-   into wwwroot. Four weights x latin: ~32KB. */
-@import "@fontsource/poppins/latin-400.css";
-@import "@fontsource/poppins/latin-500.css";
-@import "@fontsource/poppins/latin-600.css";
-@import "@fontsource/poppins/latin-700.css";
-@import "@fontsource/poppins/latin-ext-400.css";
-@import "@fontsource/poppins/latin-ext-500.css";
-@import "@fontsource/poppins/latin-ext-600.css";
-@import "@fontsource/poppins/latin-ext-700.css";
+   Inter is drawn so `ascender + descender` (1490) *is* its cap height (1490), i.e. the term is
+   exactly zero — the same property that made Poppins safe here (its term was 0.0010em), so the
+   switch keeps every icon+label row optically centred. Don't swap in a face without checking
+   this: reach for `leading-*`, `mt-px` or `translate-y` on a label that looks misaligned and
+   you are fixing the symptom of a metric.
+
+   Per-subset imports rather than the aggregate `400.css`, which also carries subsets no
+   unicode-range here will ever request but which would still be copied into wwwroot. */
+@import "@fontsource/inter/latin-400.css";
+@import "@fontsource/inter/latin-500.css";
+@import "@fontsource/inter/latin-600.css";
+@import "@fontsource/inter/latin-700.css";
+@import "@fontsource/inter/latin-ext-400.css";
+@import "@fontsource/inter/latin-ext-500.css";
+@import "@fontsource/inter/latin-ext-600.css";
+@import "@fontsource/inter/latin-ext-700.css";
 
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -26,6 +31,23 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── Design system (L47.5) ───────────────────────────────────────────────────
+   Direction: neutral canvas, colour as signal. The chrome is a true neutral
+   (chroma 0) so that the only saturated pixels on a board are the ones that
+   *mean* something — priority, due state, destructive. The previous palette
+   tinted every surface warm and then competed with its own signals.
+
+   Red is no longer the brand colour, it is a meaning: urgent, overdue, delete.
+   It used to be `--primary` as well, and `--primary` and `--destructive` were
+   `#9b2c2c` and `#991b1b` — ΔE 0.026 in OKLab, below the just-noticeable
+   threshold, so every delete button in the app wore the save button's colour.
+   The primary action is now a near-black/near-white neutral (16:1), which is
+   both the highest contrast available and what frees red to be unambiguous.
+
+   Every pair below is checked: body and secondary text clear 4.5:1 on both
+   `--background` and `--card` in both modes, focus clears 3:1, and no value
+   falls outside sRGB. Changing a lightness here means re-checking it. */
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -34,6 +56,7 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -49,14 +72,32 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Semantic signal colours. These exist so a status stops being spelled as a
+     raw Tailwind step: priority tone was written twice, differently, in
+     `kanban-view/lib.ts` (green/yellow/orange/red-500) and in `tasks/$taskId`
+     (muted/amber/orange/destructive) — one concept, two drifting copies. */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-surface: var(--success-surface);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-surface: var(--warning-surface);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-surface: var(--info-surface);
+  --color-destructive-surface: var(--destructive-surface);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -65,164 +106,254 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: Poppins, sans-serif;
+
+  --font-sans: Inter, sans-serif;
   --font-mono: IBM Plex Mono, monospace;
   --font-serif: Libre Baskerville, serif;
-  --radius: 0.375rem;
+
+  /* Type scale. The existing steps are redefined rather than renamed: `text-sm`
+     and `text-xs` are 91% of all text in the app (148 and 139 uses), so giving
+     them a real line-height and tracking improves every screen without a
+     287-site rename. Tracking is not decoration here — Inter's letterfit is drawn
+     to stay open at UI sizes, so it wants progressively tighter tracking as the
+     size climbs to hold an even colour on the page. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-2xs--letter-spacing: 0.01em;
+  --text-2xs--font-weight: 500;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-xs--letter-spacing: 0em;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.375rem;
+  --text-sm--letter-spacing: -0.006em;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-base--letter-spacing: -0.005em;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.625rem;
+  --text-lg--letter-spacing: -0.01em;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-xl--letter-spacing: -0.015em;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.9rem;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-3xl--letter-spacing: -0.025em;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
+  --text-4xl--letter-spacing: -0.03em;
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+
+  --spacing: 0.25rem;
   --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
   --tracking-tight: calc(var(--tracking-normal) - 0.025em);
   --tracking-wide: calc(var(--tracking-normal) + 0.025em);
   --tracking-wider: calc(var(--tracking-normal) + 0.05em);
   --tracking-widest: calc(var(--tracking-normal) + 0.1em);
   --tracking-normal: var(--tracking-normal);
-  --shadow-2xl: var(--shadow-2xl);
-  --shadow-xl: var(--shadow-xl);
-  --shadow-lg: var(--shadow-lg);
-  --shadow-md: var(--shadow-md);
-  --shadow: var(--shadow);
-  --shadow-sm: var(--shadow-sm);
-  --shadow-xs: var(--shadow-xs);
-  --shadow-2xs: var(--shadow-2xs);
-  --spacing: var(--spacing);
-  --letter-spacing: var(--letter-spacing);
-  --shadow-offset-y: var(--shadow-offset-y);
-  --shadow-offset-x: var(--shadow-offset-x);
-  --shadow-spread: var(--shadow-spread);
-  --shadow-blur: var(--shadow-blur);
-  --shadow-opacity: var(--shadow-opacity);
-  --color-shadow-color: var(--shadow-color);
-  --color-destructive-foreground: var(--destructive-foreground);
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
-  --radius: 0.375rem;
-  --background: oklch(0.9779 0.0042 56.3756);
-  --foreground: oklch(0.2178 0 0);
-  --card: oklch(0.9779 0.0042 56.3756);
-  --card-foreground: oklch(0.2178 0 0);
-  --popover: oklch(0.9779 0.0042 56.3756);
-  --popover-foreground: oklch(0.2178 0 0);
-  --primary: oklch(0.465 0.147 24.9381);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.9625 0.0385 89.0943);
-  --secondary-foreground: oklch(0.4847 0.1022 75.1153);
-  --muted: oklch(0.9431 0.0068 53.4442);
-  --muted-foreground: oklch(0.4444 0.0096 73.639);
-  --accent: oklch(0.9619 0.058 95.6174);
-  --accent-foreground: oklch(0.3958 0.1331 25.723);
-  --destructive: oklch(0.4437 0.1613 26.8994);
-  --border: oklch(0.9355 0.0324 80.9937);
-  --input: oklch(0.9355 0.0324 80.9937);
-  --ring: oklch(0.465 0.147 24.9381);
-  --chart-1: oklch(0.5054 0.1905 27.5181);
-  --chart-2: oklch(0.465 0.147 24.9381);
-  --chart-3: oklch(0.3958 0.1331 25.723);
-  --chart-4: oklch(0.5553 0.1455 48.9975);
-  --chart-5: oklch(0.4732 0.1247 46.2007);
-  --sidebar: oklch(0.9431 0.0068 53.4442);
-  --sidebar-foreground: oklch(0.2178 0 0);
-  --sidebar-primary: oklch(0.465 0.147 24.9381);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.9619 0.058 95.6174);
-  --sidebar-accent-foreground: oklch(0.3958 0.1331 25.723);
-  --sidebar-border: oklch(0.9355 0.0324 80.9937);
-  --sidebar-ring: oklch(0.465 0.147 24.9381);
+  /* 8px. 6px read as unfinished at card size and the board is mostly cards. */
+  --radius: 0.5rem;
+
+  /* Three surface levels, and they must stay three in BOTH modes. The old
+     tokens had light mode separating the sidebar but not cards (`--card` was
+     byte-identical to `--background`, so a card was defined by a border at
+     1.13:1 — i.e. by nothing) while dark mode separated cards but not the
+     sidebar. Two modes, two different structures, inverted. */
+  --background: oklch(0.974 0 0); /* canvas   #f6f6f6 */
+  --card: oklch(1 0 0); /* raised   #ffffff */
+  --popover: oklch(1 0 0);
+  --sidebar: oklch(0.954 0 0); /* recessed #f0f0f0 */
+
+  --foreground: oklch(0.205 0 0);
+  --card-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.205 0 0);
+
+  /* 4.96:1 on card, 4.60:1 on canvas. This token carries every date, count and
+     secondary label in the app (244 uses), so it has to be genuinely readable
+     and genuinely quieter than `--foreground` — ΔE 0.34 apart. In dark mode it
+     used to sit ΔE 0.10 from full foreground, which is not a second tier. */
+  --muted-foreground: oklch(0.53 0 0);
+  /* Not lighter than this: `--muted` is the fill behind an avatar fallback and every subtle
+     chip, and at 0.97 it was #f5f5f5 against a #f6f6f6 canvas — the circles vanished and the
+     participant initials in the project header read as overlapping bare text. It has to be
+     visible on the canvas *and* on a white card, which is what pins it here. */
+  --muted: oklch(0.95 0 0);
+  --secondary: oklch(0.954 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --accent: oklch(0.954 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+
+  --border: oklch(0.902 0 0);
+  --input: oklch(0.885 0 0);
+
+  --primary: oklch(0.24 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --destructive: oklch(0.535 0.205 27);
   --destructive-foreground: oklch(1 0 0);
-  --font-sans: Poppins, sans-serif;
+  --destructive-surface: oklch(0.955 0.022 27);
+
+  /* Focus is blue, not the primary colour: the primary is near-black, and a
+     near-black ring on a near-black button is not a focus indicator. Blue is
+     also the one strong hue with nothing else to say in this app. */
+  --ring: oklch(0.55 0.19 258);
+  --info: oklch(0.52 0.18 258);
+  --info-foreground: oklch(1 0 0);
+  --info-surface: oklch(0.955 0.022 258);
+  --success: oklch(0.54 0.13 155);
+  --success-foreground: oklch(1 0 0);
+  --success-surface: oklch(0.955 0.03 155);
+  --warning: oklch(0.575 0.125 68);
+  --warning-foreground: oklch(1 0 0);
+  --warning-surface: oklch(0.96 0.04 75);
+
+  --sidebar-primary: oklch(0.24 0 0);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.923 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.885 0 0);
+  --sidebar-ring: oklch(0.55 0.19 258);
+
+  --chart-1: oklch(0.55 0.19 258);
+  --chart-2: oklch(0.54 0.13 155);
+  --chart-3: oklch(0.575 0.125 68);
+  --chart-4: oklch(0.535 0.205 27);
+  --chart-5: oklch(0.55 0.16 305);
+
+  /* Elevation is a real scale now. The old one had `--shadow-2xs` and
+     `--shadow-xs` as byte-identical strings, likewise `--shadow-sm` and
+     `--shadow`, with all seven sharing one `1px 1px 16px -2px` layer — so a
+     popover and a resting card sat at the same apparent height and elevation
+     carried no information. Two layers each: a tight contact shadow that reads
+     as the object touching the page, and a wider ambient one that reads as
+     distance. Neutral, not the old red tint. */
+  --shadow-color: 0 0% 0%;
+  --shadow-2xs: 0 1px 1px hsl(var(--shadow-color) / 0.04);
+  --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.06);
+  --shadow-sm:
+    0 1px 2px hsl(var(--shadow-color) / 0.06),
+    0 1px 3px hsl(var(--shadow-color) / 0.1);
+  --shadow:
+    0 1px 3px hsl(var(--shadow-color) / 0.08),
+    0 2px 6px -1px hsl(var(--shadow-color) / 0.08);
+  --shadow-md:
+    0 2px 4px -1px hsl(var(--shadow-color) / 0.06),
+    0 4px 10px -2px hsl(var(--shadow-color) / 0.1);
+  --shadow-lg:
+    0 4px 6px -2px hsl(var(--shadow-color) / 0.06),
+    0 10px 20px -4px hsl(var(--shadow-color) / 0.12);
+  --shadow-xl:
+    0 8px 10px -4px hsl(var(--shadow-color) / 0.06),
+    0 20px 32px -8px hsl(var(--shadow-color) / 0.14);
+  --shadow-2xl: 0 28px 56px -12px hsl(var(--shadow-color) / 0.24);
+
+  --font-sans: Inter, sans-serif;
   --font-serif: Libre Baskerville, serif;
   --font-mono: IBM Plex Mono, monospace;
-  --shadow-color: hsl(0 63% 18%);
-  --shadow-opacity: 0.12;
-  --shadow-blur: 16px;
-  --shadow-spread: -2px;
-  --shadow-offset-x: 1px;
-  --shadow-offset-y: 1px;
   --letter-spacing: 0em;
-  --spacing: 0.25rem;
-  --shadow-2xs: 1px 1px 16px -2px hsl(0 63% 18% / 0.06);
-  --shadow-xs: 1px 1px 16px -2px hsl(0 63% 18% / 0.06);
-  --shadow-sm:
-    1px 1px 16px -2px hsl(0 63% 18% / 0.12),
-    1px 1px 2px -3px hsl(0 63% 18% / 0.12);
-  --shadow:
-    1px 1px 16px -2px hsl(0 63% 18% / 0.12),
-    1px 1px 2px -3px hsl(0 63% 18% / 0.12);
-  --shadow-md:
-    1px 1px 16px -2px hsl(0 63% 18% / 0.12),
-    1px 2px 4px -3px hsl(0 63% 18% / 0.12);
-  --shadow-lg:
-    1px 1px 16px -2px hsl(0 63% 18% / 0.12),
-    1px 4px 6px -3px hsl(0 63% 18% / 0.12);
-  --shadow-xl:
-    1px 1px 16px -2px hsl(0 63% 18% / 0.12),
-    1px 8px 10px -3px hsl(0 63% 18% / 0.12);
-  --shadow-2xl: 1px 1px 16px -2px hsl(0 63% 18% / 0.3);
   --tracking-normal: 0em;
+  --spacing: 0.25rem;
 }
 
 .dark {
-  --background: oklch(0.2161 0.0061 56.0434);
-  --foreground: oklch(0.9699 0.0013 106.4238);
-  --card: oklch(0.2685 0.0063 34.2976);
-  --card-foreground: oklch(0.9699 0.0013 106.4238);
-  --popover: oklch(0.2685 0.0063 34.2976);
-  --popover-foreground: oklch(0.9699 0.0013 106.4238);
-  --primary: oklch(0.5054 0.1905 27.5181);
-  --primary-foreground: oklch(0.9779 0.0042 56.3756);
-  --secondary: oklch(0.4732 0.1247 46.2007);
-  --secondary-foreground: oklch(0.9619 0.058 95.6174);
-  --muted: oklch(0.2291 0.006 56.0708);
-  --muted-foreground: oklch(0.8687 0.0043 56.366);
-  --accent: oklch(0.5553 0.1455 48.9975);
-  --accent-foreground: oklch(0.9619 0.058 95.6174);
-  --destructive: oklch(0.6368 0.2078 25.3313);
-  --border: oklch(0.3741 0.0087 67.5582);
-  --input: oklch(0.3741 0.0087 67.5582);
-  --ring: oklch(0.5054 0.1905 27.5181);
-  --chart-1: oklch(0.7106 0.1661 22.2162);
-  --chart-2: oklch(0.6368 0.2078 25.3313);
-  --chart-3: oklch(0.5771 0.2152 27.325);
-  --chart-4: oklch(0.8369 0.1644 84.4286);
-  --chart-5: oklch(0.7686 0.1647 70.0804);
-  --sidebar: oklch(0.2161 0.0061 56.0434);
-  --sidebar-foreground: oklch(0.9699 0.0013 106.4238);
-  --sidebar-primary: oklch(0.5054 0.1905 27.5181);
-  --sidebar-primary-foreground: oklch(0.9779 0.0042 56.3756);
-  --sidebar-accent: oklch(0.5553 0.1455 48.9975);
-  --sidebar-accent-foreground: oklch(0.9619 0.058 95.6174);
-  --sidebar-border: oklch(0.3741 0.0087 67.5582);
-  --sidebar-ring: oklch(0.5054 0.1905 27.5181);
-  --destructive-foreground: oklch(1 0 0);
-  --radius: 0.375rem;
-  --font-sans: Poppins, sans-serif;
+  --background: oklch(0.18 0 0); /* canvas   #121212 */
+  --card: oklch(0.22 0 0); /* raised   #1b1b1b */
+  --popover: oklch(0.22 0 0);
+  --sidebar: oklch(0.16 0 0); /* recessed #0d0d0d */
+
+  --foreground: oklch(0.965 0 0);
+  --card-foreground: oklch(0.965 0 0);
+  --popover-foreground: oklch(0.965 0 0);
+  --sidebar-foreground: oklch(0.965 0 0);
+
+  --muted-foreground: oklch(0.68 0 0);
+  --muted: oklch(0.26 0 0);
+  --secondary: oklch(0.275 0 0);
+  --secondary-foreground: oklch(0.965 0 0);
+  --accent: oklch(0.275 0 0);
+  --accent-foreground: oklch(0.965 0 0);
+
+  --border: oklch(0.32 0 0);
+  --input: oklch(0.355 0 0);
+
+  --primary: oklch(0.95 0 0);
+  --primary-foreground: oklch(0.2 0 0);
+
+  --destructive: oklch(0.64 0.2 25);
+  --destructive-foreground: oklch(0.16 0 0);
+  --destructive-surface: oklch(0.29 0.075 25);
+
+  --ring: oklch(0.66 0.16 258);
+  --info: oklch(0.68 0.15 258);
+  --info-foreground: oklch(0.16 0 0);
+  --info-surface: oklch(0.29 0.06 258);
+  --success: oklch(0.7 0.14 155);
+  --success-foreground: oklch(0.16 0 0);
+  --success-surface: oklch(0.29 0.055 155);
+  --warning: oklch(0.77 0.15 78);
+  --warning-foreground: oklch(0.16 0 0);
+  --warning-surface: oklch(0.3 0.06 78);
+
+  --sidebar-primary: oklch(0.95 0 0);
+  --sidebar-primary-foreground: oklch(0.2 0 0);
+  --sidebar-accent: oklch(0.275 0 0);
+  --sidebar-accent-foreground: oklch(0.965 0 0);
+  --sidebar-border: oklch(0.28 0 0);
+  --sidebar-ring: oklch(0.66 0.16 258);
+
+  --chart-1: oklch(0.66 0.16 258);
+  --chart-2: oklch(0.7 0.14 155);
+  --chart-3: oklch(0.77 0.15 78);
+  --chart-4: oklch(0.64 0.2 25);
+  --chart-5: oklch(0.68 0.14 305);
+
+  /* Shadows barely register on a dark canvas, so depth in dark mode comes from
+     the surface ladder above (0.16 → 0.18 → 0.22) and from `--border`. These
+     stay, deepened, only so a floating layer still detaches from what it
+     covers; they are not doing the work here that they do in light mode. */
+  --shadow-color: 0 0% 0%;
+  --shadow-2xs: 0 1px 1px hsl(var(--shadow-color) / 0.2);
+  --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.25);
+  --shadow-sm:
+    0 1px 2px hsl(var(--shadow-color) / 0.3),
+    0 1px 3px hsl(var(--shadow-color) / 0.35);
+  --shadow:
+    0 1px 3px hsl(var(--shadow-color) / 0.35),
+    0 2px 6px -1px hsl(var(--shadow-color) / 0.35);
+  --shadow-md:
+    0 2px 4px -1px hsl(var(--shadow-color) / 0.3),
+    0 4px 10px -2px hsl(var(--shadow-color) / 0.4);
+  --shadow-lg:
+    0 4px 6px -2px hsl(var(--shadow-color) / 0.3),
+    0 10px 20px -4px hsl(var(--shadow-color) / 0.45);
+  --shadow-xl:
+    0 8px 10px -4px hsl(var(--shadow-color) / 0.3),
+    0 20px 32px -8px hsl(var(--shadow-color) / 0.5);
+  --shadow-2xl: 0 28px 56px -12px hsl(var(--shadow-color) / 0.6);
+
+  --radius: 0.5rem;
+  --font-sans: Inter, sans-serif;
   --font-serif: Libre Baskerville, serif;
   --font-mono: IBM Plex Mono, monospace;
-  --shadow-color: hsl(0 63% 18%);
-  --shadow-opacity: 0.12;
-  --shadow-blur: 16px;
-  --shadow-spread: -2px;
-  --shadow-offset-x: 1px;
-  --shadow-offset-y: 1px;
   --letter-spacing: 0em;
   --spacing: 0.25rem;
-  --shadow-2xs: 1px 1px 16px -2px hsl(0 63% 18% / 0.06);
-  --shadow-xs: 1px 1px 16px -2px hsl(0 63% 18% / 0.06);
-  --shadow-sm:
-    1px 1px 16px -2px hsl(0 63% 18% / 0.12),
-    1px 1px 2px -3px hsl(0 63% 18% / 0.12);
-  --shadow:
-    1px 1px 16px -2px hsl(0 63% 18% / 0.12),
-    1px 1px 2px -3px hsl(0 63% 18% / 0.12);
-  --shadow-md:
-    1px 1px 16px -2px hsl(0 63% 18% / 0.12),
-    1px 2px 4px -3px hsl(0 63% 18% / 0.12);
-  --shadow-lg:
-    1px 1px 16px -2px hsl(0 63% 18% / 0.12),
-    1px 4px 6px -3px hsl(0 63% 18% / 0.12);
-  --shadow-xl:
-    1px 1px 16px -2px hsl(0 63% 18% / 0.12),
-    1px 8px 10px -3px hsl(0 63% 18% / 0.12);
-  --shadow-2xl: 1px 1px 16px -2px hsl(0 63% 18% / 0.3);
 }
 
 @layer base {

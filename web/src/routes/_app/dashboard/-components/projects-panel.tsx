@@ -35,7 +35,7 @@ function ProjectRow({ project }: { project: ProjectSummary }) {
 
 export function ProjectsPanel({ projects }: { projects: ProjectSummary[] }) {
   return (
-    <Card className="p-4">
+    <Card className="gap-0 self-start p-4">
       <div className="mb-2 flex items-center justify-between gap-2 px-1">
         <h2 className="text-sm font-semibold">Projects</h2>
         <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" asChild>
