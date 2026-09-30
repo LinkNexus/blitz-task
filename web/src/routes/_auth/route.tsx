@@ -32,10 +32,10 @@ function AuthPagesLayout() {
             </CardContent>
           </Card>
           <FieldDescription className="px-6 text-center">
-            {/* TODO: link these once the Terms / Privacy routes exist. */}
-            By continuing, you agree to our{" "}
-            <span className="underline">Terms of Service</span> and{" "}
-            <span className="underline">Privacy Policy</span>.
+            {/* Not underlined, and that is the point: these were styled as links while going
+                nowhere, which is a promise the page cannot keep. They get the underline back
+                when the Terms / Privacy routes exist and these become real anchors. */}
+            By continuing, you agree to our Terms of Service and Privacy Policy.
           </FieldDescription>
         </div>
       </div>

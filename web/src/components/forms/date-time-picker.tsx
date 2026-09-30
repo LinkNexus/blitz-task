@@ -31,6 +31,7 @@ export function DateTimePicker({
   placeholder = "No date",
   disabled,
   id,
+  allowTime = true,
   "aria-invalid": ariaInvalid,
 }: {
   /** ISO instant, or null for no date at all. */
@@ -40,6 +41,12 @@ export function DateTimePicker({
   placeholder?: string;
   disabled?: boolean;
   id?: string;
+  /**
+   * Whether a time of day can be chosen at all. False for a project's start/due, which are
+   * milestones rather than moments — but they still use *this* control, because two different
+   * date fields in one app is the inconsistency, not the missing time input.
+   */
+  allowTime?: boolean;
   "aria-invalid"?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
@@ -81,7 +88,7 @@ export function DateTimePicker({
       : format(selected, "MMM d, yyyy");
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="relative flex items-center">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -92,6 +99,10 @@ export function DateTimePicker({
             aria-invalid={ariaInvalid}
             className={cn(
               "h-9 w-full justify-start gap-2 px-3 font-normal",
+              // Room for the clear button, which is absolutely positioned inside this field
+              // rather than beside it: sitting in a grid gap it read as belonging to the
+              // *next* field along.
+              selected && !disabled && "pr-9",
               !selected && "text-muted-foreground",
             )}
           >
@@ -106,29 +117,31 @@ export function DateTimePicker({
             onSelect={setDatePart}
             autoFocus
           />
-          <div className="flex items-center gap-2 border-t p-3">
-            <span className="text-xs font-medium text-muted-foreground">
-              Time
-            </span>
-            <Input
-              type="time"
-              value={timeValue}
-              onChange={(e) => setTimePart(e.target.value)}
-              className="h-8 w-[7.5rem]"
-              aria-label="Time of day"
-            />
-            {hasTime && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-xs"
-                onClick={() => setTimePart("")}
-              >
-                Clear time
-              </Button>
-            )}
-          </div>
+          {allowTime && (
+            <div className="flex items-center gap-2 border-t p-3">
+              <span className="text-xs font-medium text-muted-foreground">
+                Time
+              </span>
+              <Input
+                type="time"
+                value={timeValue}
+                onChange={(e) => setTimePart(e.target.value)}
+                className="h-8 w-[7.5rem]"
+                aria-label="Time of day"
+              />
+              {hasTime && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                  onClick={() => setTimePart("")}
+                >
+                  Clear time
+                </Button>
+              )}
+            </div>
+          )}
         </PopoverContent>
       </Popover>
 
@@ -137,7 +150,7 @@ export function DateTimePicker({
           type="button"
           variant="ghost"
           size="icon"
-          className="size-9 shrink-0 text-muted-foreground"
+          className="absolute right-0.5 size-8 text-muted-foreground hover:bg-transparent hover:text-foreground"
           aria-label="Clear date"
           onClick={() => onChange(null, false)}
         >
