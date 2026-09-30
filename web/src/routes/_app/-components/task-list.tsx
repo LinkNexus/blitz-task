@@ -2,6 +2,7 @@ import { IconCalendarDue } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import type { UserTaskSummary } from "@/api";
+import { ProjectAccentDot } from "@/components/project-accent-dot";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatTaskDate } from "@/lib/task-dates";
@@ -32,7 +33,12 @@ export function TaskRow({ task }: { task: UserTaskSummary }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{task.name}</p>
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          <span className="truncate">{task.projectName}</span>
+          {/* `truncate` goes on the inner span, never on the flex row: the text would
+              become an anonymous flex item and `text-overflow` would never reach it. */}
+          <span className="flex min-w-0 items-center gap-1.5">
+            <ProjectAccentDot accent={task.accent} />
+            <span className="truncate">{task.projectName}</span>
+          </span>
           <span aria-hidden>·</span>
           <span className="truncate">{task.columnName}</span>
           {task.dueDate && (

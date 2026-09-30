@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using BlitzTask.Backend.Features.Projects;
 
 namespace BlitzTask.Backend.Features.Trash
 {
@@ -36,6 +37,13 @@ namespace BlitzTask.Backend.Features.Trash
         DateTime PurgeAt,
         int ProjectId,
         string ProjectName,
+        /// <summary>
+        /// The owning project's accent, so a row in a list that mixes projects can be marked as
+        /// belonging to one. Denormalised beside the name for the same reason the name is: the
+        /// alternative is the client holding a project lookup for screens that never load a
+        /// project. See <see cref="Projects.ProjectAccent"/> — it is a mark, never ink.
+        /// </summary>
+        ProjectAccent Accent,
         /// <summary>
         /// For a project, how much comes back with it. Null for a task — the count would be one,
         /// and a row saying so reads as noise.

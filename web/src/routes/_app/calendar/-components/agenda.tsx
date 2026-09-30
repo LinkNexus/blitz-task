@@ -2,6 +2,7 @@ import { IconCalendarDue, IconRepeat } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
 import { format, isSameDay } from "date-fns";
 import type { CalendarItem } from "@/api";
+import { ProjectAccentDot } from "@/components/project-accent-dot";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -100,7 +101,10 @@ function AgendaRow({ item }: { item: CalendarItem }) {
               {format(new Date(item.dueDate), "HH:mm")}
             </span>
           )}
-          <span className="truncate">{item.projectName}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <ProjectAccentDot accent={item.accent} />
+            <span className="truncate">{item.projectName}</span>
+          </span>
           {item.isProjected && (
             <>
               <span aria-hidden>·</span>

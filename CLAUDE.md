@@ -557,6 +557,18 @@ on the wrong branch.
   all (a yellow dark enough for 4.5:1 on white is olive) and what lets them answer to WCAG
   1.4.11's 3:1 instead. The same rule caught a live bug: the table's section badge rendered
   `section.color` as its **text** colour. Put an accent on a task and none of this holds.
+- **An accent belongs in the views that *mix* projects, and that is most of the work.** The first
+  cut rendered it only on the sidebar row and the project header — the two screens where you
+  already know which project you are in, so it told you nothing. It now rides on
+  `UserTaskSummary`, `CalendarItem`, `TrashItem` and `TaskSearchResult` as well, denormalised
+  beside `ProjectName` for the same reason the name is denormalised: those screens never load a
+  project, so the alternative is the client keeping a project lookup to colour a list row.
+  `ProjectAccentDot` (`components/project-accent-dot.tsx`) is the single renderer — six callers,
+  and six hand-rolled `<span>`s is exactly how priority tone ended up written five different ways.
+  It is `aria-hidden` everywhere because the project's **name** is always beside it, so colour is
+  never the only channel. **The calendar's month grid is deliberately excluded**: its bars are
+  `h-5` and already carry a column-colour dot, and two dots meaning different things in 20px is
+  worse than none.
 - **The theme is applied by a blocking inline script in `index.html`, before React exists.**
   `ThemeProvider` sets the class from a `useEffect`, which runs after the first paint — so every
   load flashed light before going dark. That is why `storageKey` (`"theme"`) and the

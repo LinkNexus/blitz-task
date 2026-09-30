@@ -9,6 +9,7 @@ import {
   getProjectOptions,
   getUserTaskOptions,
 } from "@/api/@tanstack/react-query.gen";
+import { ProjectAccentDot } from "@/components/project-accent-dot";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -135,6 +136,7 @@ function TaskPage() {
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <IconArrowLeft className="size-4" />
+          <ProjectAccentDot accent={summary.accent} />
           {summary.projectName}
         </Link>
       )}

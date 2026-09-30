@@ -71,6 +71,7 @@ namespace BlitzTask.Backend.Features.ProjectTasks
                     t.Assignees.Select(a => a.Id).ToList(),
                     t.RelatedProjectId,
                     t.RelatedProject.Name,
+                    t.RelatedProject.Accent,
                     t.RelatedColumnId,
                     t.RelatedColumn.Name,
                     t.RelatedColumn.Color,

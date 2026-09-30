@@ -268,6 +268,13 @@ namespace BlitzTask.Backend.Features.ProjectTasks
         List<int> AssigneeIds,
         int ProjectId,
         string ProjectName,
+        /// <summary>
+        /// The owning project's accent, so a row in a list that mixes projects can be marked as
+        /// belonging to one. Denormalised beside the name for the same reason the name is: the
+        /// alternative is the client holding a project lookup for screens that never load a
+        /// project. See <see cref="Projects.ProjectAccent"/> — it is a mark, never ink.
+        /// </summary>
+        ProjectAccent Accent,
         int ColumnId,
         string ColumnName,
         string ColumnColor,

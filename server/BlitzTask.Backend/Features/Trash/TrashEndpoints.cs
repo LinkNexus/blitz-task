@@ -85,6 +85,7 @@ namespace BlitzTask.Backend.Features.Trash
                 {
                     p.Id,
                     p.Name,
+                    p.Accent,
                     p.DeletedAt,
                     // Only what came down with the project: a task trashed earlier on its own
                     // stays in the trash when the project is restored, so counting it here would
@@ -109,6 +110,7 @@ namespace BlitzTask.Backend.Features.Trash
                     t.DeletedAt,
                     t.RelatedProjectId,
                     ProjectName = t.RelatedProject.Name,
+                    Accent = t.RelatedProject.Accent,
                 })
                 .ToListAsync(cancellationToken);
 
@@ -122,6 +124,7 @@ namespace BlitzTask.Backend.Features.Trash
                     TrashRetention.PurgeAt(p.DeletedAt!.Value),
                     p.Id,
                     p.Name,
+                    p.Accent,
                     p.TaskCount,
                     roles[p.Id].HasPermission(ProjectPermission.DeleteProject)
                 )),
@@ -133,6 +136,7 @@ namespace BlitzTask.Backend.Features.Trash
                     TrashRetention.PurgeAt(t.DeletedAt!.Value),
                     t.RelatedProjectId,
                     t.ProjectName,
+                    t.Accent,
                     null,
                     roles[t.RelatedProjectId].HasPermission(ProjectPermission.ManageTasks)
                 )),
