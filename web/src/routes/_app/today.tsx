@@ -1,6 +1,8 @@
 import { IconChecklist } from "@tabler/icons-react";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { listProjectsOptions } from "@/api/@tanstack/react-query.gen";
+import { NoProjectsYet } from "./-components/no-projects-yet";
 import { todaySections } from "./-components/task-buckets";
 import { TaskList } from "./-components/task-list";
 import { TaskListSkeleton } from "./-components/task-list-skeleton";
@@ -23,6 +25,9 @@ export const Route = createFileRoute("/_app/today")({
 function TodayPage() {
   const { assignedToMe } = Route.useSearch();
   const { data: tasks } = useSuspenseQuery(userTasksQueryOptions(assignedToMe));
+  // Already in cache from the sidebar, which renders on every authenticated page — so this
+  // costs no request and only tells apart "not started" from "nothing due".
+  const { data: projects } = useQuery(listProjectsOptions());
 
   const sections = todaySections(tasks);
 
@@ -55,23 +60,27 @@ function TodayPage() {
       <TaskList
         sections={sections}
         empty={
-          <>
-            <IconChecklist className="size-8 text-muted-foreground/50" />
-            <p className="text-sm font-medium">Nothing due today</p>
-            <p className="max-w-xs text-xs text-muted-foreground">
-              {assignedToMe
-                ? "Nothing assigned to you is late or due today. Switch to All tasks to see everything in your projects."
-                : "Nothing is late or due today."}{" "}
-              <Link
-                to="/upcoming"
-                search={{ assignedToMe }}
-                className="underline underline-offset-4 hover:text-foreground"
-              >
-                See what's coming
-              </Link>
-              .
-            </p>
-          </>
+          projects?.length === 0 ? (
+            <NoProjectsYet />
+          ) : (
+            <>
+              <IconChecklist className="size-8 text-muted-foreground/50" />
+              <p className="text-sm font-medium">Nothing due today</p>
+              <p className="max-w-xs text-xs text-muted-foreground">
+                {assignedToMe
+                  ? "Nothing assigned to you is late or due today. Switch to All tasks to see everything in your projects."
+                  : "Nothing is late or due today."}{" "}
+                <Link
+                  to="/upcoming"
+                  search={{ assignedToMe }}
+                  className="underline underline-offset-4 hover:text-foreground"
+                >
+                  See what's coming
+                </Link>
+                .
+              </p>
+            </>
+          )
         }
       />
     </div>

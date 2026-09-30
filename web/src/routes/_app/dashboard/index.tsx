@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { listProjectsOptions } from "@/api/@tanstack/react-query.gen";
 import { useAccount } from "@/hooks/use-current-user";
+import { NoProjectsYet } from "@/routes/_app/-components/no-projects-yet";
 import {
   countTasks,
   groupByDueSection,
@@ -82,15 +83,22 @@ function DashboardPage() {
           <TaskList
             sections={groupByDueSection(tasks)}
             empty={
-              <>
-                <IconChecklist className="size-8 text-muted-foreground/50" />
-                <p className="text-sm font-medium">Nothing open</p>
-                <p className="max-w-xs text-xs text-muted-foreground">
-                  {assignedToMe
-                    ? "No open tasks are assigned to you. Switch to All tasks to see everything in your projects."
-                    : "Every task in your projects is in its final column."}
-                </p>
-              </>
+              // "Every task is in its final column" is true and useful once there are
+              // projects, and nonsense to an account with none. The projects panel beside
+              // this one already carries the call to action, so this half only explains.
+              projects.length === 0 ? (
+                <NoProjectsYet withAction={false} />
+              ) : (
+                <>
+                  <IconChecklist className="size-8 text-muted-foreground/50" />
+                  <p className="text-sm font-medium">Nothing open</p>
+                  <p className="max-w-xs text-xs text-muted-foreground">
+                    {assignedToMe
+                      ? "No open tasks are assigned to you. Switch to All tasks to see everything in your projects."
+                      : "Every task in your projects is in its final column."}
+                  </p>
+                </>
+              )
             }
           />
         </div>

@@ -1,4 +1,5 @@
 using System.Net;
+using BlitzTask.Backend.Features.Projects;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using BlitzTask.Backend.Features.Shared.Models;
@@ -267,6 +268,12 @@ namespace BlitzTask.Backend.Features.Auth
             user.Password = passwordHasher.HashPassword(user, request.Password);
 
             dbContext.Users.Add(user);
+
+            // In the same transaction as the account, which is what makes it exactly-once: there
+            // is no second moment at which it could be created again, so it needs no flag and no
+            // unique index, and deleting it cannot bring it back. See `WelcomeProject`.
+            WelcomeProject.AddFor(user, dbContext);
+
             var result = await dbContext.SaveChangesAsync() > 0;
 
             if (!result)
