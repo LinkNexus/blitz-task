@@ -84,6 +84,48 @@ namespace BlitzTask.Backend.Features.Projects
             _permissions.TryGetValue(role, out var perms) ? [.. perms] : [];
     }
 
+    /// <summary>
+    /// A project's accent: the colour that tells it apart from its siblings in the sidebar and
+    /// names it at the top of its own board.
+    /// <para>
+    /// A <b>named</b> accent rather than the free hex that <c>ProjectColumn.Color</c> and
+    /// <c>ProjectSection.Color</c> carry, and the difference is the whole design. Those two are
+    /// only ever painted as a 2px rule or a 10px dot, where no contrast requirement applies. An
+    /// accent has to survive being read — it tints a project's name and its initials — and a
+    /// colour picked off a wheel cannot promise that: <c>#ffff00</c> is invisible on a white card
+    /// and <c>#000080</c> on a dark one, and the user who picked it is given no hint either way.
+    /// A name resolves instead to a pair of values in <c>index.css</c>, one per mode, whose
+    /// contrast is asserted by <c>accent-contrast.test.ts</c> — so an accent is dark-mode-correct
+    /// by the same mechanism as every other colour in the app, and a future theme change moves
+    /// accents along with it. Storing a hex would have put a fourth copy of colour knowledge
+    /// outside the token layer.
+    /// </para>
+    /// <para>
+    /// The set spans the wheel rather than avoiding the hues that already mean something
+    /// (red is destructive, amber is warning, green is success). That is safe only because of
+    /// where an accent is allowed to appear: project-identity chrome, never a task. A red project
+    /// dot beside a project name is an identity; a red pill on a card is a priority. Put an accent
+    /// on a task and this stops being true.
+    /// </para>
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<ProjectAccent>))]
+    public enum ProjectAccent
+    {
+        /// <summary>
+        /// No accent — the project renders in the neutral chrome. The default, which is what
+        /// every project predating this field has, so the migration needed no backfill.
+        /// </summary>
+        None,
+        Red,
+        Orange,
+        Amber,
+        Green,
+        Teal,
+        Blue,
+        Violet,
+        Pink,
+    }
+
     public class Project : IAuditable, ISoftDeletable
     {
         public int Id { get; set; }
@@ -93,6 +135,10 @@ namespace BlitzTask.Backend.Features.Projects
         public DateTimeOffset? DueDate { get; set; }
         public Guid? ImageId { get; set; }
         public List<string> Tags { get; set; } = [];
+
+        /// <summary>See <see cref="ProjectAccent"/>. Defaults to <c>None</c>.</summary>
+        public ProjectAccent Accent { get; set; }
+
         public DateTime UpdatedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? DeletedAt { get; set; }
@@ -159,6 +205,7 @@ namespace BlitzTask.Backend.Features.Projects
         public List<string>? Tags { get; init; }
         public DateTimeOffset? StartDate { get; init; }
         public DateTimeOffset? DueDate { get; init; }
+        public ProjectAccent Accent { get; init; }
         public IFormFile? Image { get; init; }
 
         public const int MaxImageSizeInBytes = 400 * 1024;
@@ -211,6 +258,7 @@ namespace BlitzTask.Backend.Features.Projects
         DateTimeOffset? DueDate,
         List<string> Tags,
         Guid? ImageId,
+        ProjectAccent Accent,
         ProjectRole Role,
         int ParticipantsCount,
         int TasksCount,
@@ -230,7 +278,8 @@ namespace BlitzTask.Backend.Features.Projects
         Guid? ImageId,
         List<ProjectInvitationInfo> Invitations,
         List<ProjectColumnDetails> Columns,
-        List<ProjectSections.ProjectSectionDetails> Sections
+        List<ProjectSections.ProjectSectionDetails> Sections,
+        ProjectAccent Accent
     )
     {
         public List<ProjectPermission> UserPermissions { get; init; } = [];

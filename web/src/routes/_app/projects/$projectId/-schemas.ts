@@ -2,6 +2,16 @@ import z from "zod";
 
 export const MAX_PROJECT_IMAGE_SIZE = 400 * 1024;
 
+/**
+ * `{ offset: true }` on every date below, and it is not optional.
+ *
+ * Bare `z.iso.datetime()` accepts a trailing `Z` and nothing else, while the server serializes
+ * `DateTimeOffset` as `2026-09-17T14:17:39.78313+00:00` — so each form was rejecting the exact
+ * value the API had just handed it, as its own `defaultValues`. The failure is silent until
+ * submit and reads as "Invalid ISO datetime" under a field nobody touched: no project with a
+ * start date and no task with a due date could be saved from its sheet at all, however the rest
+ * of the form was filled in. Anything added here that takes a date from the API needs the same.
+ */
 export const TaskSchema = z
   .object({
     name: z
@@ -13,8 +23,8 @@ export const TaskSchema = z
     // Null is the ordinary state: most tasks belong to no section (L40.5).
     sectionId: z.number().int().nullable(),
     tags: z.array(z.string().max(20, "Tag too long")).max(5, "Maximum 5 tags"),
-    startDate: z.iso.datetime().nullable(),
-    dueDate: z.iso.datetime().nullable(),
+    startDate: z.iso.datetime({ offset: true }).nullable(),
+    dueDate: z.iso.datetime({ offset: true }).nullable(),
     // Whether the clock part of the instants above is one the user chose. The dates have always
     // been instants; what these add is the ability to say "no time", so a task written before
     // this — and any task someone only gives a day to — keeps rendering as a bare date instead
@@ -71,9 +81,22 @@ export const ProjectSchema = z
     description: z
       .string()
       .max(1000, "Description must be at most 1000 characters long"),
-    startDate: z.iso.datetime().nullable(),
-    dueDate: z.iso.datetime().nullable(),
+    startDate: z.iso.datetime({ offset: true }).nullable(),
+    dueDate: z.iso.datetime({ offset: true }).nullable(),
     tags: z.array(z.string().max(50)).max(10, "Maximum 10 tags allowed"),
+    // A name, not a hex — the whole reason being that the eight names resolve to pairs whose
+    // contrast is checked, and a colour off a wheel cannot be. See `lib/project-accent.ts`.
+    accent: z.enum([
+      "None",
+      "Red",
+      "Orange",
+      "Amber",
+      "Green",
+      "Teal",
+      "Blue",
+      "Violet",
+      "Pink",
+    ]),
     image: z
       .file()
       .max(

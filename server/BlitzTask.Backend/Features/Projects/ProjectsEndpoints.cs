@@ -127,6 +127,7 @@ namespace BlitzTask.Backend.Features.Projects
                 Description = request.Description,
                 StartDate = request.StartDate,
                 DueDate = request.DueDate,
+                Accent = request.Accent,
                 Tags = request.Tags ?? [],
                 ImageId = imageId,
                 CreatedBy = user,
@@ -218,6 +219,7 @@ namespace BlitzTask.Backend.Features.Projects
             project.Description = request.Description;
             project.StartDate = request.StartDate;
             project.DueDate = request.DueDate;
+            project.Accent = request.Accent;
             project.Tags = request.Tags ?? [];
 
             if (request.Image is not null)

@@ -16,7 +16,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getInitials } from "@/lib/utils";
+import { accentRing } from "@/lib/project-accent";
+import { cn, getInitials } from "@/lib/utils";
 import { ProjectSettingsSheet } from "./project-settings-sheet";
 
 type Props = {
@@ -45,7 +46,16 @@ export const ProjectHeader = ({ project }: Props) => {
         {/* Title row — avatar shrinks on mobile, title size drops one step */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
-            <Avatar className="size-8 sm:size-14 shrink-0 rounded-xl">
+            {/* The ring is the accent's other home. A ring rather than a tint on the fallback,
+                which carries the initials: an accent is a mark, never a fill behind text. It
+                also survives `imageId` being set, where a tint would have been covered by the
+                image — the one project surface where the identity colour still has to show. */}
+            <Avatar
+              className={cn(
+                "size-8 sm:size-14 shrink-0 rounded-xl",
+                accentRing(project.accent),
+              )}
+            >
               {project.imageId && (
                 <AvatarImage
                   className="object-cover"

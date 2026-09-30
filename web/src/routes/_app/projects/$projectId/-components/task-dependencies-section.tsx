@@ -102,7 +102,7 @@ export function TaskDependenciesSection({ project, task }: Props) {
                 variant={done ? "secondary" : "outline"}
                 className={cn(
                   "rounded-md text-[10px] shrink-0",
-                  !done && "border-amber-500/50 text-warning",
+                  !done && "border-warning/50 text-warning",
                 )}
               >
                 {done ? "Done" : "Open"}

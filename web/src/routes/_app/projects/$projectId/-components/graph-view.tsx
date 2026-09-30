@@ -149,7 +149,7 @@ export function GraphView({ project, filtersActive }: Props) {
               className={cn(
                 "absolute flex flex-col justify-center gap-0.5 rounded-lg border bg-background px-3 text-left transition-colors",
                 "hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                node.openBlockerCount > 0 && "border-amber-500/60",
+                node.openBlockerCount > 0 && "border-warning/60",
                 node.isCompleted && "bg-muted",
               )}
             >

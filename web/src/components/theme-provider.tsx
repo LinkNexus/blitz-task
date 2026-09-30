@@ -18,6 +18,19 @@ type ThemeProviderState = {
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 const THEME_VALUES: Theme[] = ["dark", "light", "system"];
 
+/**
+ * `--background` in each mode, for the browser/OS chrome around an installed app.
+ *
+ * Hardcoded hexes rather than read from the computed style, because `<meta>` content cannot be a
+ * `var()` and the tag has to be right before the stylesheet has necessarily been applied. They
+ * are duplicated a third time in `index.html`'s pre-paint script, which runs before any module
+ * exists to import them from — keep all three in step with the token.
+ */
+const THEME_COLOR: Record<ResolvedTheme, string> = {
+  light: "#f6f6f6",
+  dark: "#121212",
+};
+
 const ThemeProviderContext = React.createContext<
   ThemeProviderState | undefined
 >(undefined);
@@ -76,6 +89,12 @@ function isEditableTarget(target: EventTarget | null) {
   return false;
 }
 
+/**
+ * `storageKey` defaults to `"theme"`, and `index.html`'s pre-paint script reads that literal
+ * string — it has to, since it runs before any module is loaded. Changing this default without
+ * changing the script there means the first paint uses the wrong theme and then corrects itself,
+ * which is the flash this whole arrangement exists to remove.
+ */
 export function ThemeProvider({
   children,
   defaultTheme = "system",
@@ -111,6 +130,13 @@ export function ThemeProvider({
 
       root.classList.remove("light", "dark");
       root.classList.add(resolvedTheme);
+
+      // Follows the *resolved app theme*, not `prefers-color-scheme`. A media-scoped pair of meta
+      // tags would track the OS instead, so running the app Light on a dark machine would frame a
+      // white page in near-black.
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute("content", THEME_COLOR[resolvedTheme]);
 
       if (restoreTransitions) {
         restoreTransitions();

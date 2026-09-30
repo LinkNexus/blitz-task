@@ -84,10 +84,12 @@ bunx biome check --write .
 Backend is xUnit (`dotnet test server/BlitzTask.Backend.Tests`). Frontend uses **bun's built-in
 runner** — `*.test.ts` colocated with the module under test, inside `-components/` directories
 so TanStack Router ignores them. Covered today: `toolbar-filters`, `grouping`,
-`scoreBetween`/`columnScoreBetween`, the dashboard's `task-buckets`, and on the backend the RBAC
-permission matrix plus the projections and handlers behind `GET /api/projects` and
+`scoreBetween`/`columnScoreBetween`, the dashboard's `task-buckets`, the colour maths in
+`lib/oklch.ts` and the design-system audit in `lib/theme-contrast.test.ts`, and on the backend the
+RBAC permission matrix plus the projections and handlers behind `GET /api/projects` and
 `GET /api/tasks`. All the frontend coverage is pure-function testing; there is no component/DOM
-test setup, so don't reach for one without adding it first.
+test setup, so don't reach for one without adding it first — note that `theme-contrast` gets at
+the stylesheet by *parsing* it for that reason, not by rendering anything.
 
 **Test handlers, not only projections, and do it against `TestsUtils.CreateSqliteDbContext()`.**
 Both EF traps below throw at request time and the in-memory provider evaluates past them, so a
@@ -531,6 +533,51 @@ on the wrong branch.
   re-checking the pairs it participates in** — `--muted` in particular is pinned from both sides:
   it is the fill behind avatar fallbacks and chips, so it has to be visible on the canvas *and*
   carry `--muted-foreground` at 4.5:1.
+- **The token layer is checked by a test, not by its own comments.** `lib/theme-contrast.test.ts`
+  parses `index.css` and re-derives every figure with `lib/oklch.ts` (OKLCH→sRGB plus WCAG
+  contrast and OKLab ΔE, no dependency). L47.5 computed its ratios by hand and wrote them into
+  comments; nothing held the stylesheet to them, which is the exact shape of the bug that pass
+  existed to fix. Running it found five more: light `--warning` at **3.94:1** on the sidebar and
+  **3.97:1 on its own tint** (the Medium priority pill — `bg-warning-surface text-warning` is
+  *text*, so it owes 4.5:1), light `--success` at 4.16:1, dark `--destructive` at 3.93:1 on its
+  tint, and `--info-surface`/`--warning-surface` **outside sRGB** — written to match the other
+  tints numerically rather than to what the gamut allows at each hue, so the browser was clipping
+  them. **Change a lightness and run the test**; don't re-read the comments.
+- **A project accent is eight names, and it is a mark, never ink.** `ProjectAccent` (`--hue-*` in
+  `index.css`, resolved by `lib/project-accent.ts`) is an enum rather than the free
+  `<input type="color">` that `ProjectColumn.Color` and `ProjectSection.Color` use. Those get away
+  with a hex because they are only painted as a 2px rule or a 10px dot; an accent identifies a
+  project and a colour off a wheel promises nothing — `#ffff00` is invisible on a white card,
+  `#000080` on a dark one. A name resolves to a checked light/dark pair instead. Two rules hold it
+  together. **Lightness is constant and chroma takes what sRGB affords** — lightness decides
+  contrast, so pinning it is what makes eight hues read as one set; maximise chroma instead and
+  the violet lands near-black at 10:1 while the teal glows at 12:1. Chroma cannot be the constant,
+  because the ceiling runs 0.20 at red to 0.09 at teal. And **an accent never goes behind or on
+  text** — a dot, a rule, a ring — which is the only reason the yellow-greens are in the set at
+  all (a yellow dark enough for 4.5:1 on white is olive) and what lets them answer to WCAG
+  1.4.11's 3:1 instead. The same rule caught a live bug: the table's section badge rendered
+  `section.color` as its **text** colour. Put an accent on a task and none of this holds.
+- **The theme is applied by a blocking inline script in `index.html`, before React exists.**
+  `ThemeProvider` sets the class from a `useEffect`, which runs after the first paint — so every
+  load flashed light before going dark. That is why `storageKey` (`"theme"`) and the
+  `prefers-color-scheme` fallback are **duplicated** in `index.html`: nothing can be imported that
+  early. Keep the two in step. The same script and the provider both write
+  `<meta name="theme-color">`, which follows the *resolved app theme* — a `prefers-color-scheme`
+  pair of meta tags would be less code and would track the **OS**, so anyone running the app Light
+  on a dark machine gets a near-black frame round a white page.
+- **Mount `ThemeProvider` exactly once.** It was mounted in both `main.tsx` and `__root.tsx`, and
+  that was not merely redundant: each registers its own `keydown` listener for the `d` shortcut and
+  each toggles **its own** state, while `setTheme` from the sidebar menu reaches only the nearer
+  one. Once they disagreed, effects running child-first let the stale outer provider apply last and
+  win — set Light from the menu, press `d`, and the theme went the wrong way. `main.tsx` owns it,
+  because it wraps `RouterProvider` and therefore everything the router can render.
+- **`z.iso.datetime()` rejects what this API sends.** Bare, it accepts a trailing `Z` and nothing
+  else, while `DateTimeOffset` serializes as `2026-09-17T14:17:39.78313+00:00` — so `TaskSchema`
+  and `ProjectSchema` were each rejecting the value the API had just handed them, *as their own
+  `defaultValues`*. No project with a start date and no task with a due date could be saved from
+  its sheet, and the only symptom was "Invalid ISO datetime" under a field nobody had touched.
+  Every date in `-schemas.ts` now carries `{ offset: true }`, and anything added that takes a date
+  from the API needs it too.
 - **Three surface levels, and they must stay three in both modes.** `--sidebar` (recessed) →
   `--background` (canvas) → `--card` (raised). The old tokens had light mode separating the
   sidebar but not cards — `--card` was byte-identical to `--background`, so a card was defined

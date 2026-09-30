@@ -12,12 +12,55 @@
   <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
   <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
 
-  <!-- The colour the browser paints round the app once it is installed. -->
-  <meta name="theme-color" content="#9b2c2c">
+  <!-- The colour the browser paints round the app once it is installed: `--background`.
+       Was `#9b2c2c`, the brand red L47.5 deleted — so an installed app wore a colour that appears
+       nowhere in it any more, and wore it in both modes, framing a near-black canvas in maroon.
+
+       One tag with no `media`, rewritten by whatever resolves the theme — the script below on
+       load, `ThemeProvider` on every change. A `prefers-color-scheme` pair would have been less
+       code and wrong for the same reason the toaster was: it follows the *OS*, while the theme is
+       a choice the user can make against it, so anyone running the app Light on a dark machine
+       would get a near-black frame round a white page. This value is only the pre-script
+       default. -->
+  <meta name="theme-color" content="#f6f6f6">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Blitz Task">
 
   <title>Blitz Task</title>
+
+  <!-- The theme, applied before the first paint.
+       `ThemeProvider` sets this class from a `useEffect`, which by definition runs *after* the
+       browser has already painted — so every load showed a light flash before going dark, on
+       every navigation that reloaded the document and on every cold start of the installed app.
+       A deferred or module script would be no better: both run after the document is parsed.
+       This has to be blocking, inline, and in the head.
+
+       `theme` is `ThemeProvider`'s default `storageKey` and the resolution rule is its
+       `getSystemTheme` — the two are duplicated here on purpose, because the alternative is
+       importing the module, which is the thing that cannot happen this early. Keep them in step.
+       Wrapped in try/catch because `localStorage` throws outright in a Safari private window,
+       and an exception here would stop the parser before the app's own script tag. -->
+  <script>
+    (() => {
+      try {
+        const stored = localStorage.getItem("theme");
+        const theme =
+          stored === "dark" || stored === "light"
+            ? stored
+            : window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+        document.documentElement.classList.add(theme);
+
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) {
+          meta.setAttribute("content", theme === "dark" ? "#121212" : "#f6f6f6");
+        }
+      } catch {
+        /* Fall through to the stylesheet's light defaults. */
+      }
+    })();
+  </script>
 </head>
 
 <body>

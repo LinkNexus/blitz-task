@@ -5,7 +5,6 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type { GetCurrentUserResponse } from "@/api";
 import { getCurrentUserOptions } from "@/api/@tanstack/react-query.gen";
-import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { flashMessagesStore } from "@/lib/store";
@@ -26,13 +25,17 @@ function RootLayout() {
     flashMessagesStore.actions.clear();
   }, [flashMessages]);
 
+  // No `ThemeProvider` here: `main.tsx` already wraps `RouterProvider` in one, and having two
+  // was not merely redundant. Each mounts its own `keydown` listener for the `d` shortcut and
+  // each toggles *its own* state, so once the sidebar menu had called `setTheme` — which only
+  // reaches the nearer provider — the two disagreed about the current theme and computed
+  // different next values. Effects run child-first, so the stale outer one applied last and won:
+  // set Light from the menu, press `d`, and the theme went the wrong way.
   return (
-    <ThemeProvider>
-      <TooltipProvider>
-        <Outlet />
-        <Toaster />
-      </TooltipProvider>
-    </ThemeProvider>
+    <TooltipProvider>
+      <Outlet />
+      <Toaster />
+    </TooltipProvider>
   );
 }
 

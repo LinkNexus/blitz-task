@@ -49,10 +49,17 @@ export default defineConfig({
         start_url: "/",
         scope: "/",
         display: "standalone",
-        // Both taken from the app's own theme tokens (`--primary`, `--background`) rather than
-        // picked, so an installed window does not frame the app in a colour it never uses.
-        theme_color: "#9b2c2c",
-        background_color: "#faf7f5",
+        // `--background`, both of them. These were `#9b2c2c` and `#faf7f5` — the brand red and
+        // the warm canvas that L47.5 deleted — so the comment that said they came from the
+        // theme tokens had quietly stopped being true, and an installed app was framed and
+        // splashed in two colours the app no longer contains.
+        //
+        // One value each, unlike the `<meta name="theme-color">` pair in `index.html`: a manifest
+        // has no media queries, so the light canvas is the compromise. It is the right one — it
+        // matches what an unconfigured install shows, and the splash is gone by the time the
+        // pre-paint script in `index.html` has resolved the real theme.
+        theme_color: "#f6f6f6",
+        background_color: "#f6f6f6",
         icons: [
           {
             src: "/android-chrome-192x192.png",

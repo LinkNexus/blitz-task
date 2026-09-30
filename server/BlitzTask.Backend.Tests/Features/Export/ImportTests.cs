@@ -70,7 +70,8 @@ public class ImportTests
         List<ColumnExport>? columns = null,
         List<ProjectMemberExport>? members = null,
         bool isInbox = false,
-        List<SectionExport>? sections = null
+        List<SectionExport>? sections = null,
+        ProjectAccent accent = ProjectAccent.None
     ) =>
         new(
             name,
@@ -78,6 +79,7 @@ public class ImportTests
             null,
             null,
             [],
+            accent,
             isInbox,
             DateTime.UtcNow,
             members ?? [],
@@ -222,6 +224,34 @@ public class ImportTests
         Assert.Equal(
             ProjectRole.Collaborator,
             imported.Participants.Single(p => p.UserId == bob.Id).Role
+        );
+    }
+
+    [Fact]
+    public async Task AnAccentSurvivesTheRoundTripAndAFileWithoutOneImportsAsNone()
+    {
+        using var dbContext = TestsUtils.CreateSqliteDbContext();
+        var alice = await TestsUtils.SeedUserAsync(dbContext, "alice@example.com");
+
+        await ImportAsync(
+            dbContext,
+            alice,
+            Envelope(
+                Project("Tinted", accent: ProjectAccent.Violet),
+                // Stands in for a file written before the field existed: absent from the JSON,
+                // so it deserializes to the zero value, which is the default the migration gave
+                // every project that already existed.
+                Project("Plain")
+            )
+        );
+
+        Assert.Equal(
+            ProjectAccent.Violet,
+            (await dbContext.Projects.SingleAsync(p => p.Name == "Tinted")).Accent
+        );
+        Assert.Equal(
+            ProjectAccent.None,
+            (await dbContext.Projects.SingleAsync(p => p.Name == "Plain")).Accent
         );
     }
 

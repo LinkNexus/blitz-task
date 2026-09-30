@@ -36,6 +36,7 @@ namespace BlitzTask.Backend.Features.Projects
                     p.DueDate,
                     p.Tags,
                     p.ImageId,
+                    p.Accent,
                     p.Participants.First(pp => pp.UserId == userId).Role,
                     p.Participants.Count,
                     p.Tasks.Count,
@@ -128,7 +129,8 @@ namespace BlitzTask.Backend.Features.Projects
                     .ToList(),
                 p.Sections.OrderBy(s => s.Score)
                     .Select(s => new ProjectSectionDetails(s.Id, s.Name, s.Color, s.Score))
-                    .ToList()
+                    .ToList(),
+                p.Accent
             ));
         }
 
@@ -217,7 +219,8 @@ namespace BlitzTask.Backend.Features.Projects
                     .. project
                         .Sections.OrderBy(s => s.Score)
                         .Select(s => new ProjectSectionDetails(s.Id, s.Name, s.Color, s.Score)),
-                ]
+                ],
+                project.Accent
             );
         }
     }

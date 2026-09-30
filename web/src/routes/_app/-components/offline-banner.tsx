@@ -14,7 +14,7 @@ export function OfflineBanner() {
   if (online) return null;
 
   return (
-    <div className="flex items-center justify-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs text-warning">
+    <div className="flex items-center justify-center gap-2 border-b border-warning/30 bg-warning/10 px-4 py-1.5 text-xs text-warning">
       <IconCloudOff className="size-3.5 shrink-0" />
       <span>
         You're offline. This is the last version that loaded — changes can't be

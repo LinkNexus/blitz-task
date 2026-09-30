@@ -10,6 +10,7 @@ import {
   getProjectQueryKey,
 } from "@/api/@tanstack/react-query.gen";
 import { DateTimePicker } from "@/components/forms/date-time-picker";
+import { AccentField } from "@/components/forms/fields/accent";
 import { DropzoneField } from "@/components/forms/fields/dropzone";
 import { InputField } from "@/components/forms/fields/input";
 import { TextCollectionField } from "@/components/forms/fields/text-collection";
@@ -44,6 +45,7 @@ function CreateProjectPage() {
       startDate: new Date().toISOString(),
       dueDate: null,
       tags: [],
+      accent: "None" as const,
       image: null,
     },
   });
@@ -139,6 +141,19 @@ function CreateProjectPage() {
                 fieldState={fieldState}
                 labelProps={{ children: "Tags" }}
                 inputProps={{ disabled: isFormDisabled }}
+              />
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name="accent"
+            render={({ field, fieldState }) => (
+              <AccentField
+                field={field}
+                fieldState={fieldState}
+                disabled={isFormDisabled}
+                labelProps={{ children: "Accent" }}
               />
             )}
           />

@@ -134,7 +134,7 @@ function RespondToInvitationPage() {
           </div>
 
           {emailMismatch && (
-            <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs text-warning">
+            <p className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-center text-xs text-warning">
               This invitation was sent to{" "}
               <strong>{invitation.guestEmail}</strong>, but you&apos;re signed
               in as <strong>{user.email}</strong>.

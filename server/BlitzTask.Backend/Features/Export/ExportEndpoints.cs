@@ -111,6 +111,7 @@ namespace BlitzTask.Backend.Features.Export
                     p.StartDate,
                     p.DueDate,
                     p.Tags,
+                    p.Accent,
                     p.IsInbox,
                     p.CreatedAt,
                     p.Participants.OrderBy(pp => pp.CreatedAt)
