@@ -7,6 +7,7 @@ using BlitzTask.Backend.Features.Shared.Services;
 using BlitzTask.Backend.Infrastructure.Data;
 using BlitzTask.Backend.Infrastructure.Extensions;
 using BlitzTask.Backend.Infrastructure.Filters;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -89,7 +90,8 @@ namespace BlitzTask.Backend.Features.Auth
             User user,
             bool RememberMe,
             ApplicationDbContext dbContext,
-            HttpContext context
+            HttpContext context,
+            IAntiforgery antiforgery
         )
         {
             string securityStampToken;
@@ -135,12 +137,20 @@ namespace BlitzTask.Backend.Features.Auth
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties
             );
+
+            // The antiforgery request token embeds the signed-in user's name, so the one the
+            // caller is holding was minted for whoever they were a moment ago — on a first visit,
+            // nobody. Leave it and every form write for the rest of that page session fails with
+            // "meant for a different claims-based user", which is how a new account could read
+            // everything and save nothing. See `ReissueAntiforgeryFor`.
+            context.ReissueAntiforgeryFor(claimsIdentity, antiforgery);
         }
 
         public static async Task<IResult> Login(
             LoginRequest request,
             ApplicationDbContext dbContext,
-            HttpContext context
+            HttpContext context,
+            [FromServices] IAntiforgery antiforgery
         )
         {
             var passwordHasher = new PasswordHasher<User>();
@@ -176,7 +186,8 @@ namespace BlitzTask.Backend.Features.Auth
                 result.User,
                 request.RememberMe,
                 dbContext,
-                context
+                context,
+                antiforgery
             );
             return Results.Ok(result.User.ToCurrentUser());
         }
@@ -253,7 +264,8 @@ namespace BlitzTask.Backend.Features.Auth
             HttpContext context,
             [FromServices] ApplicationDbContext dbContext,
             [FromServices] MailerService mailerService,
-            [FromServices] AppUrlBuilder urlBuilder
+            [FromServices] AppUrlBuilder urlBuilder,
+            [FromServices] IAntiforgery antiforgery
         )
         {
             var user = new User
@@ -286,7 +298,7 @@ namespace BlitzTask.Backend.Features.Auth
             }
 
             await SendVerificationEmail(user, null, dbContext, context, mailerService, urlBuilder);
-            await LoginUser(null, user, false, dbContext, context);
+            await LoginUser(null, user, false, dbContext, context, antiforgery);
 
             return Results.Ok(user.ToCurrentUser());
         }
@@ -356,9 +368,19 @@ namespace BlitzTask.Backend.Features.Auth
             );
         }
 
-        public static async Task<NoContent> Logout(HttpContext context)
+        public static async Task<NoContent> Logout(
+            HttpContext context,
+            [FromServices] IAntiforgery antiforgery
+        )
         {
             await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            // Same reasoning as sign-in, in the other direction: the token still names the user
+            // who just left, so without this the next form write from the same page — signing in
+            // as somebody else, most obviously — is rejected for a reason that has nothing to do
+            // with the request.
+            context.ReissueAntiforgeryFor(new ClaimsIdentity(), antiforgery);
+
             return TypedResults.NoContent();
         }
 

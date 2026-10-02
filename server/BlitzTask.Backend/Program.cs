@@ -344,8 +344,7 @@ public class Program
             "/api/csrf-token",
             (IAntiforgery antiforgery, HttpContext context) =>
             {
-                var tokens = antiforgery.GetAndStoreTokens(context);
-                context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!);
+                context.IssueAntiforgeryCookie(antiforgery);
                 return TypedResults.NoContent();
             }
         );

@@ -533,6 +533,21 @@ on the wrong branch.
   re-checking the pairs it participates in** — `--muted` in particular is pinned from both sides:
   it is the fill behind avatar fallbacks and chips, so it has to be visible on the canvas *and*
   carry `--muted-foreground` at 4.5:1.
+- **The antiforgery token is bound to the signed-in user, so every identity change must re-issue
+  it.** ASP.NET embeds the identity's *name claim* in the request token. The SPA fetches one on
+  boot and `ensureCsrfToken` then **skips the fetch for as long as the cookie exists**, while
+  logging in neither clears the cookie nor reloads the page — so a caller kept holding a token
+  minted for whoever they were before, usually nobody. Every **form** endpoint after that answered
+  400 with *"the provided antiforgery token was meant for a different claims-based user"*, which
+  names the symptom and not the sign-in that caused it; JSON endpoints were unaffected, because
+  only form binding triggers validation, which is why login itself still worked and the app looked
+  fine until the first save. `LoginUser` and `Logout` now call
+  `HttpContext.ReissueAntiforgeryFor(identity, antiforgery)`. **`SignInAsync` writes the auth
+  cookie to the *response* and leaves `HttpContext.User` describing the old identity for the rest
+  of the request**, so the identity has to be passed in and assigned before the token is minted —
+  skip that and the new token is issued for the user you just stopped being, which fails
+  identically. The client needs no change: its interceptor reads the cookie fresh on every
+  request. `AntiforgeryReissueTests` locks all of it, including the half-fix.
 - **The welcome project is created in the registration transaction, and that is the whole design.**
   `Features/Projects/WelcomeProject.AddFor` adds (never saves — the caller owns the transaction,
   like `ActivityRecorder`) a real board whose six cards describe the app. Because it is written in
