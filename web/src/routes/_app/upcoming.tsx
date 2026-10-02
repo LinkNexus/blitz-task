@@ -1,7 +1,9 @@
 import { IconCalendarPlus } from "@tabler/icons-react";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { listProjectsOptions } from "@/api/@tanstack/react-query.gen";
 import { Badge } from "@/components/ui/badge";
+import { NoProjectsYet } from "./-components/no-projects-yet";
 import {
   countTasks,
   UPCOMING_HORIZON_DAYS,
@@ -28,6 +30,8 @@ export const Route = createFileRoute("/_app/upcoming")({
 function UpcomingPage() {
   const { assignedToMe } = Route.useSearch();
   const { data: tasks } = useSuspenseQuery(userTasksQueryOptions(assignedToMe));
+  // Cached by the sidebar; see `NoProjectsYet` for why the two empty states differ.
+  const { data: projects } = useQuery(listProjectsOptions());
 
   const sections = upcomingSections(tasks);
   // What this view deliberately leaves out. Surfaced as a link rather than a section, so the
@@ -77,15 +81,19 @@ function UpcomingPage() {
       <TaskList
         sections={sections}
         empty={
-          <>
-            <IconCalendarPlus className="size-8 text-muted-foreground/50" />
-            <p className="text-sm font-medium">Nothing scheduled ahead</p>
-            <p className="max-w-xs text-xs text-muted-foreground">
-              {assignedToMe
-                ? "Nothing assigned to you has a due date after today. Switch to All tasks to see everything in your projects."
-                : "No task in your projects has a due date after today."}
-            </p>
-          </>
+          projects?.length === 0 ? (
+            <NoProjectsYet />
+          ) : (
+            <>
+              <IconCalendarPlus className="size-8 text-muted-foreground/50" />
+              <p className="text-sm font-medium">Nothing scheduled ahead</p>
+              <p className="max-w-xs text-xs text-muted-foreground">
+                {assignedToMe
+                  ? "Nothing assigned to you has a due date after today. Switch to All tasks to see everything in your projects."
+                  : "No task in your projects has a due date after today."}
+              </p>
+            </>
+          )
         }
       />
     </div>

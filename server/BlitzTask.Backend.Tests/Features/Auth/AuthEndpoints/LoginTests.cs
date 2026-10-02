@@ -17,7 +17,8 @@ public class LoginTests
         var result = await Backend.Features.Auth.AuthEndpoints.Login(
             new LoginRequest("nonexistent@example.com", "password", false),
             dbContext,
-            httpContext
+            httpContext,
+            new TestsUtils.RecordingAntiforgery()
         );
 
         var statusResult = Assert.IsType<IStatusCodeHttpResult>(result, exactMatch: false);
@@ -36,7 +37,8 @@ public class LoginTests
         var result = await Backend.Features.Auth.AuthEndpoints.Login(
             new LoginRequest("user@example.com", "wrongpassword", false),
             dbContext,
-            httpContext
+            httpContext,
+            new TestsUtils.RecordingAntiforgery()
         );
 
         var statusResult = Assert.IsType<IStatusCodeHttpResult>(result, exactMatch: false);
@@ -55,7 +57,8 @@ public class LoginTests
         var result = await Backend.Features.Auth.AuthEndpoints.Login(
             new LoginRequest("user@example.com", "correctpassword", false),
             dbContext,
-            httpContext
+            httpContext,
+            new TestsUtils.RecordingAntiforgery()
         );
 
         var valueResult = Assert.IsType<IValueHttpResult>(result, exactMatch: false);
@@ -76,7 +79,8 @@ public class LoginTests
         await Backend.Features.Auth.AuthEndpoints.Login(
             new LoginRequest("user@example.com", "password123", false),
             dbContext,
-            httpContext
+            httpContext,
+            new TestsUtils.RecordingAntiforgery()
         );
 
         var tokenExists = await dbContext.UserTokens.AnyAsync(t =>
@@ -107,7 +111,8 @@ public class LoginTests
         await Backend.Features.Auth.AuthEndpoints.Login(
             new LoginRequest("user@example.com", "password123", false),
             dbContext,
-            httpContext
+            httpContext,
+            new TestsUtils.RecordingAntiforgery()
         );
 
         var stampCount = await dbContext.UserTokens.CountAsync(t =>
