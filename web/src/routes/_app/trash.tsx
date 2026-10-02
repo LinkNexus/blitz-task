@@ -21,6 +21,7 @@ import {
   restoreProjectMutation,
   restoreTaskMutation,
 } from "@/api/@tanstack/react-query.gen";
+import { ProjectAccentDot } from "@/components/project-accent-dot";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -179,7 +180,10 @@ function TrashPage() {
                       </Badge>
                     )}
                   </div>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                    {/* On a project row the accent marks the project itself; on a task row,
+                        the project it will go back to. */}
+                    <ProjectAccentDot accent={item.accent} />
                     {item.kind === "TASK" && <>in {item.projectName} · </>}
                     deleted{" "}
                     {new Date(item.deletedAt).toLocaleDateString("en-US", {

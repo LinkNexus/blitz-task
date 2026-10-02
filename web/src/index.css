@@ -44,9 +44,16 @@
    The primary action is now a near-black/near-white neutral (16:1), which is
    both the highest contrast available and what frees red to be unambiguous.
 
-   Every pair below is checked: body and secondary text clear 4.5:1 on both
-   `--background` and `--card` in both modes, focus clears 3:1, and no value
-   falls outside sRGB. Changing a lightness here means re-checking it. */
+   Every pair below is checked, and since L47 that is literal rather than a
+   promise: `lib/theme-contrast.test.ts` parses this file and re-derives all of
+   it — text clears 4.5:1 on `--background`, `--card` *and* `--sidebar` in both
+   modes, marks and focus clear 3:1, nothing falls outside sRGB, and the pairs
+   that must not be confusable are held apart by ΔE. It was written for L47's
+   accents and immediately found three things the hand audit had missed: light
+   `--warning` at 3.94:1, light `--success` at 4.16:1, dark `--destructive` at
+   3.93:1 on its own tint — plus two tints (`--info-surface`, `--warning-surface`)
+   sitting outside sRGB, so the browser was painting a colour nobody chose.
+   Changing a lightness here means re-running that test, not re-reading this. */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -91,6 +98,18 @@
   --color-info-foreground: var(--info-foreground);
   --color-info-surface: var(--info-surface);
   --color-destructive-surface: var(--destructive-surface);
+
+  /* Project accents (L47). Named `hue-*` rather than `accent-*` because `--accent` is already
+     shadcn's hover surface and means something entirely different — and because hue is
+     literally the only thing that varies here: see the `:root` block for why. */
+  --color-hue-red: var(--hue-red);
+  --color-hue-orange: var(--hue-orange);
+  --color-hue-amber: var(--hue-amber);
+  --color-hue-green: var(--hue-green);
+  --color-hue-teal: var(--hue-teal);
+  --color-hue-blue: var(--hue-blue);
+  --color-hue-violet: var(--hue-violet);
+  --color-hue-pink: var(--hue-pink);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -185,7 +204,7 @@
   --popover-foreground: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.205 0 0);
 
-  /* 4.96:1 on card, 4.60:1 on canvas. This token carries every date, count and
+  /* 5.28:1 on card, 4.90:1 on canvas, 4.62:1 on the sidebar. This token carries every date, count and
      secondary label in the app (244 uses), so it has to be genuinely readable
      and genuinely quieter than `--foreground` — ΔE 0.34 apart. In dark mode it
      used to sit ΔE 0.10 from full foreground, which is not a second tier. */
@@ -216,13 +235,54 @@
   --ring: oklch(0.55 0.19 258);
   --info: oklch(0.52 0.18 258);
   --info-foreground: oklch(1 0 0);
-  --info-surface: oklch(0.955 0.022 258);
-  --success: oklch(0.54 0.13 155);
+  /* Chroma 0.022 at this lightness is *outside* sRGB for blue — the ceiling is 0.0215 — so the
+     browser was clipping it and painting a tint nobody specified. Same story for the warning
+     tint below, which asked for 0.04 against a ceiling of 0.032. Both were written to match the
+     other two tints numerically rather than to what the gamut allows at each hue. */
+  --info-surface: oklch(0.95 0.02 258);
+  /* `--success` and `--warning` are *text* on their own surfaces — that is what
+     `bg-warning-surface text-warning` on the Medium priority pill is — so they owe
+     4.5:1, and at their L47.5 lightnesses they did not pay it: warning was 3.97:1
+     on its own surface and 3.94:1 on the sidebar, success 4.16:1 on the sidebar.
+     Darkened until each clears 4.5:1 on all three surfaces *and* on its own tint.
+     A yellow that carries 4.5:1 on white is necessarily this brown — which is
+     exactly why the project accents above are marks and not ink. */
+  --success: oklch(0.51 0.119 155);
   --success-foreground: oklch(1 0 0);
   --success-surface: oklch(0.955 0.03 155);
-  --warning: oklch(0.575 0.125 68);
+  --warning: oklch(0.52 0.107 68);
   --warning-foreground: oklch(1 0 0);
-  --warning-surface: oklch(0.96 0.04 75);
+  --warning-surface: oklch(0.955 0.03 68);
+
+  /* Project accents: one lightness, eight hues.
+     ------------------------------------------------------------------------
+     Lightness is held constant and chroma takes whatever sRGB affords at that
+     lightness — never the other way round. Lightness is what decides contrast,
+     so pinning it is what makes the eight read as one set: let it float and the
+     violet lands near-black at 10:1 while the teal glows at 12:1, and a project
+     tinted violet looks *more important* than one tinted teal rather than merely
+     different. Chroma cannot be held constant instead, because the sRGB ceiling
+     at this lightness swings from 0.20 at red to 0.09 at teal — so teal is
+     genuinely quieter than red here, and that is the gamut, not a mistake.
+
+     **These are marks, never ink.** A dot, a rule, a left edge, a ring — never
+     text, and never a fill behind text. That is what lets the set include the
+     yellow-greens at all: a yellow dark enough to carry 4.5:1 as text on white
+     is olive, so requiring readability would have cost either the hue or the
+     whole band. As marks they answer to WCAG 1.4.11 instead, and all eight clear
+     3:1 against `--background`, `--card` *and* `--sidebar` in both modes.
+     `theme-contrast.test.ts` asserts every one of those 48 pairs, and asserts
+     the set stays mutually distinguishable — the closest two are Orange/Amber at
+     ΔE 0.077, about 4x the just-noticeable threshold. Put one of these on text
+     and that guarantee is gone. */
+  --hue-red: oklch(0.58 0.17 25);
+  --hue-orange: oklch(0.58 0.135 55);
+  --hue-amber: oklch(0.58 0.111 90);
+  --hue-green: oklch(0.58 0.17 145);
+  --hue-teal: oklch(0.58 0.093 200);
+  --hue-blue: oklch(0.58 0.17 258);
+  --hue-violet: oklch(0.58 0.17 295);
+  --hue-pink: oklch(0.58 0.17 345);
 
   --sidebar-primary: oklch(0.24 0 0);
   --sidebar-primary-foreground: oklch(0.99 0 0);
@@ -296,7 +356,11 @@
   --primary: oklch(0.95 0 0);
   --primary-foreground: oklch(0.2 0 0);
 
-  --destructive: oklch(0.64 0.2 25);
+  /* Lightened from 0.64: `bg-destructive-surface text-destructive` — the High
+     priority pill — was 3.93:1, the one signal pair in either mode that missed
+     AA outright. Raising the ink rather than darkening the tint, because the tint
+     has to stay distinguishable from the 0.22 card it sits on. */
+  --destructive: oklch(0.68 0.196 25);
   --destructive-foreground: oklch(0.16 0 0);
   --destructive-surface: oklch(0.29 0.075 25);
 
@@ -310,6 +374,18 @@
   --warning: oklch(0.77 0.15 78);
   --warning-foreground: oklch(0.16 0 0);
   --warning-surface: oklch(0.3 0.06 78);
+
+  /* Same rule, one step lighter: a mark has to come *forward* off a dark canvas
+     where in light mode it recedes into the page. All eight clear 3:1 on all
+     three dark surfaces; closest pair Red/Orange at ΔE 0.086. */
+  --hue-red: oklch(0.7 0.17 25);
+  --hue-orange: oklch(0.7 0.163 55);
+  --hue-amber: oklch(0.7 0.134 90);
+  --hue-green: oklch(0.7 0.17 145);
+  --hue-teal: oklch(0.7 0.112 200);
+  --hue-blue: oklch(0.7 0.149 258);
+  --hue-violet: oklch(0.7 0.166 295);
+  --hue-pink: oklch(0.7 0.17 345);
 
   --sidebar-primary: oklch(0.95 0 0);
   --sidebar-primary-foreground: oklch(0.2 0 0);

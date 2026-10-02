@@ -5,15 +5,21 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { useTheme } from "@/components/theme-provider";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
+  // The app's own provider, not `next-themes`. This shipped reading `useTheme` from
+  // `next-themes` — which nothing mounts a provider for, so the destructured default made the
+  // toaster permanently `"system"`: it followed the OS, and a user who had explicitly chosen
+  // Light while their machine was Dark got dark toasts over a light app. The four `--normal-*`
+  // overrides below hid half of it, since they pin the ordinary toast to our own tokens; what
+  // stayed wrong was every toast Sonner colours itself.
+  const { theme } = useTheme();
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={theme}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

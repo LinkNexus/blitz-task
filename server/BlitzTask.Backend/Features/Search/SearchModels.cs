@@ -1,3 +1,4 @@
+using BlitzTask.Backend.Features.Projects;
 namespace BlitzTask.Backend.Features.Search
 {
     /// <summary>
@@ -25,6 +26,13 @@ namespace BlitzTask.Backend.Features.Search
         string Name,
         int ProjectId,
         string ProjectName,
+        /// <summary>
+        /// The owning project's accent, so a row in a list that mixes projects can be marked as
+        /// belonging to one. Denormalised beside the name for the same reason the name is: the
+        /// alternative is the client holding a project lookup for screens that never load a
+        /// project. See <see cref="Projects.ProjectAccent"/> — it is a mark, never ink.
+        /// </summary>
+        ProjectAccent Accent,
         string ColumnName,
         /// <summary>So a hit in an Inbox capture links to /inbox rather than to a hidden board.</summary>
         bool IsInbox

@@ -12,8 +12,15 @@ import {
 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { searchOptions } from "@/api/@tanstack/react-query.gen";
+import { ProjectAccentDot } from "@/components/project-accent-dot";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -39,7 +46,8 @@ function isTypingInto(target: EventTarget | null): boolean {
 type Item = {
   id: string;
   label: string;
-  hint?: string;
+  /** A node rather than a string so a task hint can carry its project's accent dot. */
+  hint?: ReactNode;
   icon: typeof IconSearch;
   run: () => void;
 };
@@ -223,9 +231,16 @@ export function CommandPalette() {
         items: results.tasks.map((task) => ({
           id: `task-${task.id}`,
           label: task.name,
-          hint: task.isInbox
-            ? "Inbox"
-            : `${task.projectName} · ${task.columnName}`,
+          hint: task.isInbox ? (
+            "Inbox"
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <ProjectAccentDot accent={task.accent} />
+              <span className="truncate">
+                {task.projectName} · {task.columnName}
+              </span>
+            </span>
+          ),
           icon: IconSquareCheck,
           run: () => goToTask(task.id),
         })),
@@ -362,7 +377,7 @@ export function CommandPalette() {
                         {item.label}
                       </span>
                       {item.hint && (
-                        <span className="shrink-0 truncate text-xs text-muted-foreground">
+                        <span className="flex shrink-0 items-center text-xs text-muted-foreground">
                           {item.hint}
                         </span>
                       )}

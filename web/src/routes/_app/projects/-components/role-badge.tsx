@@ -10,11 +10,15 @@ const ROLE_BADGE_VARIANT: Record<ProjectRole, RoleBadgeVariant> = {
   Viewer: "outline",
 };
 
+/**
+ * Tokens throughout, which is what removes the `dark:` variant this used to carry: `text-blue-600
+ * dark:text-blue-400` is `--info` spelled by hand, one lightness per mode, and the token already
+ * holds both — so a theme change moves these and a hand-written pair would not.
+ */
 const ROLE_BADGE_CLASS: Record<ProjectRole, string> = {
   Owner: "",
-  Collaborator:
-    "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  Contributor: "border-green-500/30 bg-green-500/10 text-success",
+  Collaborator: "border-info/30 bg-info/10 text-info",
+  Contributor: "border-success/30 bg-success/10 text-success",
   Viewer: "",
 };
 

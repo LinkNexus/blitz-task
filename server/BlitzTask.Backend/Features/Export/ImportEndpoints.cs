@@ -113,6 +113,9 @@ namespace BlitzTask.Backend.Features.Export
                     StartDate = source.StartDate,
                     DueDate = source.DueDate,
                     Tags = [.. source.Tags],
+                    // Absent from a file written before this field existed, which deserializes
+                    // to None — the same default the migration gave every existing project.
+                    Accent = source.Accent,
                     CreatedBy = user,
                     Participants =
                     [

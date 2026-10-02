@@ -1,4 +1,5 @@
 using BlitzTask.Backend.Features.ProjectTasks;
+using BlitzTask.Backend.Features.Projects;
 
 namespace BlitzTask.Backend.Features.Calendar
 {
@@ -40,6 +41,13 @@ namespace BlitzTask.Backend.Features.Calendar
         bool HasDueTime,
         int ProjectId,
         string ProjectName,
+        /// <summary>
+        /// The owning project's accent, so a row in a list that mixes projects can be marked as
+        /// belonging to one. Denormalised beside the name for the same reason the name is: the
+        /// alternative is the client holding a project lookup for screens that never load a
+        /// project. See <see cref="Projects.ProjectAccent"/> — it is a mark, never ink.
+        /// </summary>
+        ProjectAccent Accent,
         string ColumnColor,
         bool IsCompleted,
         bool IsInbox,

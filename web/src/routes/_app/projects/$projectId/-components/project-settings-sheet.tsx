@@ -21,6 +21,7 @@ import {
   updateProjectMutation,
 } from "@/api/@tanstack/react-query.gen";
 import { DateTimePicker } from "@/components/forms/date-time-picker";
+import { AccentField } from "@/components/forms/fields/accent";
 import { DropzoneField } from "@/components/forms/fields/dropzone";
 import { InputField } from "@/components/forms/fields/input";
 import { TextCollectionField } from "@/components/forms/fields/text-collection";
@@ -113,6 +114,7 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
       startDate: project.startDate ?? null,
       dueDate: project.dueDate ?? null,
       tags: project.tags,
+      accent: project.accent,
       image: null,
     },
   });
@@ -130,6 +132,7 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
           dueDate: updated.dueDate,
           imageId: updated.imageId,
           tags: updated.tags,
+          accent: updated.accent,
         }),
       );
       // The name is denormalised into the sidebar list and every dashboard task row.
@@ -349,6 +352,19 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
                     )}
                   />
 
+                  <Controller
+                    control={form.control}
+                    name="accent"
+                    render={({ field, fieldState }) => (
+                      <AccentField
+                        field={field}
+                        fieldState={fieldState}
+                        disabled={isFormDisabled}
+                        labelProps={{ children: "Accent" }}
+                      />
+                    )}
+                  />
+
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Controller
                       control={form.control}
@@ -494,7 +510,7 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="border-amber-500/40 text-amber-700 hover:bg-amber-500/10 hover:text-warning dark:hover:text-amber-400"
+                          className="border-warning/40 text-warning hover:bg-warning/10 hover:text-warning"
                         >
                           Archive Project
                         </Button>
@@ -513,7 +529,10 @@ export function ProjectSettingsSheet({ project, open, onOpenChange }: Props) {
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
-                            className="bg-amber-600 text-white hover:bg-amber-700"
+                            // `--warning-foreground`, not `text-white`: in dark mode the token is
+                            // near-black, because `--warning` there is a light amber that white
+                            // text does not survive.
+                            className="bg-warning text-warning-foreground hover:bg-warning/90"
                             onClick={handleArchive}
                           >
                             Archive Project

@@ -10,6 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import type { ReactNode } from "react";
 import z from "zod";
 import { searchOptions } from "@/api/@tanstack/react-query.gen";
+import { ProjectAccentDot } from "@/components/project-accent-dot";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -164,9 +165,12 @@ function SearchPage() {
               {results.tasks.map((task) => (
                 <TaskRow key={String(task.id)} taskId={task.id}>
                   <span className="block text-sm font-medium">{task.name}</span>
-                  <span className="block text-xs text-muted-foreground">
-                    {task.isInbox ? "Inbox" : task.projectName} ·{" "}
-                    {task.columnName}
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <ProjectAccentDot accent={task.accent} />
+                    <span className="truncate">
+                      {task.isInbox ? "Inbox" : task.projectName} ·{" "}
+                      {task.columnName}
+                    </span>
                   </span>
                 </TaskRow>
               ))}

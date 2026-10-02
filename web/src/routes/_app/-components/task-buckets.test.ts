@@ -30,6 +30,7 @@ function task(name: string, dueDate: string | null): UserTaskSummary {
     assigneeIds: [],
     projectId: 1,
     projectName: "Alpha",
+    accent: "None",
     columnId: 1,
     columnName: "Todo",
     columnColor: "#fff",

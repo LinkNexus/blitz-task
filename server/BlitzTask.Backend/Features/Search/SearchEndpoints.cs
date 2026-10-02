@@ -69,6 +69,7 @@ namespace BlitzTask.Backend.Features.Search
                     t.Name,
                     t.RelatedProjectId,
                     t.RelatedProject.Name,
+                    t.RelatedProject.Accent,
                     t.RelatedColumn.Name,
                     t.RelatedProject.IsInbox
                 ))

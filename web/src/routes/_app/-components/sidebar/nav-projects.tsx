@@ -13,6 +13,8 @@ import {
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { useAccount } from "@/hooks/use-current-user";
+import { accentFill, hasAccent } from "@/lib/project-accent";
+import { cn } from "@/lib/utils";
 import { Route as CreateProjectRoute } from "@/routes/_app/projects/create";
 
 /** First letters of the project name, for the tile that stands in for a project icon. */
@@ -52,7 +54,22 @@ function ProjectItem({
         <Link
           to="/projects/$projectId"
           params={{ projectId: String(project.id) }}
+          className="relative"
         >
+          {/* A rule on the leading edge rather than a tinted tile: the tile carries the
+              initials, and an accent is a mark that never goes behind text — see
+              `lib/project-accent.ts`. Positioned out of flow so an accented row and a plain one
+              keep identical metrics, and inset vertically so the bar clears the row's rounded
+              corners instead of crossing them. */}
+          {hasAccent(project.accent) && (
+            <span
+              aria-hidden
+              className={cn(
+                "absolute inset-y-1 left-0 w-0.5 rounded-full",
+                accentFill(project.accent),
+              )}
+            />
+          )}
           <span className="flex size-4 shrink-0 items-center justify-center rounded-[4px] bg-primary/10 text-[9px] font-semibold text-primary">
             {initials(project.name)}
           </span>

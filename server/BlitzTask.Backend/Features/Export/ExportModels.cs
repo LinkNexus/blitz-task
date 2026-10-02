@@ -46,6 +46,7 @@ namespace BlitzTask.Backend.Features.Export
         DateTimeOffset? StartDate,
         DateTimeOffset? DueDate,
         List<string> Tags,
+        ProjectAccent Accent,
         bool IsInbox,
         DateTime CreatedAt,
         List<ProjectMemberExport> Members,

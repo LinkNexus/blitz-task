@@ -25,6 +25,14 @@ namespace BlitzTask.Backend.Features.Projects
                 )
                 .WithMessage("Start date cannot be after due date");
 
+            // An enum binds from its *number* as readily as from its name, so `Accent=99` is a
+            // successful bind to `(ProjectAccent)99` — which no token in `index.css` answers to,
+            // and which `JsonStringEnumConverter` then hands the client as the string "99".
+            // Guarding the range here is what keeps that out of the database.
+            RuleFor(x => x.Accent)
+                .IsInEnum()
+                .WithMessage("Unknown accent");
+
             RuleFor(x => x.Tags)
                 .Must(tags => tags is null || tags.Count <= 10)
                 .WithMessage("Maximum 10 tags allowed")
